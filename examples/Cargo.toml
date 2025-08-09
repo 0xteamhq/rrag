@@ -1,0 +1,34 @@
+[package]
+name = "rrag-examples"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rrag_comprehensive"
+path = "rrag_comprehensive.rs"
+
+[[bin]]
+name = "rrag_rsllm_integration"
+path = "rrag_rsllm_integration.rs"
+
+[[bin]]
+name = "hybrid_search_demo"
+path = "hybrid_search_demo.rs"
+
+[[bin]]
+name = "query_processing_demo"
+path = "query_processing_demo.rs"
+
+[features]
+default = ["rsllm-client"]
+rsllm-client = ["rrag/rsllm-client"]
+
+[dependencies]
+rrag = { path = "../crates/rrag", features = ["rsllm-client"] }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+futures = { workspace = true }

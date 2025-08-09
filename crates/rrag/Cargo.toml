@@ -1,0 +1,51 @@
+[package]
+name = "rrag"
+version = "0.1.0"
+edition = "2021"
+description = "RRAG - A native Rust RAG (Retrieval-Augmented Generation) framework"
+license = "MIT"
+keywords = ["rag", "llm", "rust", "retrieval", "generation"]
+authors = ["RRAG Team"]
+repository = "https://github.com/rrag-team/rrag"
+documentation = "https://docs.rs/rrag"
+
+[dependencies]
+# Core async runtime
+tokio = { workspace = true, features = ["full"] }
+tokio-stream = { workspace = true }
+futures = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Utilities
+uuid = { workspace = true, features = ["v4", "serde"] }
+chrono = { workspace = true, features = ["serde"] }
+regex = "1.10"
+
+# LLM interface
+rsllm = { path = "../rsllm", optional = true }
+
+# Optional features
+reqwest = { workspace = true, optional = true }
+dashmap = { version = "5.5", optional = true }
+async-stream = "0.3"
+
+[features]
+default = ["http", "concurrent"]
+rsllm-client = ["rsllm"]
+http = ["reqwest"]
+concurrent = ["dashmap"]
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.8"

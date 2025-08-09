@@ -1,0 +1,93 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/rrag",      # RRAG - Rust RAG Framework
+    "crates/rsllm",
+    "examples",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["LEVAL Team"]
+license = "MIT"
+repository = "https://github.com/leval-team/leval-rag-workspace"
+homepage = "https://github.com/leval-team/leval-rag-workspace"
+documentation = "https://docs.rs/leval-rag"
+keywords = ["rag", "llm", "ai", "retrieval", "generation"]
+categories = ["api-bindings", "web-programming", "science"]
+
+[workspace.dependencies]
+# Async runtime and utilities
+tokio = { version = "1.0", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+tokio-stream = { version = "0.1", features = ["io-util"] }
+futures = "0.3"
+futures-util = "0.3"
+async-trait = "0.1"
+
+# HTTP client and server
+reqwest = { version = "0.12", features = ["json", "stream", "multipart"] }
+axum = { version = "0.7", features = ["multipart", "ws"] }
+tower = { version = "0.5", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
+hyper = { version = "1.0", features = ["full"] }
+
+# Serialization and data handling
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+toml = "0.8"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-opentelemetry = "0.22"
+
+# Database and storage
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite", "postgres", "uuid", "chrono"] }
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
+
+# Vector databases
+qdrant-client = { version = "1.0", features = ["tonic"] }
+
+# Text processing and embeddings
+tokenizers = "0.19"
+text-splitter = "0.9"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+url = "2.5"
+base64 = "0.22"
+fastrand = "2.0"
+
+# CLI and configuration
+clap = { version = "4.0", features = ["derive", "env"] }
+config = "0.14"
+dotenv = "0.15"
+
+# Development and testing
+tokio-test = "0.4"
+wiremock = "0.6"
+
+# Optional features
+native-tls = "0.2"
+rustls = "0.23"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+debug = true
+opt-level = 0
+
+[profile.test]
+debug = true
+opt-level = 1
