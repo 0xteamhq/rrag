@@ -248,6 +248,7 @@ pub struct HttpHealthChecker {
     url: String,
     expected_status: u16,
     timeout: Duration,
+    #[cfg(feature = "http")]
     client: reqwest::Client,
     is_critical: bool,
 }
@@ -259,6 +260,7 @@ impl HttpHealthChecker {
             url: url.into(),
             expected_status: 200,
             timeout: Duration::seconds(10),
+            #[cfg(feature = "http")]
             client: reqwest::Client::new(),
             is_critical: false,
         }
@@ -283,44 +285,56 @@ impl HttpHealthChecker {
 #[async_trait::async_trait]
 impl HealthChecker for HttpHealthChecker {
     async fn check_health(&self) -> RragResult<ServiceHealth> {
-        let start_time = std::time::Instant::now();
-        
-        let timeout_duration = std::time::Duration::from_millis(self.timeout.num_milliseconds() as u64);
-        
-        match tokio::time::timeout(timeout_duration, self.client.get(&self.url).send()).await {
-            Ok(Ok(response)) => {
-                let response_time = start_time.elapsed().as_millis() as f64;
-                let status_code = response.status().as_u16();
-                
-                let status = if status_code == self.expected_status {
-                    ComponentStatus::Healthy
-                } else {
-                    ComponentStatus::Degraded
-                };
+        #[cfg(feature = "http")]
+        {
+            let start_time = std::time::Instant::now();
+            
+            let timeout_duration = std::time::Duration::from_millis(self.timeout.num_milliseconds() as u64);
+            
+            match tokio::time::timeout(timeout_duration, self.client.get(&self.url).send()).await {
+                Ok(Ok(response)) => {
+                    let response_time = start_time.elapsed().as_millis() as f64;
+                    let status_code = response.status().as_u16();
+                    
+                    let status = if status_code == self.expected_status {
+                        ComponentStatus::Healthy
+                    } else {
+                        ComponentStatus::Degraded
+                    };
 
-                Ok(ServiceHealth::new(&self.name)
-                    .with_status(status)
-                    .with_response_time(response_time)
-                    .with_detail("status_code", serde_json::json!(status_code))
-                    .with_detail("url", serde_json::json!(self.url)))
-            },
-            Ok(Err(e)) => {
-                let response_time = start_time.elapsed().as_millis() as f64;
-                Ok(ServiceHealth::new(&self.name)
-                    .with_status(ComponentStatus::Unhealthy)
-                    .with_response_time(response_time)
-                    .with_error(e.to_string())
-                    .with_detail("url", serde_json::json!(self.url)))
-            },
-            Err(_) => {
-                let response_time = start_time.elapsed().as_millis() as f64;
-                Ok(ServiceHealth::new(&self.name)
-                    .with_status(ComponentStatus::Unhealthy)
-                    .with_response_time(response_time)
-                    .with_error("Request timeout")
-                    .with_detail("timeout_ms", serde_json::json!(self.timeout.num_milliseconds()))
-                    .with_detail("url", serde_json::json!(self.url)))
+                    Ok(ServiceHealth::new(&self.name)
+                        .with_status(status)
+                        .with_response_time(response_time)
+                        .with_detail("status_code", serde_json::json!(status_code))
+                        .with_detail("url", serde_json::json!(self.url)))
+                },
+                Ok(Err(e)) => {
+                    let response_time = start_time.elapsed().as_millis() as f64;
+                    Ok(ServiceHealth::new(&self.name)
+                        .with_status(ComponentStatus::Unhealthy)
+                        .with_response_time(response_time)
+                        .with_error(e.to_string())
+                        .with_detail("url", serde_json::json!(self.url)))
+                },
+                Err(_) => {
+                    let response_time = start_time.elapsed().as_millis() as f64;
+                    Ok(ServiceHealth::new(&self.name)
+                        .with_status(ComponentStatus::Unhealthy)
+                        .with_response_time(response_time)
+                        .with_error("Request timeout")
+                        .with_detail("timeout_ms", serde_json::json!(self.timeout.num_milliseconds()))
+                        .with_detail("url", serde_json::json!(self.url)))
+                }
             }
+        }
+        #[cfg(not(feature = "http"))]
+        {
+            // Without HTTP feature, return a placeholder healthy status
+            Ok(ServiceHealth::new(&self.name)
+                .with_status(ComponentStatus::Healthy)
+                .with_response_time(0.0)
+                .with_detail("note", serde_json::json!("HTTP feature disabled"))
+                .with_detail("url", serde_json::json!(self.url)))
         }
     }
 

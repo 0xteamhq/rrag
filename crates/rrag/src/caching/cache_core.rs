@@ -13,8 +13,8 @@ use std::cmp::Reverse;
 /// LRU Cache implementation
 pub struct LRUCache<K, V> 
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Internal storage
     storage: HashMap<K, CacheNode<V>>,
@@ -35,8 +35,8 @@ where
 /// LFU Cache implementation
 pub struct LFUCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Internal storage
     storage: HashMap<K, CacheNode<V>>,
@@ -60,8 +60,8 @@ where
 /// TTL Cache implementation
 pub struct TTLCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Internal storage with expiry
     storage: HashMap<K, (V, SystemTime)>,
@@ -82,8 +82,8 @@ where
 /// ARC (Adaptive Replacement Cache) implementation
 pub struct ARCCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Recently used cache (T1)
     t1: HashMap<K, V>,
@@ -116,8 +116,8 @@ where
 /// Semantic-aware cache implementation
 pub struct SemanticAwareCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Primary storage
     storage: HashMap<K, CacheNode<V>>,
@@ -189,8 +189,8 @@ struct FrequencyEntry<K> {
 
 impl<K, V> LRUCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Create new LRU cache
     pub fn new(max_size: usize) -> Self {
@@ -228,8 +228,8 @@ where
 
 impl<K, V> Cache<K, V> for LRUCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     fn get(&self, key: &K) -> Option<V> {
         let start_time = SystemTime::now();
@@ -303,8 +303,8 @@ where
 
 impl<K, V> LFUCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Create new LFU cache
     pub fn new(max_size: usize) -> Self {
@@ -357,8 +357,8 @@ where
 
 impl<K, V> Cache<K, V> for LFUCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     fn get(&self, key: &K) -> Option<V> {
         if let Some(node) = self.storage.get(key) {
@@ -427,8 +427,8 @@ where
 
 impl<K, V> TTLCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Create new TTL cache
     pub fn new(default_ttl: Duration) -> Self {
@@ -461,8 +461,8 @@ where
 
 impl<K, V> Cache<K, V> for TTLCache<K, V>
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     fn get(&self, key: &K) -> Option<V> {
         if let Some((value, expiry)) = self.storage.get(key) {

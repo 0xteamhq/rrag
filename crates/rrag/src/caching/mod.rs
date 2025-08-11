@@ -149,8 +149,8 @@ pub enum PersistenceFormat {
 /// Generic cache trait
 pub trait Cache<K, V>: Send + Sync
 where
-    K: Hash + Eq + Clone,
-    V: Clone,
+    K: Hash + Eq + Clone + Send + Sync + 'static,
+    V: Clone + Send + Sync + 'static,
 {
     /// Get value from cache
     fn get(&self, key: &K) -> Option<V>;
@@ -402,7 +402,7 @@ impl CacheService {
             return None;
         }
         
-        self.query_cache.get(query)
+        self.query_cache.get(&query.to_string())
     }
     
     /// Cache query results
@@ -457,7 +457,7 @@ impl CacheService {
             return None;
         }
         
-        self.semantic_cache.get(query)
+        self.semantic_cache.get(&query.to_string())
     }
     
     /// Cache semantic results

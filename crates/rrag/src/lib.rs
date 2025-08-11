@@ -274,7 +274,7 @@ pub use incremental::{
     IncrementalMetrics, PerformanceTracker, IndexingStats, MonitoringConfig, AlertConfig, MetricsCollector,
 };
 
-// Observability re-exports
+// Observability re-exports  
 pub use observability::{
     ObservabilitySystem, ObservabilityConfig, ObservabilityBuilder,
     MetricsCollector as ObsMetricsCollector, MetricsRegistry, Metric, MetricType, MetricValue,
@@ -282,7 +282,7 @@ pub use observability::{
     AlertManager, AlertRule, AlertSeverity, AlertCondition, AlertNotification,
     DashboardServer, DashboardConfig, WebSocketManager, RealtimeMetrics,
     LogAggregator, LogLevel, LogEntry, LogQuery, LogFilter,
-    HealthChecker as ObsHealthChecker, HealthReport, ComponentStatus,
+    HealthChecker, HealthReport, ComponentStatus,
     Profiler, ProfileData, BottleneckAnalysis, PerformanceReport,
     ExportManager, ExportFormat, ReportGenerator, MetricsExporter,
     DataRetention, RetentionPolicy, HistoricalAnalyzer,
@@ -402,7 +402,7 @@ pub mod prelude {
     // Observability
     pub use crate::{
         ObservabilitySystem, MetricsRegistry, AlertManager,
-        HealthChecker as ObsHealthChecker, Profiler,
+        HealthChecker, Profiler,
     };
     
     // External dependencies commonly used with RRAG

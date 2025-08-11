@@ -452,6 +452,7 @@ pub struct WebhookDestination {
     name: String,
     url: String,
     headers: HashMap<String, String>,
+    #[cfg(feature = "http")]
     client: reqwest::Client,
 }
 
@@ -461,6 +462,7 @@ impl WebhookDestination {
             name: name.into(),
             url: url.into(),
             headers: HashMap::new(),
+            #[cfg(feature = "http")]
             client: reqwest::Client::new(),
         }
     }
@@ -474,47 +476,64 @@ impl WebhookDestination {
 #[async_trait::async_trait]
 impl ExportDestination for WebhookDestination {
     async fn export_data(&self, data: &[u8], filename: &str, content_type: &str) -> RragResult<DestinationResult> {
-        let mut request = self.client.post(&self.url)
-            .header("Content-Type", content_type)
-            .header("X-Filename", filename)
-            .body(data.to_vec());
+        #[cfg(feature = "http")]
+        {
+            let mut request = self.client.post(&self.url)
+                .header("Content-Type", content_type)
+                .header("X-Filename", filename)
+                .body(data.to_vec());
 
-        for (key, value) in &self.headers {
-            request = request.header(key, value);
+            for (key, value) in &self.headers {
+                request = request.header(key, value);
+            }
+
+            match request.send().await {
+                Ok(response) => {
+                    let status_code = response.status().as_u16();
+                    if response.status().is_success() {
+                        Ok(DestinationResult {
+                            destination_name: self.name.clone(),
+                            status: ExportStatus::Completed,
+                            delivered_at: Some(Utc::now()),
+                            error_message: None,
+                            delivery_info: HashMap::from([
+                                ("status_code".to_string(), status_code.to_string()),
+                                ("url".to_string(), self.url.clone()),
+                            ]),
+                        })
+                    } else {
+                        Ok(DestinationResult {
+                            destination_name: self.name.clone(),
+                            status: ExportStatus::Failed,
+                            delivered_at: None,
+                            error_message: Some(format!("HTTP {}: {}", status_code, response.status())),
+                            delivery_info: HashMap::from([
+                                ("status_code".to_string(), status_code.to_string()),
+                            ]),
+                        })
+                    }
+                },
+                Err(e) => Ok(DestinationResult {
+                    destination_name: self.name.clone(),
+                    status: ExportStatus::Failed,
+                    delivered_at: None,
+                    error_message: Some(e.to_string()),
+                    delivery_info: HashMap::new(),
+                })
+            }
         }
-
-        match request.send().await {
-            Ok(response) => {
-                let status_code = response.status().as_u16();
-                if response.status().is_success() {
-                    Ok(DestinationResult {
-                        destination_name: self.name.clone(),
-                        status: ExportStatus::Completed,
-                        delivered_at: Some(Utc::now()),
-                        error_message: None,
-                        delivery_info: HashMap::from([
-                            ("status_code".to_string(), status_code.to_string()),
-                            ("url".to_string(), self.url.clone()),
-                        ]),
-                    })
-                } else {
-                    Ok(DestinationResult {
-                        destination_name: self.name.clone(),
-                        status: ExportStatus::Failed,
-                        delivered_at: None,
-                        error_message: Some(format!("HTTP {}: {}", status_code, response.status())),
-                        delivery_info: HashMap::from([
-                            ("status_code".to_string(), status_code.to_string()),
-                        ]),
-                    })
-                }
-            },
-            Err(e) => Ok(DestinationResult {
+        #[cfg(not(feature = "http"))]
+        {
+            // Without HTTP feature, return skipped status
+            Ok(DestinationResult {
                 destination_name: self.name.clone(),
                 status: ExportStatus::Failed,
                 delivered_at: None,
-                error_message: Some(e.to_string()),
-                delivery_info: HashMap::new(),
+                error_message: Some("HTTP feature not enabled".to_string()),
+                delivery_info: HashMap::from([
+                    ("note".to_string(), "HTTP feature disabled".to_string()),
+                    ("url".to_string(), self.url.clone()),
+                ]),
             })
         }
     }
@@ -524,9 +543,17 @@ impl ExportDestination for WebhookDestination {
     }
 
     async fn test_connection(&self) -> RragResult<bool> {
-        match self.client.head(&self.url).send().await {
-            Ok(response) => Ok(response.status().is_success()),
-            Err(_) => Ok(false),
+        #[cfg(feature = "http")]
+        {
+            match self.client.head(&self.url).send().await {
+                Ok(response) => Ok(response.status().is_success()),
+                Err(_) => Ok(false),
+            }
+        }
+        #[cfg(not(feature = "http"))]
+        {
+            // Without HTTP feature, assume connection is fine
+            Ok(true)
         }
     }
 }

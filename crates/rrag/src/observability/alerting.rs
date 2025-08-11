@@ -291,6 +291,7 @@ pub struct WebhookNotificationChannel {
     name: String,
     url: String,
     headers: HashMap<String, String>,
+    #[cfg(feature = "http")]
     client: reqwest::Client,
 }
 
@@ -300,6 +301,7 @@ impl WebhookNotificationChannel {
             name: name.into(),
             url: url.into(),
             headers: HashMap::new(),
+            #[cfg(feature = "http")]
             client: reqwest::Client::new(),
         }
     }
@@ -313,29 +315,37 @@ impl WebhookNotificationChannel {
 #[async_trait::async_trait]
 impl NotificationChannel for WebhookNotificationChannel {
     async fn send_notification(&self, notification: &AlertNotification) -> RragResult<()> {
-        let payload = serde_json::json!({
-            "alert_id": notification.id,
-            "rule_name": notification.rule_name,
-            "severity": notification.severity,
-            "status": notification.status,
-            "message": notification.message,
-            "details": notification.details,
-            "triggered_at": notification.triggered_at,
-            "tags": notification.tags
-        });
+        #[cfg(feature = "http")]
+        {
+            let payload = serde_json::json!({
+                "alert_id": notification.id,
+                "rule_name": notification.rule_name,
+                "severity": notification.severity,
+                "status": notification.status,
+                "message": notification.message,
+                "details": notification.details,
+                "triggered_at": notification.triggered_at,
+                "tags": notification.tags
+            });
 
-        let mut request = self.client.post(&self.url).json(&payload);
+            let mut request = self.client.post(&self.url).json(&payload);
 
-        for (key, value) in &self.headers {
-            request = request.header(key, value);
+            for (key, value) in &self.headers {
+                request = request.header(key, value);
+            }
+
+            request.send().await
+                .map_err(|e| RragError::network("webhook_notification", Box::new(e)))?
+                .error_for_status()
+                .map_err(|e| RragError::network("webhook_notification", Box::new(e)))?;
+
+            Ok(())
         }
-
-        request.send().await
-            .map_err(|e| RragError::network("webhook_notification", Box::new(e)))?
-            .error_for_status()
-            .map_err(|e| RragError::network("webhook_notification", Box::new(e)))?;
-
-        Ok(())
+        #[cfg(not(feature = "http"))]
+        {
+            tracing::warn!("HTTP feature not enabled, webhook notification to {} skipped", self.url);
+            Ok(())
+        }
     }
 
     fn channel_type(&self) -> NotificationChannelType {
@@ -347,8 +357,16 @@ impl NotificationChannel for WebhookNotificationChannel {
     }
 
     async fn is_healthy(&self) -> bool {
-        // Simple health check - try to connect to the webhook URL
-        self.client.head(&self.url).send().await.is_ok()
+        #[cfg(feature = "http")]
+        {
+            // Simple health check - try to connect to the webhook URL
+            self.client.head(&self.url).send().await.is_ok()
+        }
+        #[cfg(not(feature = "http"))]
+        {
+            // Without HTTP feature, assume healthy
+            true
+        }
     }
 }
 
