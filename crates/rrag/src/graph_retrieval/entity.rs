@@ -616,7 +616,7 @@ impl RuleBasedEntityExtractor {
     /// Extract co-occurrence relationships
     fn extract_co_occurrence_relationships(
         &self,
-        text: &str,
+        _text: &str,
         entities: &[Entity],
         source_id: &str,
         relationships: &mut Vec<Relationship>

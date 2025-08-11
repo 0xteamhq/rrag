@@ -448,7 +448,7 @@ impl KnowledgeGraph {
         let mut total_coefficient = 0.0;
         let mut nodes_with_neighbors = 0;
         
-        for (node_id, neighbors) in &self.adjacency_list {
+        for (_node_id, neighbors) in &self.adjacency_list {
             if neighbors.len() < 2 {
                 continue;
             }

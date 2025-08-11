@@ -436,7 +436,7 @@ impl HtmlTableParser {
     }
     
     /// Parse HTML content for tables
-    pub fn parse(&self, html: &str) -> RragResult<Vec<ExtractedTable>> {
+    pub fn parse(&self, _html: &str) -> RragResult<Vec<ExtractedTable>> {
         // Simulate HTML parsing
         let table_id = format!("table_{}", uuid::Uuid::new_v4().to_string().split('-').next().unwrap());
         
@@ -473,7 +473,7 @@ impl HtmlTableParser {
     }
     
     /// Extract table attributes
-    pub fn extract_attributes(&self, table_element: &str) -> HashMap<String, String> {
+    pub fn extract_attributes(&self, _table_element: &str) -> HashMap<String, String> {
         // Simulate attribute extraction
         let mut attributes = HashMap::new();
         attributes.insert("border".to_string(), "1".to_string());

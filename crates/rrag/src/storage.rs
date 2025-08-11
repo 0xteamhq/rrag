@@ -673,6 +673,7 @@ pub struct StorageService {
     storage: Arc<dyn Storage>,
     
     /// Service configuration
+    #[allow(dead_code)]
     config: StorageServiceConfig,
 }
 

@@ -653,7 +653,7 @@ impl DefaultLayoutAnalyzer {
         // Check for logical section progression
         let mut flow_score: f32 = 1.0;
         let mut has_title = false;
-        let mut has_abstract = false;
+        let mut _has_abstract = false;
         let mut has_intro = false;
         let mut has_conclusion = false;
         
@@ -665,7 +665,7 @@ impl DefaultLayoutAnalyzer {
                         if !has_title {
                             flow_score -= 0.1; // Abstract should come after title
                         }
-                        has_abstract = true;
+                        _has_abstract = true;
                     }
                     SectionType::Introduction => {
                         if has_conclusion {

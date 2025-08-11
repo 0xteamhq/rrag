@@ -172,7 +172,7 @@ impl DefaultImageProcessor {
     }
     
     /// Load image from path
-    fn load_image(&self, path: &Path) -> RragResult<RawImage> {
+    fn load_image(&self, _path: &Path) -> RragResult<RawImage> {
         // Simulate image loading
         Ok(RawImage {
             data: vec![],
@@ -211,7 +211,7 @@ impl DefaultImageProcessor {
     /// Normalize image for model input
     fn normalize_image(&self, image: RawImage) -> RragResult<PreprocessedImage> {
         // Apply normalization (ImageNet stats typically)
-        let normalization = ImageNormalization {
+        let _normalization = ImageNormalization {
             mean: [0.485, 0.456, 0.406],
             std: [0.229, 0.224, 0.225],
         };
@@ -318,7 +318,7 @@ impl ImageProcessor for DefaultImageProcessor {
 
 impl DefaultImageProcessor {
     /// Extract image metadata
-    fn extract_metadata(&self, image_path: &Path) -> RragResult<ImageMetadata> {
+    fn extract_metadata(&self, _image_path: &Path) -> RragResult<ImageMetadata> {
         // In real implementation, would use image crate or similar
         Ok(ImageMetadata {
             width: 1920,
@@ -351,14 +351,14 @@ impl CLIPModel {
     }
     
     /// Generate CLIP embedding for image
-    pub fn generate_embedding(&self, image: &PreprocessedImage) -> RragResult<Vec<f32>> {
+    pub fn generate_embedding(&self, _image: &PreprocessedImage) -> RragResult<Vec<f32>> {
         // Simulate CLIP embedding generation
         let embedding = vec![0.1; self.config.embedding_dim];
         Ok(embedding)
     }
     
     /// Generate text embedding for comparison
-    pub fn generate_text_embedding(&self, text: &str) -> RragResult<Vec<f32>> {
+    pub fn generate_text_embedding(&self, _text: &str) -> RragResult<Vec<f32>> {
         // Simulate text embedding generation
         let embedding = vec![0.1; self.config.embedding_dim];
         Ok(embedding)
@@ -431,7 +431,7 @@ impl FeatureExtractor {
 
 impl ColorAnalyzer {
     /// Extract dominant colors from image
-    pub fn extract_colors(&self, image: &PreprocessedImage) -> RragResult<Vec<Color>> {
+    pub fn extract_colors(&self, _image: &PreprocessedImage) -> RragResult<Vec<Color>> {
         // Simulate color extraction
         Ok(vec![
             Color {
@@ -453,7 +453,7 @@ impl ColorAnalyzer {
     }
     
     /// Analyze color harmony
-    pub fn analyze_harmony(&self, colors: &[Color]) -> RragResult<ColorHarmony> {
+    pub fn analyze_harmony(&self, _colors: &[Color]) -> RragResult<ColorHarmony> {
         Ok(ColorHarmony {
             harmony_type: HarmonyType::Complementary,
             harmony_score: 0.75,
@@ -471,7 +471,7 @@ impl ObjectDetector {
     }
     
     /// Detect objects in image
-    pub fn detect_objects(&self, image: &PreprocessedImage) -> RragResult<Vec<DetectedObject>> {
+    pub fn detect_objects(&self, _image: &PreprocessedImage) -> RragResult<Vec<DetectedObject>> {
         // Simulate object detection
         Ok(vec![
             DetectedObject {
@@ -497,7 +497,7 @@ impl ObjectDetector {
 
 impl QualityAnalyzer {
     /// Assess image quality
-    pub fn assess_quality(&self, image: &PreprocessedImage) -> RragResult<ImageQuality> {
+    pub fn assess_quality(&self, _image: &PreprocessedImage) -> RragResult<ImageQuality> {
         // Simulate quality assessment
         Ok(ImageQuality {
             sharpness: 0.8,
@@ -515,7 +515,7 @@ impl QualityAnalyzer {
 
 impl SpatialAnalyzer {
     /// Analyze spatial layout
-    pub fn analyze_layout(&self, image: &PreprocessedImage) -> RragResult<SpatialLayout> {
+    pub fn analyze_layout(&self, _image: &PreprocessedImage) -> RragResult<SpatialLayout> {
         // Simulate layout analysis
         Ok(SpatialLayout {
             composition_type: CompositionType::RuleOfThirds,

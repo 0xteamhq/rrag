@@ -233,7 +233,7 @@ where
     V: Clone + Send + Sync + 'static,
 {
     fn get(&self, key: &K) -> Option<V> {
-        let start_time = SystemTime::now();
+        let _start_time = SystemTime::now();
         
         if let Some(node) = self.storage.get(key) {
             // Update stats - hits handled by mutable reference in real implementation
@@ -583,7 +583,7 @@ impl AccessPattern {
         
         // Determine trend (simplified)
         if self.recent_accesses.len() >= 4 {
-            let first_half_avg = self.recent_accesses.len() / 2;
+            let _first_half_avg = self.recent_accesses.len() / 2;
             // Trend analysis would go here
             self.trend = AccessTrend::Stable; // Simplified for now
         }

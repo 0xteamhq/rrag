@@ -649,7 +649,7 @@ impl ChartTypeClassifier {
     }
     
     /// Extract features for classification
-    pub fn extract_features(&self, image_path: &Path) -> RragResult<Vec<f32>> {
+    pub fn extract_features(&self, _image_path: &Path) -> RragResult<Vec<f32>> {
         // Simulate feature extraction
         let mut features = Vec::new();
         

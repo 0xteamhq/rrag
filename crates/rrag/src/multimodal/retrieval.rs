@@ -704,9 +704,9 @@ impl ResultFusion {
         &self,
         text_results: &[(usize, f32)],
         visual_results: &[(usize, f32)],
-        table_results: &[(usize, f32)],
-        chart_results: &[(usize, f32)],
-        cross_modal_results: &[(usize, f32)],
+        _table_results: &[(usize, f32)],
+        _chart_results: &[(usize, f32)],
+        _cross_modal_results: &[(usize, f32)],
         weights: &ScoringWeights,
     ) -> RragResult<Vec<RankedDocument>> {
         let mut document_scores: HashMap<usize, f32> = HashMap::new();

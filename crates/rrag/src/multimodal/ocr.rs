@@ -941,7 +941,7 @@ impl OCRLayoutAnalyzer {
         }
         
         // Convert groups to columns
-        for (x_pos, block_indices) in x_groups {
+        for (_x_pos, block_indices) in x_groups {
             columns.push(Column {
                 index: columns.len(),
                 blocks: block_indices,

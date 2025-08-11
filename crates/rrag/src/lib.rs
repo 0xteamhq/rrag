@@ -7,6 +7,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::must_use_candidate)]
+#![allow(dead_code)]
 
 //! # RRAG - Rust RAG Framework
 //! 

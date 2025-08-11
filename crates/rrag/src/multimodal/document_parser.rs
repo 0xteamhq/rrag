@@ -642,7 +642,7 @@ impl SectionAnalyzer {
         let mut current_section: Option<DocumentSection> = None;
         let mut content_buffer = String::new();
         
-        for (line_idx, line) in lines.iter().enumerate() {
+        for (_line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
             
             // Check if this line matches a section pattern

@@ -505,7 +505,7 @@ impl PerformanceProfiler {
         }
     }
 
-    fn analyze_performance_trends(&self, profiles: &[&ProfileData]) -> Vec<PerformanceTrend> {
+    fn analyze_performance_trends(&self, _profiles: &[&ProfileData]) -> Vec<PerformanceTrend> {
         // This would implement sophisticated trend analysis
         // For now, return a simple mock trend
         vec![

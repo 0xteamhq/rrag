@@ -284,7 +284,7 @@ impl QueryCache {
     
     /// Evict expired entries
     fn evict_expired(&mut self) -> RragResult<()> {
-        let now = SystemTime::now();
+        let _now = SystemTime::now();
         let before_count = self.storage.len();
         
         self.storage.retain(|_, entry| !entry.metadata.is_expired());

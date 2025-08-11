@@ -89,7 +89,7 @@ impl SemanticCache {
     }
     
     /// Find semantically similar cached entries
-    pub fn find_similar(&self, query: &str, embedding: &[f32]) -> Vec<SimilaritySearchResult> {
+    pub fn find_similar(&self, _query: &str, embedding: &[f32]) -> Vec<SimilaritySearchResult> {
         let mut results = Vec::new();
         
         for (cached_query, cached_embedding) in &self.embeddings {
