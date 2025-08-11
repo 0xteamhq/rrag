@@ -77,7 +77,7 @@ pub enum DestinationType {
 }
 
 /// Export data types
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum ExportType {
     Metrics,
     Logs,
@@ -90,7 +90,7 @@ pub enum ExportType {
 }
 
 /// Supported export formats
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum ExportFormat {
     Json,
     Csv,
@@ -651,8 +651,8 @@ pub struct ExportManager {
     report_generator: Arc<ReportGenerator>,
     export_history: Arc<RwLock<Vec<ExportResult>>>,
     export_queue: mpsc::UnboundedSender<ExportRequest>,
-    _queue_receiver: mpsc::UnboundedReceiver<ExportRequest>,
-    processing_handle: Option<tokio::task::JoinHandle<()>>,
+    _queue_receiver: Arc<RwLock<mpsc::UnboundedReceiver<ExportRequest>>>,
+    processing_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
@@ -768,13 +768,13 @@ impl ExportManager {
             report_generator,
             export_history,
             export_queue,
-            _queue_receiver: queue_receiver,
-            processing_handle: None,
+            _queue_receiver: Arc::new(RwLock::new(queue_receiver)),
+            processing_handle: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         })
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
             return Err(RragError::config("export_manager", "stopped", "already running"));
@@ -786,14 +786,17 @@ impl ExportManager {
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
         }
 
-        if let Some(handle) = self.processing_handle.take() {
-            handle.abort();
+        {
+            let mut handle_guard = self.processing_handle.write().await;
+            if let Some(handle) = handle_guard.take() {
+                handle.abort();
+            }
         }
 
         *running = false;
@@ -824,7 +827,7 @@ impl ExportManager {
             .ok_or_else(|| RragError::config("export_format", "supported", &format!("{:?}", format)))?;
         
         let formatted_data = formatter.format_metrics(&filtered_metrics).await?;
-        drop(formatters);
+        // formatters will be automatically dropped when it goes out of scope
 
         // Generate filename
         let filename = format!(
@@ -875,8 +878,9 @@ impl ExportManager {
         history.push(export_result.clone());
 
         // Keep only recent exports
-        if history.len() > 1000 {
-            history.drain(0..history.len() - 1000);
+        let history_len = history.len();
+        if history_len > 1000 {
+            history.drain(0..history_len - 1000);
         }
 
         Ok(export_result)

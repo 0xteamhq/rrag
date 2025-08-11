@@ -46,7 +46,7 @@ impl Default for LogConfig {
 }
 
 /// Log levels
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum LogLevel {
     Trace = 0,
     Debug = 1,
@@ -301,8 +301,9 @@ impl LogSearchEngine {
         logs.push(entry);
 
         // Keep only recent entries
-        if logs.len() > self.max_size {
-            logs.drain(0..logs.len() - self.max_size);
+        let logs_len = logs.len();
+        if logs_len > self.max_size {
+            logs.drain(0..logs_len - self.max_size);
         }
     }
 
@@ -576,11 +577,11 @@ pub struct LogAggregator {
     search_engine: Arc<LogSearchEngine>,
     logger: Arc<StructuredLogger>,
     log_sender: mpsc::UnboundedSender<LogEntry>,
-    log_receiver: Option<mpsc::UnboundedReceiver<LogEntry>>,
+    log_receiver: Arc<RwLock<Option<mpsc::UnboundedReceiver<LogEntry>>>>,
     file_writer: Option<Arc<RwLock<std::fs::File>>>,
     stream_sender: broadcast::Sender<LogEntry>,
     _stream_receiver: broadcast::Receiver<LogEntry>,
-    processing_handle: Option<tokio::task::JoinHandle<()>>,
+    processing_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
@@ -612,24 +613,28 @@ impl LogAggregator {
             search_engine,
             logger,
             log_sender,
-            log_receiver: Some(log_receiver),
+            log_receiver: Arc::new(RwLock::new(Some(log_receiver))),
             file_writer,
             stream_sender,
             _stream_receiver: stream_receiver,
-            processing_handle: None,
+            processing_handle: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         })
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
             return Err(RragError::config("log_aggregator", "stopped", "already running"));
         }
 
-        if let Some(receiver) = self.log_receiver.take() {
-            let handle = self.start_processing_loop(receiver).await?;
-            self.processing_handle = Some(handle);
+        {
+            let mut receiver_guard = self.log_receiver.write().await;
+            if let Some(receiver) = receiver_guard.take() {
+                let handle = self.start_processing_loop(receiver).await?;
+                let mut handle_guard = self.processing_handle.write().await;
+                *handle_guard = Some(handle);
+            }
         }
 
         *running = true;
@@ -637,14 +642,17 @@ impl LogAggregator {
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
         }
 
-        if let Some(handle) = self.processing_handle.take() {
-            handle.abort();
+        {
+            let mut handle_guard = self.processing_handle.write().await;
+            if let Some(handle) = handle_guard.take() {
+                handle.abort();
+            }
         }
 
         // Flush any remaining logs

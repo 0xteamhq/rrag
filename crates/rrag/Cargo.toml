@@ -1,6 +1,6 @@
 [package]
 name = "rrag"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 edition = "2021"
 rust-version = "1.70.0"
 description = "High-performance Rust framework for Retrieval-Augmented Generation with pluggable components, async-first design, and comprehensive observability"
@@ -90,7 +90,7 @@ async-session = { version = "3.0", optional = true }
 webauthn-rs = { version = "0.5", optional = true }
 
 [features]
-default = ["http", "concurrent", "observability", "security"]
+default = ["http"]
 rsllm-client = ["rsllm"]
 http = ["reqwest"]
 concurrent = ["dashmap"]

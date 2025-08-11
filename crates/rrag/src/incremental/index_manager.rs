@@ -679,6 +679,9 @@ impl IncrementalIndexManager {
                         OperationStatus::Failed(result.error.unwrap_or_default())
                     };
 
+                    // Save operation type for statistics before moving tracked_op
+                    let op_type = format!("{:?}", tracked_op.update.operation).split('{').next().unwrap_or("Unknown").to_string();
+
                     // Move to completed
                     {
                         let mut processing = processing_ops.write().await;
@@ -699,7 +702,6 @@ impl IncrementalIndexManager {
                         let mut stats_guard = stats.write().await;
                         stats_guard.total_operations += 1;
                         
-                        let op_type = format!("{:?}", tracked_op.update.operation).split('{').next().unwrap_or("Unknown").to_string();
                         *stats_guard.operations_by_type.entry(op_type).or_insert(0) += 1;
                         
                         stats_guard.success_rate = if stats_guard.total_operations > 0 {

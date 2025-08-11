@@ -422,7 +422,7 @@ pub struct HealthMonitor {
     health_history: Arc<RwLock<HashMap<String, Vec<ServiceHealth>>>>,
     alerts: Arc<RwLock<Vec<HealthAlert>>>,
     system_start_time: DateTime<Utc>,
-    monitoring_handle: Option<tokio::task::JoinHandle<()>>,
+    monitoring_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
@@ -434,33 +434,39 @@ impl HealthMonitor {
             health_history: Arc::new(RwLock::new(HashMap::new())),
             alerts: Arc::new(RwLock::new(Vec::new())),
             system_start_time: Utc::now(),
-            monitoring_handle: None,
+            monitoring_handle: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         })
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
             return Err(RragError::config("health_monitor", "stopped", "already running"));
         }
 
         let handle = self.start_monitoring_loop().await?;
-        self.monitoring_handle = Some(handle);
+        {
+            let mut handle_guard = self.monitoring_handle.write().await;
+            *handle_guard = Some(handle);
+        }
 
         *running = true;
         tracing::info!("Health monitor started");
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
         }
 
-        if let Some(handle) = self.monitoring_handle.take() {
-            handle.abort();
+        {
+            let mut handle_guard = self.monitoring_handle.write().await;
+            if let Some(handle) = handle_guard.take() {
+                handle.abort();
+            }
         }
 
         *running = false;
@@ -563,8 +569,9 @@ impl HealthMonitor {
                             alert_list.push(alert);
 
                             // Keep only recent alerts
-                            if alert_list.len() > 1000 {
-                                alert_list.drain(0..alert_list.len() - 1000);
+                            let alert_list_len = alert_list.len();
+                            if alert_list_len > 1000 {
+                                alert_list.drain(0..alert_list_len - 1000);
                             }
                         }
                     }

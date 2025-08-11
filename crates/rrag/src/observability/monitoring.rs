@@ -134,7 +134,7 @@ pub struct PerformanceMonitor {
     config: MonitoringConfig,
     metrics_collector: Arc<MetricsCollector>,
     performance_history: Arc<RwLock<Vec<PerformanceMetrics>>>,
-    collection_handle: Option<tokio::task::JoinHandle<()>>,
+    collection_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
@@ -144,12 +144,12 @@ impl PerformanceMonitor {
             config,
             metrics_collector,
             performance_history: Arc::new(RwLock::new(Vec::new())),
-            collection_handle: None,
+            collection_handle: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         })
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
             return Err(RragError::config("performance_monitor", "stopped", "already running"));
@@ -175,8 +175,9 @@ impl PerformanceMonitor {
                     
                     // Keep only recent data
                     let retention_size = (config.performance_window_minutes * 60 / config.collection_interval_seconds as u32) as usize;
-                    if history.len() > retention_size {
-                        history.drain(0..history.len() - retention_size);
+                    let current_len = history.len();
+                    if current_len > retention_size {
+                        history.drain(0..current_len - retention_size);
                     }
                     drop(history);
 
@@ -191,13 +192,16 @@ impl PerformanceMonitor {
             }
         });
 
-        self.collection_handle = Some(handle);
+        {
+            let mut handle_guard = self.collection_handle.write().await;
+            *handle_guard = Some(handle);
+        }
         *running = true;
         tracing::info!("Performance monitor started");
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
@@ -205,8 +209,11 @@ impl PerformanceMonitor {
 
         *running = false;
         
-        if let Some(handle) = self.collection_handle.take() {
-            handle.abort();
+        {
+            let mut handle_guard = self.collection_handle.write().await;
+            if let Some(handle) = handle_guard.take() {
+                handle.abort();
+            }
         }
 
         tracing::info!("Performance monitor stopped");
@@ -345,8 +352,9 @@ impl SearchAnalyzer {
         history.push(analytics.clone());
         
         // Keep only recent data (last 1000 searches)
-        if history.len() > 1000 {
-            history.drain(0..history.len() - 1000);
+        let current_len = history.len();
+        if current_len > 1000 {
+            history.drain(0..current_len - 1000);
         }
 
         // Update metrics
@@ -528,8 +536,9 @@ impl UserActivityTracker {
         history.push(activity.clone());
         
         // Keep only recent activity (last 10000 actions)
-        if history.len() > 10000 {
-            history.drain(0..history.len() - 10000);
+        let current_len = history.len();
+        if current_len > 10000 {
+            history.drain(0..current_len - 10000);
         }
 
         // Update metrics
@@ -643,17 +652,17 @@ impl Default for UserStats {
 /// Main system monitor orchestrating all monitoring services
 pub struct SystemMonitor {
     config: MonitoringConfig,
-    performance_monitor: PerformanceMonitor,
-    search_analyzer: SearchAnalyzer,
-    user_tracker: UserActivityTracker,
+    performance_monitor: Arc<PerformanceMonitor>,
+    search_analyzer: Arc<SearchAnalyzer>,
+    user_tracker: Arc<UserActivityTracker>,
     is_running: Arc<RwLock<bool>>,
 }
 
 impl SystemMonitor {
     pub async fn new(config: MonitoringConfig, metrics_collector: Arc<MetricsCollector>) -> RragResult<Self> {
-        let performance_monitor = PerformanceMonitor::new(config.clone(), metrics_collector.clone()).await?;
-        let search_analyzer = SearchAnalyzer::new(config.clone(), metrics_collector.clone()).await;
-        let user_tracker = UserActivityTracker::new(config.clone(), metrics_collector).await;
+        let performance_monitor = Arc::new(PerformanceMonitor::new(config.clone(), metrics_collector.clone()).await?);
+        let search_analyzer = Arc::new(SearchAnalyzer::new(config.clone(), metrics_collector.clone()).await);
+        let user_tracker = Arc::new(UserActivityTracker::new(config.clone(), metrics_collector).await);
 
         Ok(Self {
             config,
@@ -664,7 +673,7 @@ impl SystemMonitor {
         })
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
             return Err(RragError::config("system_monitor", "stopped", "already running"));
@@ -688,7 +697,7 @@ impl SystemMonitor {
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
@@ -780,12 +789,12 @@ impl MonitoringService {
     }
 
     pub async fn start(&self) -> RragResult<()> {
-        let mut monitor = self.system_monitor.write().await;
+        let monitor = self.system_monitor.read().await;
         monitor.start().await
     }
 
     pub async fn stop(&self) -> RragResult<()> {
-        let mut monitor = self.system_monitor.write().await;
+        let monitor = self.system_monitor.read().await;
         monitor.stop().await
     }
 

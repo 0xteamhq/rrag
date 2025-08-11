@@ -218,8 +218,9 @@ impl DashboardMetrics {
         let mut history = self.performance_history.write().await;
         history.push(metrics);
         
-        if history.len() > self.max_data_points {
-            history.drain(0..history.len() - self.max_data_points);
+        let current_len = history.len();
+        if current_len > self.max_data_points {
+            history.drain(0..current_len - self.max_data_points);
         }
     }
 
@@ -227,8 +228,9 @@ impl DashboardMetrics {
         let mut history = self.search_stats_history.write().await;
         history.push(stats);
         
-        if history.len() > self.max_data_points {
-            history.drain(0..history.len() - self.max_data_points);
+        let current_len = history.len();
+        if current_len > self.max_data_points {
+            history.drain(0..current_len - self.max_data_points);
         }
     }
 
@@ -236,8 +238,9 @@ impl DashboardMetrics {
         let mut history = self.user_stats_history.write().await;
         history.push(stats);
         
-        if history.len() > self.max_data_points {
-            history.drain(0..history.len() - self.max_data_points);
+        let current_len = history.len();
+        if current_len > self.max_data_points {
+            history.drain(0..current_len - self.max_data_points);
         }
     }
 
@@ -461,8 +464,8 @@ pub struct DashboardServer {
     system_monitor: Arc<SystemMonitor>,
     websocket_manager: Arc<WebSocketManager>,
     dashboard_metrics: Arc<DashboardMetrics>,
-    server_handle: Option<tokio::task::JoinHandle<()>>,
-    update_handle: Option<tokio::task::JoinHandle<()>>,
+    server_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
+    update_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
@@ -481,13 +484,13 @@ impl DashboardServer {
             system_monitor,
             websocket_manager,
             dashboard_metrics,
-            server_handle: None,
-            update_handle: None,
+            server_handle: Arc::new(RwLock::new(None)),
+            update_handle: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         })
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         if !self.config.enabled {
             return Ok(());
         }
@@ -499,11 +502,17 @@ impl DashboardServer {
 
         // Start the HTTP server
         let server_handle = self.start_http_server().await?;
-        self.server_handle = Some(server_handle);
+        {
+            let mut handle = self.server_handle.write().await;
+            *handle = Some(server_handle);
+        }
 
         // Start the metrics update loop
         let update_handle = self.start_update_loop().await?;
-        self.update_handle = Some(update_handle);
+        {
+            let mut handle = self.update_handle.write().await;
+            *handle = Some(update_handle);
+        }
 
         *running = true;
         tracing::info!(
@@ -514,18 +523,24 @@ impl DashboardServer {
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
         }
 
         // Stop server tasks
-        if let Some(handle) = self.server_handle.take() {
-            handle.abort();
+        {
+            let mut handle = self.server_handle.write().await;
+            if let Some(h) = handle.take() {
+                h.abort();
+            }
         }
-        if let Some(handle) = self.update_handle.take() {
-            handle.abort();
+        {
+            let mut handle = self.update_handle.write().await;
+            if let Some(h) = handle.take() {
+                h.abort();
+            }
         }
 
         *running = false;

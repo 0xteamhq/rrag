@@ -502,8 +502,8 @@ impl HistoricalAnalyzer {
             analysis_period_days: self.analysis_window_days,
             generated_at: Utc::now(),
             total_data_points: recent_data.len(),
-            volume_trend,
-            component_trends,
+            volume_trend: volume_trend.clone(),
+            component_trends: component_trends.clone(),
             severity_trends,
             recommendations: self.generate_recommendations(&volume_trend, &component_trends).await,
         }
@@ -749,7 +749,7 @@ pub struct DataRetention {
     policies: Arc<RwLock<HashMap<String, RetentionPolicy>>>,
     archive_manager: Arc<ArchiveManager>,
     historical_analyzer: Arc<HistoricalAnalyzer>,
-    cleanup_handle: Option<tokio::task::JoinHandle<()>>,
+    cleanup_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
@@ -780,12 +780,12 @@ impl DataRetention {
             policies,
             archive_manager,
             historical_analyzer,
-            cleanup_handle: None,
+            cleanup_handle: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         })
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
             return Err(RragError::config("data_retention", "stopped", "already running"));
@@ -793,7 +793,8 @@ impl DataRetention {
 
         if self.config.enabled {
             let handle = self.start_cleanup_loop().await?;
-            self.cleanup_handle = Some(handle);
+            let mut handle_guard = self.cleanup_handle.write().await;
+            *handle_guard = Some(handle);
         }
 
         *running = true;
@@ -801,14 +802,17 @@ impl DataRetention {
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
         }
 
-        if let Some(handle) = self.cleanup_handle.take() {
-            handle.abort();
+        {
+            let mut handle_guard = self.cleanup_handle.write().await;
+            if let Some(handle) = handle_guard.take() {
+                handle.abort();
+            }
         }
 
         *running = false;

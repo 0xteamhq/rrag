@@ -68,7 +68,7 @@ pub enum NotificationChannelType {
 }
 
 /// Alert severity levels
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AlertSeverity {
     Low = 1,
     Medium = 2,
@@ -211,7 +211,7 @@ pub struct AlertNotification {
     pub tags: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum AlertStatus {
     Triggered,
     Acknowledged,
@@ -572,20 +572,20 @@ pub struct AlertManager {
     active_alerts: Arc<RwLock<HashMap<String, AlertNotification>>>,
     notification_channels: Arc<RwLock<HashMap<String, Box<dyn NotificationChannel>>>>,
     evaluator: Arc<AlertEvaluator>,
-    evaluation_handle: Option<tokio::task::JoinHandle<()>>,
+    evaluation_handle: Arc<RwLock<Option<tokio::task::JoinHandle<()>>>>,
     is_running: Arc<RwLock<bool>>,
 }
 
 impl AlertManager {
     pub async fn new(config: AlertConfig, metrics_collector: Arc<MetricsCollector>) -> RragResult<Self> {
-        let mut manager = Self {
+        let manager = Self {
             config: config.clone(),
             metrics_collector,
             alert_rules: Arc::new(RwLock::new(HashMap::new())),
             active_alerts: Arc::new(RwLock::new(HashMap::new())),
             notification_channels: Arc::new(RwLock::new(HashMap::new())),
             evaluator: Arc::new(AlertEvaluator::new(1000)),
-            evaluation_handle: None,
+            evaluation_handle: Arc::new(RwLock::new(None)),
             is_running: Arc::new(RwLock::new(false)),
         };
 
@@ -702,28 +702,34 @@ impl AlertManager {
         Ok(())
     }
 
-    pub async fn start(&mut self) -> RragResult<()> {
+    pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
             return Err(RragError::config("alert_manager", "stopped", "already running"));
         }
 
         let handle = self.start_evaluation_loop().await?;
-        self.evaluation_handle = Some(handle);
+        {
+            let mut eval_handle = self.evaluation_handle.write().await;
+            *eval_handle = Some(handle);
+        }
 
         *running = true;
         tracing::info!("Alert manager started");
         Ok(())
     }
 
-    pub async fn stop(&mut self) -> RragResult<()> {
+    pub async fn stop(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if !*running {
             return Ok(());
         }
 
-        if let Some(handle) = self.evaluation_handle.take() {
-            handle.abort();
+        {
+            let mut eval_handle = self.evaluation_handle.write().await;
+            if let Some(handle) = eval_handle.take() {
+                handle.abort();
+            }
         }
 
         *running = false;

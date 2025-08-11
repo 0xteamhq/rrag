@@ -263,6 +263,29 @@ impl RragError {
         }
     }
 
+    /// Create a serialization error with message
+    pub fn serialization_with_message(
+        data_type: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
+        Self::Agent {
+            agent_id: "serialization".to_string(),
+            message: format!("{}: {}", data_type.into(), message.into()),
+            source: None,
+        }
+    }
+
+    /// Create an I/O error
+    pub fn io_error(message: impl Into<String>) -> Self {
+        Self::Network {
+            operation: "io_operation".to_string(),
+            source: Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                message.into(),
+            )),
+        }
+    }
+
     /// Check if this error suggests a retry might succeed
     pub fn is_retryable(&self) -> bool {
         matches!(

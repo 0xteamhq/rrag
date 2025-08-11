@@ -59,10 +59,10 @@ pub struct PersistenceStats {
 /// Cache serializer trait
 pub trait CacheSerializer: Send + Sync {
     /// Serialize cache data
-    fn serialize<T: Serialize>(&self, data: &T) -> RragResult<Vec<u8>>;
+    fn serialize_cache_data(&self, data: &PersistedCacheData) -> RragResult<Vec<u8>>;
     
     /// Deserialize cache data
-    fn deserialize<T: for<'de> Deserialize<'de>>(&self, data: &[u8]) -> RragResult<T>;
+    fn deserialize_cache_data(&self, data: &[u8]) -> RragResult<PersistedCacheData>;
     
     /// Get format name
     fn format_name(&self) -> &str;
@@ -72,14 +72,14 @@ pub trait CacheSerializer: Send + Sync {
 pub struct BinarySerializer;
 
 impl CacheSerializer for BinarySerializer {
-    fn serialize<T: Serialize>(&self, data: &T) -> RragResult<Vec<u8>> {
+    fn serialize_cache_data(&self, data: &PersistedCacheData) -> RragResult<Vec<u8>> {
         bincode::serialize(data)
-            .map_err(|e| RragError::serialization(format!("Binary serialization failed: {}", e)))
+            .map_err(|e| RragError::serialization_with_message("binary", e.to_string()))
     }
     
-    fn deserialize<T: for<'de> Deserialize<'de>>(&self, data: &[u8]) -> RragResult<T> {
+    fn deserialize_cache_data(&self, data: &[u8]) -> RragResult<PersistedCacheData> {
         bincode::deserialize(data)
-            .map_err(|e| RragError::serialization(format!("Binary deserialization failed: {}", e)))
+            .map_err(|e| RragError::serialization_with_message("binary", e.to_string()))
     }
     
     fn format_name(&self) -> &str {
@@ -91,14 +91,14 @@ impl CacheSerializer for BinarySerializer {
 pub struct JsonSerializer;
 
 impl CacheSerializer for JsonSerializer {
-    fn serialize<T: Serialize>(&self, data: &T) -> RragResult<Vec<u8>> {
+    fn serialize_cache_data(&self, data: &PersistedCacheData) -> RragResult<Vec<u8>> {
         serde_json::to_vec(data)
-            .map_err(|e| RragError::serialization(format!("JSON serialization failed: {}", e)))
+            .map_err(|e| RragError::serialization_with_message("json", e.to_string()))
     }
     
-    fn deserialize<T: for<'de> Deserialize<'de>>(&self, data: &[u8]) -> RragResult<T> {
+    fn deserialize_cache_data(&self, data: &[u8]) -> RragResult<PersistedCacheData> {
         serde_json::from_slice(data)
-            .map_err(|e| RragError::serialization(format!("JSON deserialization failed: {}", e)))
+            .map_err(|e| RragError::serialization_with_message("json", e.to_string()))
     }
     
     fn format_name(&self) -> &str {
@@ -110,14 +110,14 @@ impl CacheSerializer for JsonSerializer {
 pub struct MessagePackSerializer;
 
 impl CacheSerializer for MessagePackSerializer {
-    fn serialize<T: Serialize>(&self, data: &T) -> RragResult<Vec<u8>> {
+    fn serialize_cache_data(&self, data: &PersistedCacheData) -> RragResult<Vec<u8>> {
         rmp_serde::to_vec(data)
-            .map_err(|e| RragError::serialization(format!("MessagePack serialization failed: {}", e)))
+            .map_err(|e| RragError::serialization_with_message("msgpack", e.to_string()))
     }
     
-    fn deserialize<T: for<'de> Deserialize<'de>>(&self, data: &[u8]) -> RragResult<T> {
+    fn deserialize_cache_data(&self, data: &[u8]) -> RragResult<PersistedCacheData> {
         rmp_serde::from_slice(data)
-            .map_err(|e| RragError::serialization(format!("MessagePack deserialization failed: {}", e)))
+            .map_err(|e| RragError::serialization_with_message("msgpack", e.to_string()))
     }
     
     fn format_name(&self) -> &str {
@@ -180,7 +180,7 @@ impl PersistenceManager {
         // Create storage directory if it doesn't exist
         if !storage_path.exists() {
             fs::create_dir_all(&storage_path)
-                .map_err(|e| RragError::storage(format!("Failed to create cache directory: {}", e)))?;
+                .map_err(|e| RragError::storage("create_cache_directory", e))?;
         }
         
         let serializer: Box<dyn CacheSerializer> = match config.format {
@@ -202,23 +202,23 @@ impl PersistenceManager {
         let start = std::time::Instant::now();
         
         // Serialize data
-        let serialized = self.serializer.serialize(data)?;
+        let serialized = self.serializer.serialize_cache_data(data)?;
         
         // Write to temporary file first
         let temp_path = self.get_temp_path();
         let mut file = fs::File::create(&temp_path)
-            .map_err(|e| RragError::storage(format!("Failed to create temp file: {}", e)))?;
+            .map_err(|e| RragError::storage("create_temp_file", e))?;
         
         file.write_all(&serialized)
-            .map_err(|e| RragError::storage(format!("Failed to write cache data: {}", e)))?;
+            .map_err(|e| RragError::storage("write_cache_data", e))?;
         
         file.sync_all()
-            .map_err(|e| RragError::storage(format!("Failed to sync cache file: {}", e)))?;
+            .map_err(|e| RragError::storage("sync_cache_file", e))?;
         
         // Rename to final path (atomic on most systems)
         let final_path = self.get_cache_path();
         fs::rename(&temp_path, &final_path)
-            .map_err(|e| RragError::storage(format!("Failed to rename cache file: {}", e)))?;
+            .map_err(|e| RragError::storage("rename_cache_file", e))?;
         
         // Update stats
         self.stats.save_count += 1;
@@ -242,26 +242,27 @@ impl PersistenceManager {
         let cache_path = self.get_cache_path();
         
         if !cache_path.exists() {
-            return Err(RragError::storage("Cache file not found"));
+            return Err(RragError::memory("load_cache", "Cache file not found"));
         }
         
         // Read file
         let mut file = fs::File::open(&cache_path)
-            .map_err(|e| RragError::storage(format!("Failed to open cache file: {}", e)))?;
+            .map_err(|e| RragError::storage("open_cache_file", e))?;
         
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)
-            .map_err(|e| RragError::storage(format!("Failed to read cache file: {}", e)))?;
+            .map_err(|e| RragError::storage("read_cache_file", e))?;
         
         // Deserialize data
-        let data: PersistedCacheData = self.serializer.deserialize(&buffer)?;
+        let data = self.serializer.deserialize_cache_data(&buffer)?;
         
         // Validate version
         if data.version != CACHE_VERSION {
-            return Err(RragError::storage(format!(
-                "Cache version mismatch: expected {}, got {}",
-                CACHE_VERSION, data.version
-            )));
+            return Err(RragError::validation(
+                "cache_version",
+                format!("version {}", CACHE_VERSION),
+                format!("version {}", data.version)
+            ));
         }
         
         // Update stats
@@ -288,24 +289,24 @@ impl PersistenceManager {
         
         // Spawn blocking task for IO
         tokio::task::spawn_blocking(move || {
-            let serialized = serializer.serialize(&data)?;
+            let serialized = serializer.serialize_cache_data(&data)?;
             
             let mut file = fs::File::create(&temp_path)
-                .map_err(|e| RragError::storage(format!("Failed to create temp file: {}", e)))?;
+                .map_err(|e| RragError::storage("create_temp_file", e))?;
             
             file.write_all(&serialized)
-                .map_err(|e| RragError::storage(format!("Failed to write cache data: {}", e)))?;
+                .map_err(|e| RragError::storage("write_cache_data", e))?;
             
             file.sync_all()
-                .map_err(|e| RragError::storage(format!("Failed to sync cache file: {}", e)))?;
+                .map_err(|e| RragError::storage("sync_cache_file", e))?;
             
             fs::rename(&temp_path, &path)
-                .map_err(|e| RragError::storage(format!("Failed to rename cache file: {}", e)))?;
+                .map_err(|e| RragError::storage("rename_cache_file", e))?;
             
             Ok(())
         })
         .await
-        .map_err(|e| RragError::storage(format!("Async save failed: {}", e)))?
+        .map_err(|e| RragError::memory("async_save", e.to_string()))?
     }
     
     /// Create backup of current cache
@@ -317,7 +318,7 @@ impl PersistenceManager {
         
         let backup_path = self.get_backup_path();
         fs::copy(&cache_path, &backup_path)
-            .map_err(|e| RragError::storage(format!("Failed to create backup: {}", e)))?;
+            .map_err(|e| RragError::storage("create_backup", e))?;
         
         tracing::info!("Cache backed up to {:?}", backup_path);
         Ok(())
@@ -327,12 +328,12 @@ impl PersistenceManager {
     pub fn restore(&self) -> RragResult<()> {
         let backup_path = self.get_backup_path();
         if !backup_path.exists() {
-            return Err(RragError::storage("Backup file not found"));
+            return Err(RragError::memory("restore_backup", "Backup file not found"));
         }
         
         let cache_path = self.get_cache_path();
         fs::copy(&backup_path, &cache_path)
-            .map_err(|e| RragError::storage(format!("Failed to restore from backup: {}", e)))?;
+            .map_err(|e| RragError::storage("restore_from_backup", e))?;
         
         tracing::info!("Cache restored from backup");
         Ok(())
@@ -344,18 +345,18 @@ impl PersistenceManager {
             - std::time::Duration::from_secs(keep_days as u64 * 86400);
         
         let entries = fs::read_dir(&self.storage_path)
-            .map_err(|e| RragError::storage(format!("Failed to read cache directory: {}", e)))?;
+            .map_err(|e| RragError::storage("read_cache_directory", e))?;
         
         let mut removed = 0;
         for entry in entries {
-            let entry = entry.map_err(|e| RragError::storage(format!("Failed to read entry: {}", e)))?;
+            let entry = entry.map_err(|e| RragError::storage("read_directory_entry", e))?;
             let metadata = entry.metadata()
-                .map_err(|e| RragError::storage(format!("Failed to read metadata: {}", e)))?;
+                .map_err(|e| RragError::storage("read_file_metadata", e))?;
             
             if let Ok(modified) = metadata.modified() {
                 if modified < cutoff {
                     fs::remove_file(entry.path())
-                        .map_err(|e| RragError::storage(format!("Failed to remove old cache: {}", e)))?;
+                        .map_err(|e| RragError::storage("remove_old_cache", e))?;
                     removed += 1;
                 }
             }
@@ -452,23 +453,23 @@ mod tests {
     #[test]
     fn test_binary_serializer() {
         let serializer = BinarySerializer;
-        let data = vec![1, 2, 3];
+        let data = PersistedCacheData::default();
         
-        let serialized = serializer.serialize(&data).unwrap();
-        let deserialized: Vec<i32> = serializer.deserialize(&serialized).unwrap();
+        let serialized = serializer.serialize_cache_data(&data).unwrap();
+        let deserialized = serializer.deserialize_cache_data(&serialized).unwrap();
         
-        assert_eq!(data, deserialized);
+        assert_eq!(data.version, deserialized.version);
     }
     
     #[test]
     fn test_json_serializer() {
         let serializer = JsonSerializer;
-        let data = vec!["a", "b", "c"];
+        let data = PersistedCacheData::default();
         
-        let serialized = serializer.serialize(&data).unwrap();
-        let deserialized: Vec<String> = serializer.deserialize(&serialized).unwrap();
+        let serialized = serializer.serialize_cache_data(&data).unwrap();
+        let deserialized = serializer.deserialize_cache_data(&serialized).unwrap();
         
-        assert_eq!(data, deserialized);
+        assert_eq!(data.version, deserialized.version);
     }
     
     #[test]

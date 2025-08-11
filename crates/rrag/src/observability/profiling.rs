@@ -370,8 +370,9 @@ impl PerformanceProfiler {
             profiles.push(profile.clone());
 
             // Keep only recent profiles
-            if profiles.len() > self.config.max_profiles {
-                profiles.drain(0..profiles.len() - self.config.max_profiles);
+            let profiles_len = profiles.len();
+            if profiles_len > self.config.max_profiles {
+                profiles.drain(0..profiles_len - self.config.max_profiles);
             }
 
             Ok(Some(profile))
@@ -390,8 +391,9 @@ impl PerformanceProfiler {
         profiles.push(profile);
 
         // Keep only recent profiles
-        if profiles.len() > self.config.max_profiles {
-            profiles.drain(0..profiles.len() - self.config.max_profiles);
+        let profiles_len = profiles.len();
+        if profiles_len > self.config.max_profiles {
+            profiles.drain(0..profiles_len - self.config.max_profiles);
         }
 
         Ok(())

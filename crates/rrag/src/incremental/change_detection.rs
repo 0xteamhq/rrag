@@ -355,7 +355,7 @@ impl ChangeDetector {
         drop(cache);
         {
             let mut cache = self.document_cache.write().await;
-            cache.insert(document.id.clone(), current_state);
+            cache.insert(document.id.clone(), current_state.clone());
         }
 
         // Update statistics
@@ -524,7 +524,7 @@ impl ChangeDetector {
         
         // Compute metadata hash
         let metadata_json = serde_json::to_string(&document.metadata)
-            .map_err(|e| RragError::serialization("document_metadata", e))?;
+            .map_err(|e| RragError::serialization_with_message("document_metadata", e.to_string()))?;
         let metadata_hash = self.compute_hash(&metadata_json).await?;
         
         // Compute chunk hashes if provided
