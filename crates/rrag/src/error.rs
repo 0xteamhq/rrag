@@ -263,6 +263,17 @@ impl RragError {
         }
     }
 
+    /// Create a network error
+    pub fn network(
+        operation: impl Into<String>,
+        source: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        Self::Network {
+            operation: operation.into(),
+            source: Box::new(source),
+        }
+    }
+
     /// Create a configuration error (shorthand for config method)
     pub fn configuration(message: impl Into<String>) -> Self {
         Self::Configuration {

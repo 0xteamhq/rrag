@@ -80,7 +80,7 @@ pub use monitoring::{
     MonitoringConfig, AlertConfig, MetricsCollector
 };
 
-use crate::{RragError, RragResult};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;

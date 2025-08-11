@@ -2,7 +2,7 @@
 //! 
 //! Advanced entity recognition and relationship extraction for knowledge graph construction.
 
-use crate::{RragResult, Document, DocumentChunk, Embedding};
+use crate::RragResult;
 use super::{GraphNode, GraphEdge, NodeType, EdgeType, GraphError};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -155,6 +155,7 @@ pub struct EntityExtractionConfig {
     pub extract_concepts: bool,
     
     /// Custom entity patterns
+    #[serde(skip)]
     pub custom_patterns: HashMap<String, Regex>,
     
     /// Stop words to ignore

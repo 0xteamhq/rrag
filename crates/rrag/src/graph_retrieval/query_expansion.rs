@@ -2,8 +2,8 @@
 //! 
 //! Leverage knowledge graph structure to expand and enhance queries for improved retrieval.
 
-use super::{KnowledgeGraph, GraphNode, GraphEdge, GraphError, algorithms::GraphAlgorithms};
-use crate::{RragResult, Embedding};
+use super::{KnowledgeGraph, algorithms::GraphAlgorithms};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use async_trait::async_trait;
@@ -269,7 +269,7 @@ impl GraphQueryExpander {
         let strategy_weight = self.config.strategy_weights.get(&ExpansionStrategy::Semantic).copied().unwrap_or(1.0);
         
         for entity_id in entity_ids {
-            if let Some(entity_node) = self.graph.get_node(entity_id) {
+            if let Some(_entity_node) = self.graph.get_node(entity_id) {
                 // Find semantic relationships
                 let semantic_edges: Vec<_> = self.graph.edges.values()
                     .filter(|edge| {
@@ -580,8 +580,8 @@ impl GraphQueryExpander {
     /// Deduplicate and rank expanded terms
     fn deduplicate_and_rank(&self, terms: &mut Vec<ExpandedTerm>, max_terms: Option<usize>) {
         // Remove duplicates by term text, keeping the one with highest confidence
-        let mut seen_terms = HashMap::new();
-        let mut unique_terms = Vec::new();
+        let mut seen_terms: HashMap<String, usize> = HashMap::new();
+        let mut unique_terms: Vec<ExpandedTerm> = Vec::new();
         
         for term in terms.drain(..) {
             match seen_terms.get(&term.term) {

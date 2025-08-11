@@ -7,7 +7,7 @@
 //! - Log aggregation
 
 use rrag::prelude::*;
-use std::collections::HashMap;
+use rrag::system::HealthStatus;
 use tokio::time::{sleep, Duration};
 
 #[tokio::main]
@@ -60,10 +60,10 @@ async fn main() -> RragResult<()> {
     println!("   Components:");
     for (component, status) in &health.component_status {
         let status_icon = match status {
-            rrag::HealthStatus::Healthy => "✅",
-            rrag::HealthStatus::Degraded => "⚠️",
-            rrag::HealthStatus::Unhealthy => "❌",
-            rrag::HealthStatus::Unknown => "❓",
+            HealthStatus::Healthy => "✅",
+            HealthStatus::Degraded => "⚠️",
+            HealthStatus::Unhealthy => "❌",
+            HealthStatus::Unknown => "❓",
         };
         println!("      {} {}: {:?}", status_icon, component, status);
     }

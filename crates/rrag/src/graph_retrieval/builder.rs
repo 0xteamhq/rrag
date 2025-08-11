@@ -3,12 +3,11 @@
 //! Builder pattern implementation for creating and configuring graph-based retrieval systems.
 
 use super::{
-    GraphRetriever, GraphRetrievalConfig, KnowledgeGraph, GraphNode, GraphEdge,
+    GraphRetriever, GraphRetrievalConfig, KnowledgeGraph, GraphNode,
     entity::{EntityExtractor, RuleBasedEntityExtractor, EntityExtractionConfig, entities_to_nodes, relationships_to_edges},
     storage::{GraphStorage, InMemoryGraphStorage, GraphStorageConfig},
-    query_expansion::{ExpansionConfig, ExpansionOptions, ExpansionStrategy},
+    query_expansion::{ExpansionConfig, ExpansionStrategy},
     algorithms::PageRankConfig,
-    GraphError,
 };
 use crate::{RragResult, Document, DocumentChunk};
 use serde::{Deserialize, Serialize};
@@ -273,7 +272,7 @@ impl GraphRetrievalBuilder {
 
     /// Build graph retriever from document chunks
     pub async fn build_from_chunks(
-        mut self,
+        self,
         chunks: Vec<DocumentChunk>,
         progress_callback: Option<Box<dyn ProgressCallback>>,
     ) -> RragResult<GraphRetriever> {
@@ -328,7 +327,7 @@ impl GraphRetrievalBuilder {
 
         if self.config.enable_parallel_processing && documents.len() > self.config.batch_size {
             // Process in parallel batches
-            for (batch_idx, batch) in documents.chunks(self.config.batch_size).enumerate() {
+            for (_batch_idx, batch) in documents.chunks(self.config.batch_size).enumerate() {
                 let batch_start = std::time::Instant::now();
                 let mut batch_entities = Vec::new();
                 let mut batch_relationships = Vec::new();
@@ -365,7 +364,7 @@ impl GraphRetrievalBuilder {
         } else {
             // Process sequentially
             for (doc_idx, document) in documents.iter().enumerate() {
-                let doc_start = std::time::Instant::now();
+                let _doc_start = std::time::Instant::now();
 
                 match entity_extractor.extract_all(&document.content_str(), &document.id).await {
                     Ok((entities, relationships)) => {

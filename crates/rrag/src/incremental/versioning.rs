@@ -3,7 +3,7 @@
 //! Provides comprehensive document versioning and conflict resolution for incremental indexing.
 //! Handles version tracking, conflict detection, and resolution strategies.
 
-use crate::{RragError, RragResult, Document, Metadata};
+use crate::{RragResult, Document, Metadata};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;

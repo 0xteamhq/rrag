@@ -2,10 +2,9 @@
 //! 
 //! Advanced eviction policies for intelligent cache management.
 
-use super::{CacheEntryMetadata, EvictionPolicy};
-use crate::RragResult;
+use super::CacheEntryMetadata;
 use std::collections::{HashMap, BinaryHeap};
-use std::time::{SystemTime, Duration};
+use std::time::SystemTime;
 use std::cmp::Ordering;
 
 /// Eviction policy trait

@@ -12,7 +12,7 @@ pub mod policies;
 pub mod metrics;
 pub mod persistence;
 
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};

@@ -3,12 +3,11 @@
 //! Intelligent caching based on semantic similarity for RAG applications.
 
 use super::{
-    Cache, CacheStats, SemanticCacheConfig, SemanticCacheEntry, SimilarEntry, 
-    CacheEntryMetadata, CachedSearchResult
+    Cache, CacheStats, SemanticCacheConfig, SemanticCacheEntry
 };
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, BinaryHeap};
+use std::collections::HashMap;
 use std::time::SystemTime;
 
 /// Semantic cache with similarity-based retrieval
@@ -244,7 +243,12 @@ impl SemanticCache {
             
             for query in &cluster.queries {
                 if let Some(embedding) = self.embeddings.get(query) {
-                    let similarity = self.compute_similarity(&cluster.centroid, embedding);
+                    // Inline cosine similarity calculation to avoid borrowing self
+                    let dot_product: f32 = cluster.centroid.iter().zip(embedding.iter()).map(|(x, y)| x * y).sum();
+                    let norm_a: f32 = cluster.centroid.iter().map(|x| x * x).sum::<f32>().sqrt();
+                    let norm_b: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
+                    let similarity = if norm_a == 0.0 || norm_b == 0.0 { 0.0 } else { dot_product / (norm_a * norm_b) };
+                    
                     if similarity > best_similarity {
                         best_similarity = similarity;
                         best_query = query.clone();

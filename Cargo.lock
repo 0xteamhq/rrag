@@ -2791,7 +2791,7 @@ dependencies = [
 
 [[package]]
 name = "rrag"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "anyhow",
  "argon2",
@@ -2824,7 +2824,7 @@ dependencies = [
  "reqwest",
  "ring",
  "rmp-serde",
- "rsllm",
+ "rsllm 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sanitize_html",
  "serde",
  "serde_json",
@@ -2887,6 +2887,31 @@ dependencies = [
  "url",
  "uuid",
  "wiremock",
+]
+
+[[package]]
+name = "rsllm"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbd3100a9723b63a4c1b8cab088e34fb6256e3eb3aa4cf2fc12846d2fd628a30"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "bytes",
+ "chrono",
+ "config",
+ "dotenv",
+ "futures-util",
+ "pin-project-lite",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-stream",
+ "url",
+ "uuid",
 ]
 
 [[package]]

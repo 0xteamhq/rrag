@@ -3,7 +3,7 @@
 //! Implementation of graph-based retrieval algorithms including PageRank, 
 //! graph traversal, and semantic path finding.
 
-use super::{KnowledgeGraph, GraphNode, GraphEdge, GraphError};
+use super::{KnowledgeGraph, GraphEdge, GraphError};
 use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque, BinaryHeap};

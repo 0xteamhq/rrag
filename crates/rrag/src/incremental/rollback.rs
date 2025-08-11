@@ -3,7 +3,7 @@
 //! Provides comprehensive rollback capabilities for failed operations.
 //! Includes operation logging, state snapshots, and recovery mechanisms.
 
-use crate::{RragError, RragResult};
+use crate::RragResult;
 use crate::incremental::index_manager::{IndexUpdate, UpdateResult};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
@@ -526,7 +526,7 @@ impl RollbackManager {
     }
 
     /// Create a system state snapshot
-    pub async fn create_snapshot(&self, description: String) -> RragResult<String> {
+    pub async fn create_snapshot(&self, _description: String) -> RragResult<String> {
         let snapshot_id = Uuid::new_v4().to_string();
         
         // Collect current system state

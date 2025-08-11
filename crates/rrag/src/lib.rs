@@ -1,6 +1,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]

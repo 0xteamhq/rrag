@@ -11,11 +11,24 @@
 //! - Automated data retention and archiving
 
 use rrag::prelude::*;
-use rrag::observability::*;
+use rrag::observability::{
+    logging::{LogLevel, LogAggregator, LogQuery, LogConfig}, 
+    monitoring::{SystemMonitor, MonitoringConfig},
+    profiling::{PerformanceProfiler, ProfilingConfig},
+    export::{ExportFormat, ReportConfig, ExportConfig},
+    health::HealthConfig,
+    retention::RetentionConfig,
+    dashboard::DashboardConfig,
+    alerting::AlertConfig,
+    ObservabilityConfig,
+};
+use rrag::{AlertCondition, AlertSeverity, AlertRule, ComponentStatus};
 use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::time::{sleep, Duration};
 use chrono::Utc;
-use rand::Rng;
+use rand::{Rng, SeedableRng};
+use rand::rngs::StdRng;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
@@ -34,7 +47,7 @@ async fn main() -> RragResult<()> {
         environment: "demo".to_string(),
         
         // Enable all components
-        metrics: MetricsConfig {
+        metrics: rrag::observability::metrics::MetricsConfig {
             enabled: true,
             collection_interval_seconds: 5,
             buffer_size: 5000,
@@ -53,7 +66,7 @@ async fn main() -> RragResult<()> {
             search_analytics_enabled: true,
             user_tracking_enabled: true,
             resource_monitoring_enabled: true,
-            alert_thresholds: AlertThresholds {
+            alert_thresholds: rrag::observability::monitoring::AlertThresholds {
                 cpu_usage_percent: 80.0,
                 memory_usage_percent: 85.0,
                 error_rate_percent: 5.0,
@@ -68,15 +81,15 @@ async fn main() -> RragResult<()> {
             evaluation_interval_seconds: 15,
             alert_buffer_size: 500,
             notification_channels: vec![
-                NotificationChannelConfig {
+                rrag::observability::alerting::NotificationChannelConfig {
                     name: "console".to_string(),
-                    channel_type: NotificationChannelType::Console,
+                    channel_type: rrag::observability::alerting::NotificationChannelType::Console,
                     enabled: true,
                     config: HashMap::new(),
                 },
-                NotificationChannelConfig {
+                rrag::observability::alerting::NotificationChannelConfig {
                     name: "webhook".to_string(),
-                    channel_type: NotificationChannelType::Webhook,
+                    channel_type: rrag::observability::alerting::NotificationChannelType::Webhook,
                     enabled: false, // Disabled for demo
                     config: HashMap::from([
                         ("url".to_string(), "http://localhost:9999/alerts".to_string()),
@@ -150,9 +163,9 @@ async fn main() -> RragResult<()> {
             compression_enabled: true,
             scheduled_exports: vec![],
             destinations: vec![
-                ExportDestinationConfig {
+                rrag::observability::export::ExportDestinationConfig {
                     name: "local_files".to_string(),
-                    destination_type: DestinationType::LocalFile,
+                    destination_type: rrag::observability::export::DestinationType::LocalFile,
                     config: HashMap::from([
                         ("path".to_string(), "./exports".to_string()),
                     ]),
@@ -168,10 +181,10 @@ async fn main() -> RragResult<()> {
             archive_compression: true,
             cleanup_interval_hours: 24,
             policies: vec![
-                RetentionPolicyConfig::default_metrics(),
-                RetentionPolicyConfig::default_logs(),
-                RetentionPolicyConfig::default_health(),
-                RetentionPolicyConfig::default_profiles(),
+                rrag::observability::retention::RetentionPolicyConfig::default_metrics(),
+                rrag::observability::retention::RetentionPolicyConfig::default_logs(),
+                rrag::observability::retention::RetentionPolicyConfig::default_health(),
+                rrag::observability::retention::RetentionPolicyConfig::default_profiles(),
             ],
             historical_analysis_enabled: true,
             trend_analysis_days: 30,
@@ -184,7 +197,7 @@ async fn main() -> RragResult<()> {
     };
 
     // Initialize the observability system
-    let mut observability = ObservabilitySystem::new(observability_config).await?;
+    let observability = ObservabilitySystem::new(observability_config).await?;
     
     println!("📊 Starting observability system components...");
     observability.start().await?;
@@ -193,7 +206,7 @@ async fn main() -> RragResult<()> {
     let metrics = observability.metrics().clone();
     let monitoring = observability.monitoring().clone();
     let alerting = observability.alerting().clone();
-    let dashboard = observability.dashboard().clone();
+    let _dashboard = observability.dashboard().clone();
     let logging = observability.logging().clone();
     let health = observability.health().clone();
     let profiling = observability.profiling().clone();
@@ -213,7 +226,7 @@ async fn main() -> RragResult<()> {
     
     // Add various health checkers to demonstrate monitoring
     health.add_checker(Box::new(
-        BasicHealthChecker::new("search_engine", || {
+        rrag::observability::health::BasicHealthChecker::new("search_engine", || {
             // Simulate occasional search engine issues
             if rand::random::<f64>() > 0.9 {
                 Err(RragError::agent("search_engine", "Search index temporarily unavailable"))
@@ -224,7 +237,7 @@ async fn main() -> RragResult<()> {
     )).await?;
 
     health.add_checker(Box::new(
-        BasicHealthChecker::new("vector_store", || {
+        rrag::observability::health::BasicHealthChecker::new("vector_store", || {
             // Simulate vector store with occasional degradation
             let rand_val = rand::random::<f64>();
             if rand_val > 0.95 {
@@ -238,7 +251,7 @@ async fn main() -> RragResult<()> {
     )).await?;
 
     health.add_checker(Box::new(
-        DatabaseHealthChecker::new("embedding_db", "postgresql://localhost:5432/embeddings")
+        rrag::observability::health::DatabaseHealthChecker::new("embedding_db", "postgresql://localhost:5432/embeddings")
             .with_critical(true)
     )).await?;
 
@@ -250,7 +263,7 @@ async fn main() -> RragResult<()> {
         "High Search Latency - Demo",
         AlertCondition::Threshold {
             metric_name: "search_processing_time_ms".to_string(),
-            operator: ComparisonOperator::GreaterThan,
+            operator: rrag::observability::alerting::ComparisonOperator::GreaterThan,
             value: 500.0,
             duration_minutes: 2,
         },
@@ -270,12 +283,17 @@ async fn main() -> RragResult<()> {
     println!("   - Triggering occasional alerts");
     println!();
 
+    let metrics_clone = metrics.clone();
+    let monitoring_clone = monitoring.clone();
+    let logging_clone = logging.clone();
+    let profiling_clone = profiling.clone();
+    
     let simulation_handle = tokio::spawn(async move {
         simulate_system_activity(
-            metrics,
-            monitoring,
-            logging,
-            profiling,
+            metrics_clone,
+            monitoring_clone,
+            logging_clone,
+            profiling_clone,
         ).await
     });
 
@@ -304,7 +322,7 @@ async fn main() -> RragResult<()> {
             all_metrics.clone(),
             ExportFormat::Json,
             vec!["local_files".to_string()],
-            ExportFilters::default(),
+            rrag::observability::export::ExportFilters::default(),
         ).await?;
         
         println!("   Exported {} metrics to: {:?}", 
@@ -363,7 +381,7 @@ async fn main() -> RragResult<()> {
     let recent_logs = logging.search_logs(&LogQuery {
         level_filter: Some(LogLevel::Info),
         limit: Some(5),
-        sort_order: SortOrder::Descending,
+        sort_order: rrag::observability::logging::SortOrder::Descending,
         ..Default::default()
     }).await;
 
@@ -427,16 +445,16 @@ async fn main() -> RragResult<()> {
         ReportConfig {
             name: "RRAG Demo Final Report".to_string(),
             description: "Comprehensive report from the RRAG observability demo".to_string(),
-            report_type: ReportType::SystemHealth,
+            report_type: rrag::observability::export::ReportType::SystemHealth,
             template: None,
             parameters: HashMap::new(),
             output_format: ExportFormat::Json,
             include_charts: true,
-            chart_config: ChartConfig::default(),
+            chart_config: rrag::observability::export::ChartConfig::default(),
         },
-        SystemOverview {
+        rrag::observability::monitoring::SystemOverview {
             timestamp: Utc::now(),
-            performance_metrics: Some(PerformanceMetrics {
+            performance_metrics: Some(rrag::observability::monitoring::PerformanceMetrics {
                 timestamp: Utc::now(),
                 cpu_usage_percent: 45.0,
                 memory_usage_mb: 512.0,
@@ -474,14 +492,14 @@ async fn main() -> RragResult<()> {
 
 /// Simulate realistic system activity for demonstration
 async fn simulate_system_activity(
-    metrics: Arc<MetricsCollector>,
+    metrics: Arc<rrag::observability::metrics::MetricsCollector>,
     monitoring: Arc<SystemMonitor>,
     logging: Arc<LogAggregator>,
     profiling: Arc<PerformanceProfiler>,
 ) {
     let mut interval = tokio::time::interval(Duration::from_secs(2));
     let mut request_counter = 0u64;
-    let mut rng = rand::thread_rng();
+    let mut rng = StdRng::from_entropy();
 
     loop {
         interval.tick().await;
@@ -536,15 +554,15 @@ async fn simulate_system_activity(
 
         // Simulate user activity
         if rng.gen_bool(0.4) { // 40% chance
-            let activity = UserActivity {
+            let activity = rrag::observability::monitoring::UserActivity {
                 timestamp: Utc::now(),
                 user_id: format!("user_{}", rng.gen_range(1..100)),
                 session_id: format!("session_{}", rng.gen_range(1..20)),
                 action: match rng.gen_range(0..4) {
-                    0 => UserAction::Search,
-                    1 => UserAction::Chat,
-                    2 => UserAction::DocumentView,
-                    _ => UserAction::SystemHealth,
+                    0 =>                     rrag::observability::monitoring::UserAction::Search,
+                    1 =>                     rrag::observability::monitoring::UserAction::Chat,
+                    2 =>                     rrag::observability::monitoring::UserAction::DocumentView,
+                    _ =>                     rrag::observability::monitoring::UserAction::SystemHealth,
                 },
                 query: Some("sample query".to_string()),
                 response_time_ms: search_time,
@@ -558,14 +576,14 @@ async fn simulate_system_activity(
 
         // Simulate search analytics
         if rng.gen_bool(0.6) { // 60% chance
-            let search_analytics = SearchAnalytics {
+            let search_analytics = rrag::observability::monitoring::SearchAnalytics {
                 timestamp: Utc::now(),
                 query: format!("demo query {}", request_counter),
                 query_type: match rng.gen_range(0..4) {
-                    0 => QueryType::Factual,
-                    1 => QueryType::Conceptual,
-                    2 => QueryType::Procedural,
-                    _ => QueryType::Conversational,
+                    0 =>                     rrag::observability::monitoring::QueryType::Factual,
+                    1 =>                     rrag::observability::monitoring::QueryType::Conceptual,
+                    2 =>                     rrag::observability::monitoring::QueryType::Procedural,
+                    _ =>                     rrag::observability::monitoring::QueryType::Conversational,
                 },
                 results_count: rng.gen_range(1..20),
                 processing_time_ms: search_time,

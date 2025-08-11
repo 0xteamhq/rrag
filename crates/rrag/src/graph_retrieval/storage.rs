@@ -4,7 +4,7 @@
 //! various storage backends and optimized query operations.
 
 use super::{KnowledgeGraph, GraphNode, GraphEdge, NodeType, EdgeType, GraphError};
-use crate::{RragResult, Embedding};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, BTreeMap};
 use async_trait::async_trait;

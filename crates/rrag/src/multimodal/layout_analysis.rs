@@ -520,7 +520,7 @@ impl DefaultLayoutAnalyzer {
     }
     
     /// Helper methods for specific document types
-    async fn extract_pdf_content(&self, path: &Path) -> RragResult<DocumentContent> {
+    async fn extract_pdf_content(&self, _path: &Path) -> RragResult<DocumentContent> {
         // Simplified PDF content extraction
         Ok(DocumentContent {
             text: "PDF content".to_string(),
@@ -534,7 +534,7 @@ impl DefaultLayoutAnalyzer {
         })
     }
     
-    async fn extract_word_content(&self, path: &Path) -> RragResult<DocumentContent> {
+    async fn extract_word_content(&self, _path: &Path) -> RragResult<DocumentContent> {
         Ok(DocumentContent {
             text: "Word document content".to_string(),
             document_type: DocumentType::Word,
@@ -950,7 +950,7 @@ impl StructureDetector {
         })
     }
     
-    pub async fn detect_structure(&self, content: &DocumentContent) -> RragResult<DocumentStructure> {
+    pub async fn detect_structure(&self, _content: &DocumentContent) -> RragResult<DocumentStructure> {
         Ok(DocumentStructure {
             detection_confidence: 0.8,
             hierarchy_levels: vec![],
@@ -1067,31 +1067,66 @@ impl Default for FormattingInfo {
 
 // Minimal implementations for component structs
 impl ContentClassifier {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self { 
+        Self {
+            models: HashMap::new(),
+            feature_extractors: Vec::new(),
+        }
+    }
 }
 
 impl FlowDetector {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self { 
+        Self {
+            algorithms: Vec::new(),
+            pattern_matchers: Vec::new(),
+        }
+    }
 }
 
 impl RegionAnalyzer {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self { 
+        Self {
+            classifiers: Vec::new(),
+            relationship_detectors: Vec::new(),
+        }
+    }
 }
 
 impl LayoutClassifier {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self { 
+        Self {
+            features: Vec::new(),
+            decision_trees: Vec::new(),
+        }
+    }
 }
 
 impl SpacingAnalyzer {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self { 
+        Self {
+            metrics: Vec::new(),
+            threshold_calculator: ThresholdCalculator::new(),
+        }
+    }
 }
 
 impl ContentDistributionAnalyzer {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self { 
+        Self {
+            metrics: Vec::new(),
+            balance_calculators: Vec::new(),
+        }
+    }
 }
 
 impl MarginDetector {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self { 
+        Self {
+            methods: Vec::new(),
+            consistency_checker: ConsistencyChecker::new(),
+        }
+    }
 }
 
 // Additional empty structs for compilation
@@ -1114,6 +1149,18 @@ pub struct DistributionMetric;
 pub struct BalanceCalculator;
 pub struct MarginDetectionMethod;
 pub struct ConsistencyChecker;
+
+impl ThresholdCalculator {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl ConsistencyChecker {
+    pub fn new() -> Self {
+        Self
+    }
+}
 #[derive(Debug, Clone)]
 pub struct ContextRequirement;
 

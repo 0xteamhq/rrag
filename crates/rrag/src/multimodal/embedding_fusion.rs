@@ -4,9 +4,9 @@
 
 use super::{
     MultiModalDocument, MultiModalEmbeddings, EmbeddingWeights, EmbeddingFusionStrategy,
-    ProcessedImage, ExtractedTable, AnalyzedChart, FusionStrategy
+    ProcessedImage, ExtractedTable, FusionStrategy
 };
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

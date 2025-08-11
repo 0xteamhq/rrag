@@ -8,15 +8,14 @@
 //! - Integration with traditional retrieval methods
 
 use rrag::prelude::*;
+use rrag::Retriever;
 use rrag::graph_retrieval::{
-    GraphRetrievalBuilder, GraphBuildConfig, PrintProgressCallback, GraphConfig, GraphConfigBuilder,
+    GraphRetrievalBuilder, GraphBuildConfig, builder::PrintProgressCallback, GraphConfigBuilder,
     entity::{EntityExtractionConfig, RuleBasedEntityExtractor},
     query_expansion::{ExpansionStrategy, ExpansionOptions},
     algorithms::{GraphAlgorithms, PageRankConfig, TraversalConfig},
-    storage::InMemoryGraphStorage,
     KnowledgeGraph, GraphNode, GraphEdge, NodeType, EdgeType,
 };
-use std::collections::HashMap;
 use tokio;
 
 #[tokio::main]

@@ -670,7 +670,7 @@ impl PerformanceProfiler {
 
     fn calculate_component_performance(&self, profiles: &[&ProfileData]) -> HashMap<String, ComponentPerformanceMetrics> {
         let mut component_data: HashMap<String, Vec<f64>> = HashMap::new();
-        let mut error_counts: HashMap<String, usize> = HashMap::new();
+        let error_counts: HashMap<String, usize> = HashMap::new();
 
         for profile in profiles {
             component_data.entry(profile.component.clone())

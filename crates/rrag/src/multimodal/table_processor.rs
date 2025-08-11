@@ -4,8 +4,7 @@
 
 use super::{
     TableProcessor, ExtractedTable, TableCell, TableStatistics, ColumnStatistics,
-    NumericStatistics, TextStatistics, TableExtractionConfig, DataType, 
-    TableOutputFormat, CellFormatting
+    NumericStatistics, TextStatistics, TableExtractionConfig, DataType
 };
 use crate::{RragResult, RragError};
 use serde::{Deserialize, Serialize};

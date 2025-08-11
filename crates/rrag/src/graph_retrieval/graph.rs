@@ -2,7 +2,7 @@
 //! 
 //! Core graph structures and operations for knowledge graph construction and management.
 
-use crate::{RragResult, Document, DocumentChunk, Embedding};
+use crate::{RragResult, Embedding};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;

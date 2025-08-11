@@ -484,7 +484,7 @@ impl BatchProcessor {
     /// Process a batch of operations
     pub async fn process_batch(&self, batch: BatchOperation) -> RragResult<BatchResult> {
         let _permit = self.executor.semaphore.acquire().await
-            .map_err(|e| RragError::timeout("acquire_semaphore", 30000))?;
+            .map_err(|_e| RragError::timeout("acquire_semaphore", 30000))?;
 
         let start_time = std::time::Instant::now();
         let queue_wait_time = start_time.elapsed();
@@ -684,7 +684,7 @@ impl BatchProcessor {
     /// Start batch processing task
     async fn start_batch_processing_task(&self) -> tokio::task::JoinHandle<()> {
         let queue_manager = Arc::clone(&self.queue_manager);
-        let executor = Arc::clone(&self.executor);
+        let _executor = Arc::clone(&self.executor);
 
         tokio::spawn(async move {
             loop {
@@ -711,7 +711,7 @@ impl BatchProcessor {
                     }
                 };
 
-                if let Some(batch) = batch {
+                if let Some(_batch) = batch {
                     // Process batch (simplified - would need full context)
                     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                 } else {

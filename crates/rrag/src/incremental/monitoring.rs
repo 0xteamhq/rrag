@@ -3,7 +3,7 @@
 //! Comprehensive monitoring and alerting system for incremental indexing operations.
 //! Provides performance tracking, health monitoring, and automated alerting.
 
-use crate::{RragError, RragResult};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;

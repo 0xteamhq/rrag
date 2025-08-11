@@ -5,11 +5,10 @@
 use super::{
     entity::EntityExtractionConfig,
     storage::GraphStorageConfig,
-    query_expansion::{ExpansionConfig, ExpansionOptions},
+    query_expansion::ExpansionConfig,
     algorithms::PageRankConfig,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Main configuration for graph-based retrieval
 #[derive(Debug, Clone, Serialize, Deserialize)]

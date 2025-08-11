@@ -3,9 +3,9 @@
 //! Manages incremental updates to vector indexes without requiring full rebuilds.
 //! Handles embedding updates, index optimization, and performance monitoring.
 
-use crate::{RragError, RragResult, Embedding};
+use crate::{RragResult, Embedding};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, VecDeque, HashSet};
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -642,7 +642,7 @@ impl VectorUpdateManager {
                     pending.pop_front()
                 };
 
-                if let Some(op) = operation {
+                if let Some(_op) = operation {
                     // Process operation (simplified)
                     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
                 } else {
@@ -781,7 +781,7 @@ impl VectorUpdateManager {
     }
 
     /// Process operation immediately
-    async fn process_immediate(&self, operation: VectorOperation) -> RragResult<()> {
+    async fn process_immediate(&self, _operation: VectorOperation) -> RragResult<()> {
         // Would process the operation immediately
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
         Ok(())

@@ -4,13 +4,12 @@
 //! Provides insights into search analytics, performance bottlenecks, and user behavior.
 
 use crate::{RragError, RragResult};
-use super::metrics::{MetricsCollector, Metric};
+use super::metrics::MetricsCollector;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::RwLock;
 use chrono::{DateTime, Utc, Duration};
-use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Monitoring configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,7 +95,7 @@ pub struct SearchAnalytics {
 }
 
 /// Query classification
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum QueryType {
     Factual,
     Conceptual,

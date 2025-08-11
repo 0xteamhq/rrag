@@ -10,10 +10,12 @@ use rrag::{
     SearchResult,
     reranking::{
         AdvancedReranker, AdvancedRerankingConfig, ScoreCombination, RerankingStrategyType,
-        CrossEncoderReranker, CrossEncoderConfig, CrossEncoderModelType,
+        CrossEncoderReranker, CrossEncoderConfig,
         MultiSignalReranker, MultiSignalConfig, SignalType, SignalWeight,
-        LearningToRankReranker, LTRConfig, LTRModelType,
+        LearningToRankReranker, LTRConfig,
         neural_reranker::{NeuralReranker, NeuralConfig, NeuralArchitecture},
+        cross_encoder::CrossEncoderModelType,
+        learning_to_rank::LTRModelType,
     },
 };
 use std::collections::HashMap;
@@ -64,7 +66,7 @@ async fn demo_cross_encoder_reranking(
     results: &[SearchResult],
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("🤖 Cross-Encoder Reranking Demo");
-    println!("─".repeat(50));
+    println!("{}", "─".repeat(50));
     
     // Test different cross-encoder models
     let models = vec![
@@ -117,7 +119,7 @@ async fn demo_multi_signal_reranking(
     results: &[SearchResult],
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("📊 Multi-Signal Reranking Demo");
-    println!("─".repeat(50));
+    println!("{}", "─".repeat(50));
     
     let mut config = MultiSignalConfig::default();
     
@@ -169,7 +171,7 @@ async fn demo_ltr_reranking(
     results: &[SearchResult],
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("🎯 Learning-to-Rank Reranking Demo");
-    println!("─".repeat(50));
+    println!("{}", "─".repeat(50));
     
     let mut config = LTRConfig::default();
     config.model_type = LTRModelType::SimulatedLambdaMART;
@@ -214,7 +216,7 @@ async fn demo_neural_reranking(
     results: &[SearchResult],
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("🧠 Neural Reranking Demo");
-    println!("─".repeat(50));
+    println!("{}", "─".repeat(50));
     
     let neural_architectures = vec![
         ("Simulated BERT", NeuralArchitecture::SimulatedBERT),
@@ -259,7 +261,7 @@ async fn demo_complete_advanced_reranking(
     results: &[SearchResult],
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 Complete Advanced Reranking Pipeline");
-    println!("─".repeat(50));
+    println!("{}", "─".repeat(50));
     
     // Configure the advanced reranker with all components
     let mut config = AdvancedRerankingConfig::default();
@@ -302,7 +304,7 @@ async fn demo_complete_advanced_reranking(
             for (rank, result) in reranked_results.iter().enumerate() {
                 println!("\n  {}. {} [Final Score: {:.3}]", 
                         rank + 1,
-                        result.id,
+                        result.document_id,
                         result.final_score
                 );
                 println!("     Original Rank: {} → New Rank: {}", 
@@ -346,14 +348,14 @@ async fn demo_reranking_comparison(
     results: &[SearchResult],
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!("📊 Reranking Methods Comparison");
-    println!("─".repeat(50));
+    println!("{}", "─".repeat(50));
     
     let mut comparison_results = Vec::new();
     
     // Original ranking
     let original_ranking: Vec<(String, f32)> = results
         .iter()
-        .map(|r| (r.document_id.clone(), r.score))
+        .map(|r| (r.id.clone(), r.score))
         .collect();
     comparison_results.push(("Original", original_ranking));
     
@@ -405,7 +407,7 @@ async fn demo_reranking_comparison(
     for rank in 0..5.min(results.len()) {
         print!("{:<15}", format!("#{}", rank + 1));
         
-        for (method_name, ranking) in &comparison_results {
+        for (_method_name, ranking) in &comparison_results {
             let doc_id = if rank < ranking.len() {
                 &ranking[rank].0
             } else {

@@ -4,7 +4,7 @@
 //! traditional IR metrics (Precision@K, Recall@K, MAP, MRR, NDCG)
 //! and modern retrieval-specific metrics.
 
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use super::{
     Evaluator, EvaluatorConfig, EvaluatorPerformance, EvaluationData, EvaluationResult,
     QueryEvaluationResult, EvaluationSummary, EvaluationMetadata, PerformanceStats,
@@ -358,7 +358,7 @@ impl Evaluator for RetrievalEvaluator {
 
 impl RetrievalEvaluator {
     /// Generate insights based on scores
-    fn generate_insights(&self, scores: &HashMap<String, f32>, std_devs: &HashMap<String, f32>) -> Vec<String> {
+    fn generate_insights(&self, scores: &HashMap<String, f32>, _std_devs: &HashMap<String, f32>) -> Vec<String> {
         let mut insights = Vec::new();
         
         // Precision insights

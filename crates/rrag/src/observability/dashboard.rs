@@ -5,14 +5,14 @@
 
 use crate::{RragError, RragResult};
 use super::{
-    metrics::{MetricsCollector, Metric, MetricValue},
+    metrics::MetricsCollector,
     monitoring::{SystemMonitor, SystemOverview, PerformanceMetrics, SearchStats, UserStats}
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{RwLock, broadcast, mpsc};
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Utc};
 use std::net::SocketAddr;
 
 /// Dashboard configuration

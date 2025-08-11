@@ -32,7 +32,7 @@ pub use builder::{GraphRetrievalBuilder, GraphBuildConfig};
 pub use config::{GraphConfig, GraphConfigBuilder, AlgorithmConfig};
 pub use storage::GraphStorageConfig;
 
-use crate::{RragError, RragResult};
+use crate::RragError;
 
 /// Graph-based retrieval error types
 #[derive(Debug, thiserror::Error)]

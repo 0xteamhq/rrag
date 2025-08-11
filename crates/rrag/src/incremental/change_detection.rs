@@ -6,7 +6,7 @@
 use crate::{RragError, RragResult, Document, DocumentChunk, Metadata};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use std::hash::{Hash, Hasher};
+use std::hash::Hasher;
 use std::collections::hash_map::DefaultHasher;
 use tokio::sync::RwLock;
 
@@ -398,7 +398,7 @@ impl ChangeDetector {
         document: &Document, 
         chunks: &[DocumentChunk]
     ) -> RragResult<ChangeResult> {
-        let start_time = std::time::Instant::now();
+        let _start_time = std::time::Instant::now();
         
         // Compute current state with chunks
         let current_state = self.compute_document_state(document, Some(chunks)).await?;

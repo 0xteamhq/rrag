@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{RwLock, mpsc};
-use chrono::{DateTime, Utc, Duration};
+use chrono::{DateTime, Utc};
 use std::sync::atomic::{AtomicU64, AtomicI64, Ordering};
 
 /// Metrics collection configuration

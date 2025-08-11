@@ -3,12 +3,11 @@
 //! Evaluation metrics specifically for text generation quality including
 //! fluency, coherence, relevance, factual accuracy, and linguistic metrics.
 
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use super::{
     Evaluator, EvaluatorConfig, EvaluatorPerformance, EvaluationData, EvaluationResult,
     QueryEvaluationResult, EvaluationSummary, EvaluationMetadata, PerformanceStats,
 };
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Generation evaluator

@@ -2,10 +2,10 @@
 //! 
 //! Performance metrics and monitoring for the caching layer.
 
-use super::{CacheStats, CacheMetrics, OverallCacheMetrics};
+use super::{CacheStats, OverallCacheMetrics};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::{SystemTime, Duration, Instant};
+use std::time::{SystemTime, Duration};
 
 /// Cache metrics collector
 pub struct MetricsCollector {

@@ -6,9 +6,8 @@ use super::{
     Cache, CacheStats, ResultCacheConfig, ResultCacheEntry, CacheEntryMetadata,
     CachedSearchResult
 };
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher, DefaultHasher};
 
 /// Result cache optimized for search results
 pub struct ResultCache {

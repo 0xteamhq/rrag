@@ -6,9 +6,9 @@ use super::{
     Cache, CacheStats, QueryCacheConfig, QueryCacheEntry, CacheEntryMetadata,
     CachedSearchResult
 };
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use std::collections::HashMap;
-use std::time::{SystemTime, Duration};
+use std::time::SystemTime;
 
 /// Query cache with similarity-based retrieval
 pub struct QueryCache {

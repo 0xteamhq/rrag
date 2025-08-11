@@ -11,9 +11,8 @@ pub mod retrieval;
 pub mod ocr;
 pub mod layout_analysis;
 
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::path::Path;
 
 /// Multi-modal processing service
@@ -818,13 +817,13 @@ impl MultiModalService {
     }
     
     /// Process multi-modal document
-    pub async fn process_document(&self, document_path: &Path) -> RragResult<MultiModalDocument> {
+    pub async fn process_document(&self, _document_path: &Path) -> RragResult<MultiModalDocument> {
         // Implementation would process all modalities
         todo!("Implement multi-modal document processing")
     }
     
     /// Extract all modalities
-    pub async fn extract_modalities(&self, content: &[u8]) -> RragResult<MultiModalDocument> {
+    pub async fn extract_modalities(&self, _content: &[u8]) -> RragResult<MultiModalDocument> {
         // Implementation would extract different modalities
         todo!("Implement modality extraction")
     }

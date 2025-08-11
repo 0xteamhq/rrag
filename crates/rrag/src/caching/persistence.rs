@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{RragResult, RragError};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::fs;
 use std::io::{Read, Write};
 use std::collections::HashMap;

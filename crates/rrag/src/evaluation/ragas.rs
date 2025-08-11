@@ -677,7 +677,7 @@ impl RagasMetric for ContextPrecisionMetric {
         query: &str,
         contexts: &[String],
         _answer: &str,
-        ground_truth: Option<&str>,
+        _ground_truth: Option<&str>,
     ) -> RragResult<f32> {
         if contexts.is_empty() {
             return Ok(0.0);

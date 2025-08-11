@@ -51,7 +51,7 @@ pub use retention::{
     RetentionConfig, ArchiveManager
 };
 
-use crate::{RragError, RragResult, SystemMetrics};
+use crate::{RragError, RragResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;

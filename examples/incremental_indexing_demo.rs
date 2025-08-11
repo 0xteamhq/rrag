@@ -14,6 +14,15 @@
 
 use rrag::prelude::*;
 use rrag::incremental::*;
+use rrag::incremental::change_detection::ChangeSensitivity;
+use rrag::incremental::change_detection::{ChangeDetector, ChangeDetectionConfig, ChangeResult, ContentDelta, MetadataChanges, ChangeTimestamps, ChangeType as DetectionChangeType};
+use rrag::incremental::index_manager::{IncrementalIndexManager, IndexManagerConfig, IndexOperation, IndexUpdate, UpdateResult, ConflictResolutionStrategy};
+use rrag::incremental::batch_processor::{BatchProcessor, BatchConfig, ErrorHandlingStrategy};
+use rrag::incremental::versioning::{VersionManager, VersioningConfig, ConflictDetectionStrategy, ResolutionStrategy, VersionResolution, ChangeType};
+use rrag::incremental::rollback::{RollbackManager, RollbackConfig, RollbackOperation, SystemState};
+use rrag::incremental::integrity::{IntegrityChecker, IntegrityConfig};
+use rrag::incremental::vector_updates::{VectorUpdateManager, VectorUpdateConfig, VectorOperation, EmbeddingUpdate, UpdateReason, OptimizationType};
+use rrag::incremental::monitoring::{MetricsCollector, MonitoringConfig, AlertConfig, AlertThresholds, PerformanceTracker, PerformanceDataPoint, MetricsUpdate, IndexingMetrics, OperationMetrics, RetryMetrics, ErrorMetrics};
 use std::collections::HashMap;
 use tokio::time::{sleep, Duration};
 use uuid::Uuid;
@@ -131,7 +140,7 @@ async fn demo_change_detection() -> RragResult<()> {
     }).await?;
 
     // Create initial document
-    let mut doc = Document::new("The quick brown fox jumps over the lazy dog.")
+    let doc = Document::new("The quick brown fox jumps over the lazy dog.")
         .with_metadata("category", serde_json::Value::String("example".to_string()))
         .with_metadata("priority", serde_json::Value::Number(1.into()))
         .with_content_hash();
@@ -182,7 +191,7 @@ async fn demo_incremental_operations() -> RragResult<()> {
     println!("  📚 Setting up index manager...");
     
     let index_manager = IncrementalIndexManager::new(IndexManagerConfig {
-        max_batch_size: 50,
+        batch_size: 50,
         enable_conflict_resolution: true,
         conflict_resolution: ConflictResolutionStrategy::LastWriteWins,
         ..Default::default()
@@ -217,7 +226,7 @@ async fn demo_incremental_operations() -> RragResult<()> {
         };
         
         let op_id = index_manager.submit_update(update).await?;
-        operation_ids.push(op_id);
+        operation_ids.push(op_id.clone());
         println!("  📤 Submitted add operation {}: {}", i + 1, op_id.split('-').next().unwrap_or("unknown"));
     }
 
@@ -241,7 +250,7 @@ async fn demo_incremental_operations() -> RragResult<()> {
     let embeddings = create_test_embeddings(&chunks).await;
     
     let change_result = ChangeResult {
-        change_type: ChangeType::ContentChanged,
+        change_type: DetectionChangeType::ContentChanged,
         document_id: updated_doc.id.clone(),
         previous_hash: Some("old_hash".to_string()),
         current_hash: "new_hash".to_string(),
@@ -374,7 +383,7 @@ async fn demo_batch_processing() -> RragResult<()> {
         };
         
         let op_id = batch_processor.add_operation(update).await?;
-        operation_ids.push(op_id);
+        operation_ids.push(op_id.clone());
         
         if (i + 1) % 5 == 0 {
             println!("  📤 Submitted batch {} ({} operations)", (i + 1) / 5, 5);
@@ -433,9 +442,9 @@ async fn demo_versioning_system() -> RragResult<()> {
             .with_metadata("iteration", serde_json::Value::Number((i + 1).into()));
 
         let change_type = if i == 0 {
-            ChangeType::Initial
-        } else {
             ChangeType::Major
+        } else {
+            ChangeType::Minor
         };
 
         let version = version_manager.create_version(&doc, author, change_type, None).await?;
@@ -724,14 +733,14 @@ async fn demo_vector_updates() -> RragResult<()> {
     // Create embedding updates
     let embedding_updates = vec![
         EmbeddingUpdate {
-            embedding_id: embeddings[0].id.clone(),
-            new_embedding: Embedding::new(embeddings[0].id.clone(), vec![0.9, 0.8, 0.7, 0.6]),
+            embedding_id: embeddings[0].source_id.clone(),
+            new_embedding: Embedding::new(vec![0.9, 0.8, 0.7, 0.6], "updated-model", embeddings[0].source_id.clone()),
             update_reason: UpdateReason::QualityImprovement,
             metadata: HashMap::new(),
         },
         EmbeddingUpdate {
-            embedding_id: embeddings[1].id.clone(),
-            new_embedding: Embedding::new(embeddings[1].id.clone(), vec![0.5, 0.4, 0.3, 0.2]),
+            embedding_id: embeddings[1].source_id.clone(),
+            new_embedding: Embedding::new(vec![0.5, 0.4, 0.3, 0.2], "updated-model", embeddings[1].source_id.clone()),
             update_reason: UpdateReason::ContentChanged,
             metadata: HashMap::new(),
         },
@@ -897,7 +906,7 @@ async fn demo_monitoring_system() -> RragResult<()> {
             change_detection_accuracy: 0.97,
             vector_update_efficiency: 0.91,
         }),
-        system_metrics: Some(SystemMetrics {
+        system_metrics: Some(rrag::incremental::monitoring::SystemMetrics {
             cpu_usage_percent: 65.0,
             memory_usage_bytes: 756 * 1024 * 1024, // 756 MB
             available_memory_bytes: 1268 * 1024 * 1024, // 1268 MB
@@ -924,7 +933,7 @@ async fn demo_monitoring_system() -> RragResult<()> {
                 avg_retries_per_operation: 0.15,
             },
         }),
-        health_metrics: Some(HealthMetrics {
+        health_metrics: Some(rrag::incremental::monitoring::HealthMetrics {
             overall_health_score: 0.92,
             component_health: vec![
                 ("indexing".to_string(), 0.95),
@@ -1034,8 +1043,10 @@ async fn demo_production_scenarios() -> RragResult<()> {
             operations.push(update);
         }
         
-        // Submit batch
-        let _op_ids = batch_processor.submit_batch(operations).await?;
+        // Submit operations
+        for operation in operations {
+            let _op_id = batch_processor.add_operation(operation).await?;
+        }
         
         if (batch_num + 1) % 3 == 0 {
             println!("      ✅ Processed {} batches ({} documents)", 
@@ -1071,12 +1082,12 @@ async fn demo_production_scenarios() -> RragResult<()> {
     
     println!("      👥 Simulating concurrent updates from {} users...", authors.len());
     
-    for (i, (author, content)) in authors.iter().zip(contents.iter()).enumerate() {
+    for (_i, (author, content)) in authors.iter().zip(contents.iter()).enumerate() {
         let doc = Document::with_id(doc_id, *content)
             .with_metadata("editor", serde_json::Value::String(author.to_string()))
             .with_metadata("edit_time", serde_json::Value::String(chrono::Utc::now().to_rfc3339()));
         
-        let version = version_manager.create_version(&doc, author, ChangeType::Major, None).await?;
+        let version = version_manager.create_version(&doc, author, ChangeType::Minor, None).await?;
         println!("      ✏️  {} created version {}", author, version.version_number);
         
         // Small delay to simulate real-time updates
@@ -1144,7 +1155,7 @@ async fn demo_production_scenarios() -> RragResult<()> {
         indexing_metrics: None,
         system_metrics: None,
         operation_metrics: None,
-        health_metrics: Some(HealthMetrics {
+        health_metrics: Some(rrag::incremental::monitoring::HealthMetrics {
             overall_health_score: 0.6, // Poor health
             component_health: HashMap::new(),
             service_availability: 0.95,
@@ -1265,7 +1276,7 @@ async fn create_test_embeddings(chunks: &[DocumentChunk]) -> Vec<Embedding> {
             base_value * 0.5,
         ];
         
-        let embedding = Embedding::new(format!("{}_emb_{}", chunk.document_id, i), vector)
+        let embedding = Embedding::new(vector, "test-model", format!("{}_emb_{}", chunk.document_id, i))
             .with_metadata("source", serde_json::Value::String("test_generator".to_string()))
             .with_metadata("chunk_index", serde_json::Value::Number(i.into()));
         
@@ -1282,7 +1293,7 @@ async fn create_test_embeddings_direct(count: usize) -> Vec<Embedding> {
         let base = (i as f32) / (count as f32);
         let vector = vec![base, base * 0.5, base * 1.5, base * 0.3];
         
-        let embedding = Embedding::new(format!("direct_emb_{}", i), vector)
+        let embedding = Embedding::new(vector, "test-model", format!("direct_emb_{}", i))
             .with_metadata("type", serde_json::Value::String("direct".to_string()))
             .with_metadata("index", serde_json::Value::Number(i.into()));
         

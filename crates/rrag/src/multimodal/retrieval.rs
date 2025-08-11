@@ -3,13 +3,11 @@
 //! Advanced multi-modal retrieval combining text, visual, and structured data queries.
 
 use super::{
-    MultiModalDocument, MultiModalEmbeddings, ProcessedImage, ExtractedTable, AnalyzedChart,
-    EmbeddingWeights, ImageProcessor, ChartType, VisualFeatures, DataPoint
+    MultiModalDocument, ProcessedImage, ExtractedTable, AnalyzedChart, ChartType
 };
 use crate::{RragResult, RragError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::Path;
 
 /// Multi-modal retrieval system
 pub struct MultiModalRetriever {

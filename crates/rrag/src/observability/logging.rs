@@ -438,7 +438,7 @@ impl LogSearchEngine {
         
         let mut level_counts = HashMap::new();
         let mut component_counts = HashMap::new();
-        let mut total_entries = logs.len();
+        let total_entries = logs.len();
 
         for entry in logs.iter() {
             *level_counts.entry(entry.level).or_insert(0) += 1;

@@ -3,10 +3,9 @@
 //! Comprehensive evaluation that considers the entire RAG pipeline
 //! including user experience, system performance, and holistic quality.
 
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use super::{
-    Evaluator, EvaluatorConfig, EvaluatorPerformance, EvaluationData, EvaluationResult,
-    QueryEvaluationResult, EvaluationSummary, EvaluationMetadata, PerformanceStats,
+    Evaluator, EvaluatorConfig, EvaluatorPerformance, EvaluationData, EvaluationResult, EvaluationSummary, EvaluationMetadata, PerformanceStats,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

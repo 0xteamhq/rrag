@@ -76,7 +76,7 @@ impl Default for IndexManagerConfig {
 }
 
 /// Types of index operations
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum IndexOperation {
     /// Add new document and its chunks
     Add {
@@ -295,7 +295,7 @@ pub struct IncrementalIndexManager {
 }
 
 /// Index state tracking
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct IndexState {
     /// Documents currently indexed
     indexed_documents: HashSet<String>,
@@ -753,7 +753,7 @@ impl IncrementalIndexManager {
         update: &IndexUpdate,
         index_state: &Arc<RwLock<IndexState>>,
         conflict_resolver: &Arc<ConflictResolver>,
-        config: &IndexManagerConfig,
+        _config: &IndexManagerConfig,
     ) -> UpdateResult {
         let start_time = std::time::Instant::now();
         let mut conflicts = Vec::new();
@@ -827,7 +827,7 @@ impl IncrementalIndexManager {
                 true // Simplified for batch operations
             }
             
-            IndexOperation::Rebuild { index_name, document_ids } => {
+            IndexOperation::Rebuild { index_name: _, document_ids } => {
                 operations_completed.push("rebuild".to_string());
                 items_affected = document_ids.len();
                 true // Simplified for rebuild operations
@@ -874,10 +874,10 @@ impl IncrementalIndexManager {
         _conflict_resolver: &Arc<ConflictResolver>,
     ) -> RragResult<(usize, Vec<ConflictInfo>)> {
         let mut state = index_state.write().await;
-        let mut conflicts = Vec::new();
+        let conflicts = Vec::new();
         
         // Check for conflicts
-        if let Some(current_version) = state.document_versions.get(document_id) {
+        if let Some(_current_version) = state.document_versions.get(document_id) {
             // Simple conflict detection - in production, would be more sophisticated
             if change_result.change_type == ChangeType::NoChange {
                 // No actual conflict, but could indicate race condition

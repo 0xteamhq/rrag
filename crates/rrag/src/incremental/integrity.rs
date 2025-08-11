@@ -3,9 +3,9 @@
 //! Comprehensive integrity checking and validation for incremental indexing systems.
 //! Ensures consistency, detects corruption, and provides health monitoring.
 
-use crate::{RragError, RragResult};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -891,7 +891,7 @@ impl IntegrityChecker {
         &self,
         errors: &[IntegrityError],
         metrics: &PerformanceMetrics,
-        health: &HealthStatus,
+        _health: &HealthStatus,
     ) -> RragResult<Vec<Recommendation>> {
         let mut recommendations = Vec::new();
         

@@ -3,7 +3,7 @@
 //! High-performance caching for embedding computations with compression.
 
 use super::{Cache, CacheStats, EmbeddingCacheConfig, EmbeddingCacheEntry, CacheEntryMetadata};
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher, DefaultHasher};

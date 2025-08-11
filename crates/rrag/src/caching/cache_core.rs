@@ -2,13 +2,11 @@
 //! 
 //! Foundation cache data structures with different eviction policies.
 
-use super::{Cache, CacheStats, EvictionPolicy, CacheEntryMetadata};
-use crate::{RragResult, RragError};
-use std::collections::{HashMap, VecDeque, BinaryHeap};
-use std::hash::{Hash, Hasher};
-use std::sync::{Arc, RwLock};
+use super::{Cache, CacheStats, CacheEntryMetadata};
+use crate::RragResult;
+use std::collections::{HashMap, VecDeque};
+use std::hash::Hash;
 use std::time::{SystemTime, Duration};
-use std::cmp::Reverse;
 
 /// LRU Cache implementation
 pub struct LRUCache<K, V> 
@@ -180,7 +178,7 @@ pub enum AccessTrend {
 }
 
 /// Priority entry for frequency-based eviction
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct FrequencyEntry<K>
 where
     K: Ord,
@@ -519,7 +517,7 @@ where
 
 impl<K> PartialOrd for FrequencyEntry<K>
 where
-    K: Eq,
+    K: Ord,
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
@@ -528,7 +526,7 @@ where
 
 impl<K> Ord for FrequencyEntry<K>
 where
-    K: Eq,
+    K: Ord,
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // Lower frequency first (for min-heap)

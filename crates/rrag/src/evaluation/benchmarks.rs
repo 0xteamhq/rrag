@@ -2,10 +2,10 @@
 //! 
 //! Standard benchmarks and datasets for RAG system evaluation.
 
-use crate::{RragResult, RragError};
+use crate::RragResult;
 use super::{
     Evaluator, EvaluatorConfig, EvaluatorPerformance, EvaluationData, EvaluationResult,
-    TestQuery, GroundTruth, SystemResponse, QueryEvaluationResult, EvaluationSummary,
+    TestQuery, GroundTruth, SystemResponse, EvaluationSummary,
     EvaluationMetadata, PerformanceStats,
 };
 use serde::{Deserialize, Serialize};
@@ -257,7 +257,7 @@ impl Evaluator for BenchmarkEvaluator {
     fn evaluate(&self, data: &EvaluationData) -> RragResult<EvaluationResult> {
         let start_time = std::time::Instant::now();
         let mut overall_scores = HashMap::new();
-        let mut per_query_results = Vec::new();
+        let per_query_results = Vec::new();
         
         // Evaluate against each benchmark
         for benchmark in &self.benchmarks {
@@ -573,7 +573,7 @@ macro_rules! impl_simple_benchmark {
                 })
             }
             
-            fn evaluate_benchmark(&self, responses: &[SystemResponse]) -> RragResult<BenchmarkResult> {
+            fn evaluate_benchmark(&self, _responses: &[SystemResponse]) -> RragResult<BenchmarkResult> {
                 let overall_score = 0.75; // Default score for placeholder
                 
                 let mut detailed_scores = HashMap::new();
