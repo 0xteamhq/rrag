@@ -381,6 +381,7 @@ impl From<serde_json::Error> for RragError {
     }
 }
 
+#[cfg(feature = "http")]
 impl From<reqwest::Error> for RragError {
     fn from(err: reqwest::Error) -> Self {
         Self::Network {
