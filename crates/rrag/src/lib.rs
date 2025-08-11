@@ -446,7 +446,7 @@ pub const DESCRIPTION: &str = "Rust RAG Framework - High-performance Retrieval-A
 /// Framework repository URL
 ///
 /// The primary repository location for source code, issues, and documentation.
-pub const REPOSITORY: &str = "https://github.com/rrag-team/rrag";
+pub const REPOSITORY: &str = "https://github.com/leval-ai/rrag";
 
 /// Framework license
 ///
