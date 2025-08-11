@@ -552,6 +552,7 @@ pub struct TextPreprocessingStep {
     operations: Vec<TextOperation>,
 }
 
+/// Text preprocessing operations for document processing
 #[derive(Debug, Clone)]
 pub enum TextOperation {
     /// Convert to lowercase
@@ -565,12 +566,15 @@ pub enum TextOperation {
 
     /// Custom regex replacement
     RegexReplace {
+        /// Regular expression pattern to match
         pattern: String,
+        /// Replacement string for matched patterns
         replacement: String,
     },
 }
 
 impl TextPreprocessingStep {
+    /// Create a new text preprocessing step with specified operations
     pub fn new(operations: Vec<TextOperation>) -> Self {
         Self { operations }
     }
@@ -687,6 +691,7 @@ pub struct DocumentChunkingStep {
 }
 
 impl DocumentChunkingStep {
+    /// Create a new document chunking step with the specified chunker
     pub fn new(chunker: DocumentChunker) -> Self {
         Self { chunker }
     }
@@ -759,6 +764,7 @@ pub struct EmbeddingStep {
 }
 
 impl EmbeddingStep {
+    /// Create a new embedding generation step with the specified service
     pub fn new(embedding_service: Arc<EmbeddingService>) -> Self {
         Self { embedding_service }
     }
@@ -830,6 +836,7 @@ pub struct RetrievalStep {
     search_config: SearchStepConfig,
 }
 
+/// Configuration for search/retrieval step
 #[derive(Debug, Clone)]
 pub struct SearchStepConfig {
     /// Number of results to retrieve
@@ -853,6 +860,7 @@ impl Default for SearchStepConfig {
 }
 
 impl RetrievalStep {
+    /// Create a new retrieval step with default configuration
     pub fn new(retrieval_service: Arc<RetrievalService>) -> Self {
         Self {
             retrieval_service,
@@ -860,6 +868,7 @@ impl RetrievalStep {
         }
     }
 
+    /// Create a new retrieval step with custom configuration
     pub fn with_config(retrieval_service: Arc<RetrievalService>, config: SearchStepConfig) -> Self {
         Self {
             retrieval_service,
@@ -1067,11 +1076,17 @@ impl Default for Pipeline {
 /// Pipeline step information for introspection
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineStepInfo {
+    /// Name of the pipeline step
     pub name: String,
+    /// Description of what the step does
     pub description: String,
+    /// Types of input data this step accepts
     pub input_types: Vec<String>,
+    /// Type of output data this step produces
     pub output_type: String,
+    /// Whether this step can run in parallel with others
     pub is_parallelizable: bool,
+    /// Names of steps this step depends on
     pub dependencies: Vec<String>,
 }
 
@@ -1091,6 +1106,7 @@ pub struct RagPipelineBuilder {
 }
 
 impl RagPipelineBuilder {
+    /// Create a new RAG pipeline builder
     pub fn new() -> Self {
         Self {
             embedding_service: None,
@@ -1100,21 +1116,25 @@ impl RagPipelineBuilder {
         }
     }
 
+    /// Set the embedding service for the pipeline
     pub fn with_embedding_service(mut self, service: Arc<EmbeddingService>) -> Self {
         self.embedding_service = Some(service);
         self
     }
 
+    /// Set the retrieval service for the pipeline
     pub fn with_retrieval_service(mut self, service: Arc<RetrievalService>) -> Self {
         self.retrieval_service = Some(service);
         self
     }
 
+    /// Set the storage service for the pipeline
     pub fn with_storage_service(mut self, service: Arc<StorageService>) -> Self {
         self.storage_service = Some(service);
         self
     }
 
+    /// Set custom configuration for the pipeline
     pub fn with_config(mut self, config: PipelineConfig) -> Self {
         self.config = config;
         self

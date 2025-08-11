@@ -17,103 +17,145 @@ pub enum RragError {
     /// Document processing errors
     #[error("Document processing failed: {message}")]
     DocumentProcessing {
+        /// Error message describing what went wrong
         message: String,
         #[source]
+        /// Optional source error that caused this failure
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Embedding generation errors
     #[error("Embedding generation failed for {content_type}: {message}")]
     Embedding {
+        /// Type of content that failed to embed (text, image, etc.)
         content_type: String,
+        /// Error message describing the failure
         message: String,
         #[source]
+        /// Optional source error that caused this failure
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Vector storage errors
     #[error("Vector storage operation failed: {operation}")]
     Storage {
+        /// Storage operation that failed (insert, query, delete, etc.)
         operation: String,
         #[source]
+        /// Source error from the storage backend
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     /// rsllm client errors
     #[error("rsllm client error: {operation}")]
     RsllmClient {
+        /// Client operation that failed (request, auth, etc.)
         operation: String,
         #[source]
+        /// Source error from the rsllm client
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     /// Retrieval/search errors
     #[error("Retrieval failed: {query}")]
     Retrieval {
+        /// Query that failed to execute
         query: String,
         #[source]
+        /// Optional source error that caused this failure
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Tool execution errors
     #[error("Tool '{tool}' execution failed: {message}")]
     ToolExecution {
+        /// Name of the tool that failed
         tool: String,
+        /// Error message from the tool execution
         message: String,
         #[source]
+        /// Optional source error that caused this failure
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Configuration errors
     #[error("Configuration error: {field}")]
     Configuration {
+        /// Configuration field that has an invalid value
         field: String,
+        /// Expected value or format for the field
         expected: String,
+        /// Actual value that was provided
         actual: String,
     },
 
     /// Network/IO errors
     #[error("Network operation failed: {operation}")]
     Network {
+        /// Network operation that failed (request, response, etc.)
         operation: String,
         #[source]
+        /// Source error from the network operation
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     /// Serialization/deserialization errors
     #[error("Serialization error: {data_type}")]
     Serialization {
+        /// Type of data that failed to serialize/deserialize
         data_type: String,
         #[source]
+        /// Source error from the serialization library
         source: serde_json::Error,
     },
 
     /// Timeout errors
     #[error("Operation timed out after {duration_ms}ms: {operation}")]
-    Timeout { operation: String, duration_ms: u64 },
+    Timeout { 
+        /// Operation that timed out
+        operation: String, 
+        /// Duration in milliseconds before timeout
+        duration_ms: u64 
+    },
 
     /// Memory/conversation errors
     #[error("Memory operation failed: {operation}")]
-    Memory { operation: String, message: String },
+    Memory { 
+        /// Memory operation that failed
+        operation: String, 
+        /// Error message describing the failure
+        message: String 
+    },
 
     /// Streaming errors
     #[error("Stream error in {context}: {message}")]
-    Stream { context: String, message: String },
+    Stream { 
+        /// Context where the stream error occurred
+        context: String, 
+        /// Error message describing the stream failure
+        message: String 
+    },
 
     /// Agent execution errors
     #[error("Agent execution failed: {agent_id}")]
     Agent {
+        /// ID of the agent that encountered the error
         agent_id: String,
+        /// Error message from the agent
         message: String,
         #[source]
+        /// Optional source error that caused this failure
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
     },
 
     /// Validation errors
     #[error("Validation failed: {field}")]
     Validation {
+        /// Field that failed validation
         field: String,
+        /// Validation constraint that was violated
         constraint: String,
+        /// Value that failed validation
         value: String,
     },
 }
@@ -352,9 +394,13 @@ impl RragError {
 /// Error severity levels for monitoring and alerting
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ErrorSeverity {
+    /// Low priority error that doesn't affect core functionality
     Low = 1,
+    /// Medium priority error that may cause minor issues
     Medium = 2,
+    /// High priority error that affects core functionality
     High = 3,
+    /// Critical error that causes system failure
     Critical = 4,
 }
 

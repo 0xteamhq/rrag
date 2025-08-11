@@ -658,6 +658,7 @@ pub struct LocalEmbeddingProvider {
 }
 
 impl LocalEmbeddingProvider {
+    /// Create a new local embedding provider
     pub fn new(model_path: impl Into<String>, dimensions: usize) -> Self {
         Self {
             model_path: model_path.into(),
@@ -973,9 +974,13 @@ impl EmbeddingService {
 /// Provider information for introspection
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProviderInfo {
+    /// Provider name
     pub name: String,
+    /// List of supported model names
     pub supported_models: Vec<String>,
+    /// Maximum batch size for efficient processing
     pub max_batch_size: usize,
+    /// Number of dimensions in the embedding vectors
     pub embedding_dimensions: usize,
 }
 
@@ -1018,6 +1023,7 @@ pub struct MockEmbeddingProvider {
 }
 
 impl MockEmbeddingProvider {
+    /// Create a new mock embedding provider
     pub fn new() -> Self {
         Self {
             model: "mock-model".to_string(),
@@ -1082,6 +1088,7 @@ impl EmbeddingProvider for MockEmbeddingProvider {
 }
 
 // For backward compatibility
+/// Type alias for MockEmbeddingProvider for backward compatibility
 pub type MockEmbeddingService = MockEmbeddingProvider;
 
 #[cfg(test)]

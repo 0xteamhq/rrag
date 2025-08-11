@@ -35,13 +35,18 @@ pub struct ConversationMessage {
 /// Message roles in conversation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum MessageRole {
+    /// Message from the user
     User,
+    /// Message from the AI assistant
     Assistant,
+    /// System message
     System,
+    /// Message from a tool execution
     Tool,
 }
 
 impl ConversationMessage {
+    /// Create a new conversation message
     pub fn new(role: MessageRole, content: impl Into<String>) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
@@ -53,27 +58,33 @@ impl ConversationMessage {
         }
     }
 
+    /// Create a user message
     pub fn user(content: impl Into<String>) -> Self {
         Self::new(MessageRole::User, content)
     }
 
+    /// Create an assistant message
     pub fn assistant(content: impl Into<String>) -> Self {
         Self::new(MessageRole::Assistant, content)
     }
 
+    /// Create a system message
     pub fn system(content: impl Into<String>) -> Self {
         Self::new(MessageRole::System, content)
     }
 
+    /// Create a tool message
     pub fn tool(content: impl Into<String>) -> Self {
         Self::new(MessageRole::Tool, content)
     }
 
+    /// Add metadata to the message
     pub fn with_metadata(mut self, key: impl Into<String>, value: serde_json::Value) -> Self {
         self.metadata.insert(key.into(), value);
         self
     }
 
+    /// Set the token count for the message
     pub fn with_token_count(mut self, count: usize) -> Self {
         self.token_count = Some(count);
         self
@@ -103,8 +114,9 @@ pub struct MemorySummary {
     /// Token count of summary
     pub summary_tokens: usize,
 
-    /// Time range covered
+    /// Time range covered - start time
     pub start_time: chrono::DateTime<chrono::Utc>,
+    /// Time range covered - end time
     pub end_time: chrono::DateTime<chrono::Utc>,
 
     /// Summary metadata
@@ -167,6 +179,7 @@ pub struct ConversationBufferMemory {
     config: BufferMemoryConfig,
 }
 
+/// Configuration for buffer-based memory
 #[derive(Debug, Clone)]
 pub struct BufferMemoryConfig {
     /// Maximum messages to keep per conversation
@@ -190,6 +203,7 @@ impl Default for BufferMemoryConfig {
 }
 
 impl ConversationBufferMemory {
+    /// Create a new buffer memory with default configuration
     pub fn new() -> Self {
         Self {
             conversations: Arc::new(RwLock::new(HashMap::new())),
@@ -197,6 +211,7 @@ impl ConversationBufferMemory {
         }
     }
 
+    /// Create a new buffer memory with custom configuration
     pub fn with_config(config: BufferMemoryConfig) -> Self {
         Self {
             conversations: Arc::new(RwLock::new(HashMap::new())),
@@ -361,6 +376,7 @@ pub struct ConversationTokenBufferMemory {
     token_config: TokenBufferConfig,
 }
 
+/// Configuration for token-aware memory buffer
 #[derive(Debug, Clone)]
 pub struct TokenBufferConfig {
     /// Maximum tokens to keep in memory
@@ -373,6 +389,7 @@ pub struct TokenBufferConfig {
     pub overflow_strategy: TokenOverflowStrategy,
 }
 
+/// Strategy for handling token overflow in memory buffer
 #[derive(Debug, Clone)]
 pub enum TokenOverflowStrategy {
     /// Remove oldest messages
@@ -396,6 +413,7 @@ impl Default for TokenBufferConfig {
 }
 
 impl ConversationTokenBufferMemory {
+    /// Create a new token buffer memory with default configuration
     pub fn new() -> Self {
         Self {
             buffer: ConversationBufferMemory::new(),
@@ -403,6 +421,7 @@ impl ConversationTokenBufferMemory {
         }
     }
 
+    /// Create a new token buffer memory with custom configuration
     pub fn with_config(buffer_config: BufferMemoryConfig, token_config: TokenBufferConfig) -> Self {
         Self {
             buffer: ConversationBufferMemory::with_config(buffer_config),
@@ -562,6 +581,7 @@ pub struct ConversationSummaryMemory {
     config: SummaryMemoryConfig,
 }
 
+/// Configuration for summary-based memory management
 #[derive(Debug, Clone)]
 pub struct SummaryMemoryConfig {
     /// Maximum messages before summarization
@@ -593,6 +613,7 @@ impl Default for SummaryMemoryConfig {
 }
 
 impl ConversationSummaryMemory {
+    /// Create a new summary memory with default configuration
     pub fn new() -> Self {
         Self {
             current_messages: Arc::new(RwLock::new(HashMap::new())),
@@ -601,6 +622,7 @@ impl ConversationSummaryMemory {
         }
     }
 
+    /// Create a new summary memory with custom configuration
     pub fn with_config(config: SummaryMemoryConfig) -> Self {
         Self {
             current_messages: Arc::new(RwLock::new(HashMap::new())),
@@ -845,6 +867,7 @@ pub struct MemoryService {
     config: MemoryServiceConfig,
 }
 
+/// Configuration for the memory service
 #[derive(Debug, Clone)]
 pub struct MemoryServiceConfig {
     /// Default conversation settings
@@ -857,6 +880,7 @@ pub struct MemoryServiceConfig {
     pub persistence_interval_seconds: u64,
 }
 
+/// Settings for individual conversations
 #[derive(Debug, Clone)]
 pub struct ConversationSettings {
     /// Maximum messages per conversation
@@ -890,6 +914,7 @@ impl Default for ConversationSettings {
 }
 
 impl MemoryService {
+    /// Create a new memory service with default configuration
     pub fn new(memory: Arc<dyn Memory>) -> Self {
         Self {
             memory,
@@ -897,6 +922,7 @@ impl MemoryService {
         }
     }
 
+    /// Create a new memory service with custom configuration
     pub fn with_config(memory: Arc<dyn Memory>, config: MemoryServiceConfig) -> Self {
         Self { memory, config }
     }

@@ -226,6 +226,7 @@ pub struct SearchResult {
 }
 
 impl SearchResult {
+    /// Create a new search result with the specified parameters
     pub fn new(id: impl Into<String>, content: impl Into<String>, score: f32, rank: usize) -> Self {
         Self {
             id: id.into(),
