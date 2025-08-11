@@ -496,9 +496,9 @@ mod tests {
         let retriever = HybridRetriever::new(config, embedding_service);
         
         let docs = vec![
-            Document::new("1", "The quick brown fox jumps over the lazy dog"),
-            Document::new("2", "Machine learning is a subset of artificial intelligence"),
-            Document::new("3", "Natural language processing enables text understanding"),
+            Document::with_id("1", "The quick brown fox jumps over the lazy dog"),
+            Document::with_id("2", "Machine learning is a subset of artificial intelligence"),
+            Document::with_id("3", "Natural language processing enables text understanding"),
         ];
         
         retriever.index_batch(docs).await.unwrap();

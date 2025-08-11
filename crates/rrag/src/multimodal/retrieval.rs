@@ -68,7 +68,7 @@ pub struct ModalitySimilarityThresholds {
 }
 
 /// Result fusion strategies
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum ResultFusionStrategy {
     /// Weighted combination
     WeightedCombination,
@@ -456,7 +456,7 @@ impl MultiModalRetriever {
     /// Calculate cosine similarity between embeddings
     fn calculate_embedding_similarity(&self, a: &[f32], b: &[f32]) -> RragResult<f32> {
         if a.len() != b.len() {
-            return Err(RragError::validation("Embedding dimensions mismatch"));
+            return Err(RragError::validation("embedding_dimensions", "matching dimensions", "mismatched dimensions"));
         }
         
         let dot_product: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();

@@ -374,9 +374,9 @@ mod tests {
         let retriever = BM25Retriever::new(BM25Config::default());
         
         let docs = vec![
-            Document::new("1", "The quick brown fox jumps over the lazy dog"),
-            Document::new("2", "A quick brown dog runs through the forest"),
-            Document::new("3", "The lazy cat sleeps in the warm sunshine"),
+            Document::with_id("1", "The quick brown fox jumps over the lazy dog"),
+            Document::with_id("2", "A quick brown dog runs through the forest"),
+            Document::with_id("3", "The lazy cat sleeps in the warm sunshine"),
         ];
         
         retriever.index_batch(docs).await.unwrap();

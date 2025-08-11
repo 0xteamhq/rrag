@@ -440,9 +440,9 @@ mod tests {
         );
         
         let docs = vec![
-            Document::new("1", "Machine learning is a subset of artificial intelligence"),
-            Document::new("2", "Deep learning uses neural networks"),
-            Document::new("3", "Natural language processing enables computers to understand text"),
+            Document::with_id("1", "Machine learning is a subset of artificial intelligence"),
+            Document::with_id("2", "Deep learning uses neural networks"),
+            Document::with_id("3", "Natural language processing enables computers to understand text"),
         ];
         
         retriever.index_batch(docs).await.unwrap();

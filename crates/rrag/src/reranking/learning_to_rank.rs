@@ -1024,16 +1024,20 @@ mod tests {
         
         let results = vec![
             SearchResult {
-                document_id: "doc1".to_string(),
+                id: "doc1".to_string(),
                 content: "Machine learning is a subset of artificial intelligence that enables computers to learn".to_string(),
                 score: 0.8,
+                rank: 0,
                 metadata: HashMap::new(),
+                embedding: None,
             },
             SearchResult {
-                document_id: "doc2".to_string(),
+                id: "doc2".to_string(),
                 content: "AI and ML".to_string(),
                 score: 0.6,
+                rank: 1,
                 metadata: HashMap::new(),
+                embedding: None,
             },
         ];
         
@@ -1066,10 +1070,12 @@ mod tests {
         };
         
         let document = SearchResult {
-            document_id: "test_doc".to_string(),
+            id: "test_doc".to_string(),
             content: "test document content".to_string(),
             score: 0.7,
+            rank: 0,
             metadata: HashMap::new(),
+            embedding: None,
         };
         
         let features = extractor.extract_features("test query", &document, &context).unwrap();

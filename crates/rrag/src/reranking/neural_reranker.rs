@@ -871,16 +871,20 @@ mod tests {
         
         let results = vec![
             SearchResult {
-                document_id: "doc1".to_string(),
+                id: "doc1".to_string(),
                 content: "Machine learning algorithms for data analysis".to_string(),
                 score: 0.8,
+                rank: 0,
                 metadata: HashMap::new(),
+                embedding: None,
             },
             SearchResult {
-                document_id: "doc2".to_string(),
+                id: "doc2".to_string(),
                 content: "Cooking recipes for beginners".to_string(),
                 score: 0.3,
+                rank: 1,
                 metadata: HashMap::new(),
+                embedding: None,
             },
         ];
         

@@ -372,7 +372,7 @@ impl Retriever for GraphRetriever {
                     metadata: {
                         let mut metadata = HashMap::new();
                         metadata.insert("graph_score".to_string(), 
-                                       serde_json::Value::Number(graph_score.into()));
+                                       serde_json::json!(graph_score));
                         metadata
                     },
                     embedding: None,

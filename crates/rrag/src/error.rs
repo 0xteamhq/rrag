@@ -263,6 +263,15 @@ impl RragError {
         }
     }
 
+    /// Create a configuration error (shorthand for config method)
+    pub fn configuration(message: impl Into<String>) -> Self {
+        Self::Configuration {
+            field: "configuration".to_string(),
+            expected: "valid configuration".to_string(),
+            actual: message.into(),
+        }
+    }
+
     /// Create a serialization error with message
     pub fn serialization_with_message(
         data_type: impl Into<String>,

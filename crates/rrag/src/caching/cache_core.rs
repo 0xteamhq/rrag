@@ -180,8 +180,11 @@ pub enum AccessTrend {
 }
 
 /// Priority entry for frequency-based eviction
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct FrequencyEntry<K> {
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct FrequencyEntry<K>
+where
+    K: Ord,
+{
     key: K,
     frequency: u64,
     last_access: SystemTime,
@@ -516,7 +519,7 @@ where
 
 impl<K> PartialOrd for FrequencyEntry<K>
 where
-    K: PartialEq,
+    K: Eq,
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))

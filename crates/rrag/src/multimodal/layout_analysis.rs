@@ -651,7 +651,7 @@ impl DefaultLayoutAnalyzer {
         }
         
         // Check for logical section progression
-        let mut flow_score = 1.0;
+        let mut flow_score: f32 = 1.0;
         let mut has_title = false;
         let mut has_abstract = false;
         let mut has_intro = false;
@@ -1114,6 +1114,7 @@ pub struct DistributionMetric;
 pub struct BalanceCalculator;
 pub struct MarginDetectionMethod;
 pub struct ConsistencyChecker;
+#[derive(Debug, Clone)]
 pub struct ContextRequirement;
 
 #[cfg(test)]

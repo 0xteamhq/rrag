@@ -378,7 +378,7 @@ impl DocumentParser {
             .map_err(|e| RragError::io_error(e.to_string()))?;
         
         if metadata.len() as usize > self.config.max_file_size {
-            return Err(RragError::validation("File size exceeds maximum limit"));
+            return Err(RragError::validation("file_size", format!("maximum {} bytes", self.max_file_size), format!("{} bytes", file_size)));
         }
         
         Ok(())

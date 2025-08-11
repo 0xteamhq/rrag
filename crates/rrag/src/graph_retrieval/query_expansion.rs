@@ -37,7 +37,7 @@ pub struct GraphQueryExpander {
 }
 
 /// Query expansion configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExpansionConfig {
     /// Maximum expansion depth in the graph
     pub max_expansion_depth: usize,

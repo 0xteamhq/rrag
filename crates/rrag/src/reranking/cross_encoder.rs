@@ -559,16 +559,20 @@ mod tests {
         
         let results = vec![
             SearchResult {
-                document_id: "doc1".to_string(),
+                id: "doc1".to_string(),
                 content: "Machine learning is a subset of artificial intelligence".to_string(),
                 score: 0.8,
+                rank: 0,
                 metadata: Default::default(),
+                embedding: None,
             },
             SearchResult {
-                document_id: "doc2".to_string(),
+                id: "doc2".to_string(),
                 content: "Deep learning uses neural networks with multiple layers".to_string(),
                 score: 0.6,
+                rank: 1,
                 metadata: Default::default(),
+                embedding: None,
             },
         ];
         

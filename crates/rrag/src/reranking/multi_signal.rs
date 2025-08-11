@@ -920,16 +920,20 @@ mod tests {
         
         let results = vec![
             SearchResult {
-                document_id: "doc1".to_string(),
+                id: "doc1".to_string(),
                 content: "Machine learning is a subset of artificial intelligence that focuses on algorithms".to_string(),
                 score: 0.8,
+                rank: 0,
                 metadata: HashMap::new(),
+                embedding: None,
             },
             SearchResult {
-                document_id: "doc2".to_string(),
+                id: "doc2".to_string(),
                 content: "AI".to_string(), // Short, low quality
                 score: 0.9,
+                rank: 1,
                 metadata: HashMap::new(),
+                embedding: None,
             },
         ];
         

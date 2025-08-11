@@ -140,7 +140,7 @@ pub enum RelationType {
 }
 
 /// Entity extraction configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EntityExtractionConfig {
     /// Minimum confidence threshold
     pub min_confidence: f32,

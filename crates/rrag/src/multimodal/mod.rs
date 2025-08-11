@@ -427,7 +427,7 @@ pub enum ChartType {
 }
 
 /// OCR engine types
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OCREngineType {
     Tesseract,
     EasyOCR,
@@ -436,7 +436,7 @@ pub enum OCREngineType {
 }
 
 /// Document types
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum DocumentType {
     PDF,
     Word,
@@ -448,7 +448,7 @@ pub enum DocumentType {
 }
 
 /// Data types for table columns
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum DataType {
     String,
     Number,
@@ -597,7 +597,7 @@ pub struct TrendAnalysis {
 }
 
 /// Trend directions
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum TrendDirection {
     Increasing,
     Decreasing,
@@ -699,7 +699,7 @@ pub struct DocumentSection {
 }
 
 /// Section types
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum SectionType {
     Title,
     Abstract,

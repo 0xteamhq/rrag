@@ -290,7 +290,7 @@ pub struct StorageStats {
 }
 
 /// Graph storage configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GraphStorageConfig {
     /// Enable full-text indexing
     pub enable_text_indexing: bool,

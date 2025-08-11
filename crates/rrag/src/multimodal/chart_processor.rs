@@ -770,7 +770,7 @@ impl TrendAnalyzer {
     /// Analyze trends in data points
     pub fn analyze(&self, data_points: &[DataPoint]) -> RragResult<TrendAnalysis> {
         if data_points.len() < self.min_points {
-            return Err(RragError::validation("Insufficient data points for trend analysis"));
+            return Err(RragError::validation("data_points", format!("minimum {} points", self.min_points), format!("{} points", data_points.len())));
         }
         
         // Calculate trend direction
@@ -888,7 +888,7 @@ impl TrendAnalyzer {
             return vec![];
         }
         
-        let mut y_values: Vec<f32> = data_points.iter().map(|p| p.y).collect();
+        let mut y_values: Vec<f32> = data_points.iter().map(|p| p.y as f32).collect();
         y_values.sort_by(|a, b| a.partial_cmp(b).unwrap());
         
         let q1_idx = y_values.len() / 4;
@@ -901,7 +901,7 @@ impl TrendAnalyzer {
         let upper_bound = q3 + 1.5 * iqr;
         
         data_points.iter()
-            .filter(|p| p.y < lower_bound || p.y > upper_bound)
+            .filter(|p| (p.y as f32) < lower_bound || (p.y as f32) > upper_bound)
             .cloned()
             .collect()
     }
@@ -932,7 +932,7 @@ impl TrendAnalyzer {
             
             forecast.push(DataPoint {
                 x,
-                y,
+                y: y as f64,
                 label: Some(format!("Forecast {}", i)),
                 series: Some("Forecast".to_string()),
             });
@@ -989,11 +989,11 @@ impl ChartDescriptionGenerator {
         
         if !analysis.data_points.is_empty() {
             let max_y = analysis.data_points.iter()
-                .map(|p| p.y)
-                .fold(f32::NEG_INFINITY, f32::max);
+                .map(|p| p.y as f32)
+                .fold(f32::NEG_INFINITY, |a, b| a.max(b));
             let min_y = analysis.data_points.iter()
-                .map(|p| p.y)
-                .fold(f32::INFINITY, f32::min);
+                .map(|p| p.y as f32)
+                .fold(f32::INFINITY, |a, b| a.min(b));
             
             description = description.replace("{max_value}", &max_y.to_string());
             description = description.replace("{min_value}", &min_y.to_string());
