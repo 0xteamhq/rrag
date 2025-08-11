@@ -19,12 +19,32 @@ path = "hybrid_search_demo.rs"
 name = "query_processing_demo"
 path = "query_processing_demo.rs"
 
+[[bin]]
+name = "advanced_reranking_demo"
+path = "advanced_reranking_demo.rs"
+
+[[bin]]
+name = "graph_retrieval_demo"
+path = "graph_retrieval_demo.rs"
+
+[[bin]]
+name = "incremental_indexing_demo"
+path = "incremental_indexing_demo.rs"
+
+[[bin]]
+name = "observability_dashboard_demo"
+path = "observability_dashboard_demo.rs"
+
+[[bin]]
+name = "simple_observability_demo"
+path = "simple_observability_demo.rs"
+
 [features]
 default = ["rsllm-client"]
 rsllm-client = ["rrag/rsllm-client"]
 
 [dependencies]
-rrag = { path = "../crates/rrag", features = ["rsllm-client"] }
+rrag = { path = "../crates/rrag", features = ["rsllm-client", "observability"] }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 serde = { workspace = true }
@@ -32,3 +52,8 @@ serde_json = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 futures = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+rand = "0.8"

@@ -1,7 +1,205 @@
 //! # RRAG Agent System
-//! 
-//! Type-safe, async-first agent implementation with rsllm integration.
-//! Focuses on Rust's strengths: ownership, concurrency, and zero-cost abstractions.
+//!
+//! Type-safe, async-first agent implementation with comprehensive tool integration,
+//! memory management, and streaming support. Built for production workloads with
+//! robust error handling and configurable behavior.
+//!
+//! ## Features
+//!
+//! - **Tool Integration**: Type-safe tool calling with automatic schema generation
+//! - **Memory Management**: Persistent conversation state and context
+//! - **Streaming Responses**: Real-time token streaming for interactive experiences
+//! - **rsllm Integration**: Native Rust LLM client support when feature is enabled
+//! - **Async-First**: Built on Tokio for high-concurrency workloads
+//! - **Configuration**: Flexible configuration with builder pattern
+//! - **Error Handling**: Comprehensive error types with detailed context
+//! - **Monitoring**: Built-in metrics and observability
+//!
+//! ## Quick Start
+//!
+//! ### Basic Agent
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use std::sync::Arc;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! // Create a basic agent
+//! let agent = AgentBuilder::new()
+//!     .with_name("My Assistant")
+//!     .with_model("openai", "gpt-4")
+//!     .with_temperature(0.7)
+//!     .build()?;
+//!
+//! // Process a message
+//! let response = agent.process_message("Hello! How can you help me?", None).await?;
+//! println!("Agent: {}", response.text);
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Agent with Tools
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use std::sync::Arc;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! // Create an agent with tools
+//! let agent = AgentBuilder::new()
+//!     .with_name("Math Assistant")
+//!     .with_tool(Arc::new(Calculator::new()))
+//!     # #[cfg(feature = "http")]
+//!     .with_tool(Arc::new(HttpTool::new()))
+//!     .with_system_prompt("You are a helpful math assistant with access to a calculator.")
+//!     .build()?;
+//!
+//! // The agent can now use tools automatically
+//! let response = agent.process_message("What's 15 * 23?", None).await?;
+//! println!("Agent: {}", response.text);
+//! println!("Used {} tools", response.tool_calls.len());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Agent with Memory
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use std::sync::Arc;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! // Create memory for conversation history
+//! let memory = Arc::new(ConversationBufferMemory::new(100));
+//!
+//! // Create agent with memory
+//! let agent = AgentBuilder::new()
+//!     .with_name("Contextual Assistant")
+//!     .with_memory(memory)
+//!     .build()?;
+//!
+//! // Have a multi-turn conversation
+//! let conversation_id = "user-123";
+//!
+//! let response1 = agent.process_message(
+//!     "My name is Alice", 
+//!     Some(conversation_id.to_string())
+//! ).await?;
+//!
+//! let response2 = agent.process_message(
+//!     "What's my name?", 
+//!     Some(conversation_id.to_string())
+//! ).await?;
+//!
+//! // Agent remembers previous context
+//! assert!(response2.text.contains("Alice"));
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Streaming Responses
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use futures::StreamExt;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! let agent = AgentBuilder::new()
+//!     .with_name("Streaming Assistant")
+//!     .build()?;
+//!
+//! // Stream response tokens in real-time
+//! let mut stream = agent.stream_message("Tell me a story", None).await?;
+//!
+//! while let Some(token) = stream.next().await {
+//!     match token {
+//!         Ok(stream_token) => print!("{}", stream_token.content),
+//!         Err(e) => eprintln!("Stream error: {}", e),
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Architecture
+//!
+//! The agent system is built around several key components:
+//!
+//! - **AgentConfig**: Configuration and behavior settings
+//! - **AgentContext**: Per-conversation state and variables
+//! - **ToolRegistry**: Type-safe tool management and execution
+//! - **Memory**: Persistent conversation state
+//! - **StreamingResponse**: Real-time response streaming
+//!
+//! ## Configuration Options
+//!
+//! Agents support extensive configuration:
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use std::time::Duration;
+//!
+//! # fn example() -> RragResult<()> {
+//! let config = AgentConfig {
+//!     name: "Production Agent".to_string(),
+//!     model_config: ModelConfig {
+//!         provider: "openai".to_string(),
+//!         model: "gpt-4-turbo".to_string(),
+//!         timeout: Duration::from_secs(60),
+//!         max_tokens: Some(4096),
+//!         ..Default::default()
+//!     },
+//!     max_tool_calls: 5,
+//!     max_thinking_time: Duration::from_secs(120),
+//!     temperature: 0.3,
+//!     stream_responses: true,
+//!     verbose: false,
+//!     system_prompt: Some("You are a professional assistant.".to_string()),
+//!     ..Default::default()
+//! };
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Error Handling
+//!
+//! The agent system provides detailed error information:
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//!
+//! # #[tokio::main]
+//! # async fn main() {
+//! match agent.process_message("Hello", None).await {
+//!     Ok(response) => {
+//!         println!("Success: {}", response.text);
+//!         println!("Processing time: {}ms", response.metadata.duration_ms);
+//!     }
+//!     Err(RragError::Agent { agent_id, message, .. }) => {
+//!         eprintln!("Agent {} error: {}", agent_id, message);
+//!     }
+//!     Err(RragError::ToolExecution { tool, message, .. }) => {
+//!         eprintln!("Tool {} failed: {}", tool, message);
+//!     }
+//!     Err(RragError::Timeout { operation, duration_ms }) => {
+//!         eprintln!("Operation {} timed out after {}ms", operation, duration_ms);
+//!     }
+//!     Err(e) => eprintln!("Other error: {}", e),
+//! }
+//! # }
+//! ```
+//!
+//! ## Performance Considerations
+//!
+//! - Use streaming for long responses to improve perceived performance
+//! - Configure appropriate timeouts based on expected response times
+//! - Limit tool calls to prevent infinite loops
+//! - Use memory efficiently by setting appropriate buffer sizes
+//! - Monitor agent performance using the built-in metrics
 
 use crate::{
     RragError, RragResult, 
@@ -16,7 +214,28 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-/// Agent configuration using the builder pattern
+/// Configuration for agent behavior and capabilities
+///
+/// Defines all aspects of agent behavior including model settings,
+/// tool usage limits, streaming preferences, and safety constraints.
+/// Uses the builder pattern for convenient configuration.
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::time::Duration;
+///
+/// let config = AgentConfig {
+///     name: "Customer Support Agent".to_string(),
+///     temperature: 0.3, // More focused responses
+///     max_tool_calls: 3, // Limit tool usage
+///     max_thinking_time: Duration::from_secs(30),
+///     stream_responses: true,
+///     system_prompt: Some("You are a helpful customer support agent.".to_string()),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentConfig {
     /// Agent identifier
@@ -63,7 +282,35 @@ impl Default for AgentConfig {
     }
 }
 
-/// Model configuration for rsllm client
+/// Configuration for the underlying language model
+///
+/// Specifies which model to use and how to connect to it. Supports
+/// multiple providers including OpenAI, Anthropic, and local models.
+/// When using the `rsllm-client` feature, this integrates with the
+/// rsllm client library for unified model access.
+///
+/// # Supported Providers
+///
+/// - `openai`: OpenAI GPT models (gpt-4, gpt-3.5-turbo, etc.)
+/// - `anthropic`: Anthropic Claude models
+/// - `local`: Local models via rsllm
+/// - Custom providers via rsllm extensions
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::time::Duration;
+///
+/// let config = ModelConfig {
+///     provider: "openai".to_string(),
+///     model: "gpt-4-turbo".to_string(),
+///     timeout: Duration::from_secs(60),
+///     max_tokens: Some(4096),
+///     api_key_env: "OPENAI_API_KEY".to_string(),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelConfig {
     /// Model provider (openai, anthropic, etc.)
@@ -98,7 +345,39 @@ impl Default for ModelConfig {
     }
 }
 
-/// Agent execution context for maintaining state during conversations
+/// Execution context for maintaining state during agent conversations
+///
+/// Each conversation maintains its own context with tool call history,
+/// memory references, timing information, and custom variables. The context
+/// is created per conversation and persists across multiple turns.
+///
+/// # Features
+///
+/// - **Tool Call Tracking**: Complete history of tool executions
+/// - **Memory Integration**: Access to persistent conversation memory
+/// - **Timing Information**: Track conversation duration and performance
+/// - **Custom Variables**: Store conversation-specific data
+/// - **State Management**: Maintain state across async operations
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::sync::Arc;
+///
+/// let memory = Arc::new(ConversationBufferMemory::new(100));
+/// let mut context = AgentContext::new("user-123")
+///     .with_memory(memory);
+///
+/// // Set custom variables
+/// context.set_variable("user_preference", "concise".into());
+/// context.set_variable("session_id", 12345.into());
+///
+/// // Access variables later
+/// if let Some(pref) = context.get_variable("user_preference") {
+///     println!("User prefers: {}", pref.as_str().unwrap());
+/// }
+/// ```
 pub struct AgentContext {
     /// Current conversation ID
     pub conversation_id: String,
@@ -149,7 +428,41 @@ impl AgentContext {
     }
 }
 
-/// Tool call record for tracking agent actions
+/// Record of a tool execution during agent processing
+///
+/// Tracks all information about tool calls including input, output,
+/// timing, and metadata. Used for debugging, monitoring, and audit trails.
+/// Each tool call is assigned a unique ID for tracking across systems.
+///
+/// # Fields
+///
+/// - `id`: Unique identifier for this tool call
+/// - `tool_name`: Name of the tool that was executed
+/// - `input`: Input parameters passed to the tool
+/// - `result`: Tool execution result (if completed)
+/// - `timestamp`: When the tool call was initiated
+/// - `duration_ms`: How long the tool took to execute
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// let tool_call = ToolCall::new("calculator", "2 + 2")
+///     .with_result(
+///         ToolResult {
+///             success: true,
+///             output: "4".to_string(),
+///             metadata: Default::default(),
+///         },
+///         150 // 150ms execution time
+///     );
+///
+/// println!("Tool '{}' executed in {}ms", 
+///     tool_call.tool_name, 
+///     tool_call.duration_ms.unwrap()
+/// );
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolCall {
     pub id: String,
@@ -179,7 +492,33 @@ impl ToolCall {
     }
 }
 
-/// Agent response containing output and metadata
+/// Complete response from an agent including text, tool calls, and metadata
+///
+/// Contains all information about an agent's response to a user message,
+/// including the generated text, any tools that were called, performance
+/// metrics, and whether the response is final or needs continuation.
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// # #[tokio::main]
+/// # async fn main() -> RragResult<()> {
+/// let agent = AgentBuilder::new().build()?;
+/// let response = agent.process_message("Hello!", None).await?;
+///
+/// println!("Agent: {}", response.text);
+/// println!("Processing time: {}ms", response.metadata.duration_ms);
+/// println!("Tools used: {}", response.tool_calls.len());
+/// println!("Model calls: {}", response.metadata.model_calls);
+///
+/// if let Some(tokens) = response.metadata.total_tokens {
+///     println!("Tokens used: {}", tokens);
+/// }
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentResponse {
     /// Generated response text
@@ -214,7 +553,60 @@ pub struct ResponseMetadata {
     pub agent_config: AgentConfig,
 }
 
-/// Main RRAG agent implementation
+/// Main RRAG agent implementation with comprehensive capabilities
+///
+/// The core agent struct that orchestrates conversation handling, tool execution,
+/// memory management, and LLM integration. Designed for production use with
+/// robust error handling, performance monitoring, and concurrent operation support.
+///
+/// # Architecture
+///
+/// - **Configuration**: Flexible behavior configuration via [`AgentConfig`]
+/// - **Tool Registry**: Type-safe tool management and execution
+/// - **Memory Integration**: Optional persistent conversation state
+/// - **LLM Client**: rsllm integration when feature is enabled
+/// - **Context Management**: Per-conversation state tracking
+/// - **Async Operations**: Full async/await support for high concurrency
+///
+/// # Thread Safety
+///
+/// The agent is designed to be safely shared across threads using `Arc<RragAgent>`.
+/// Internal state is protected by async RwLocks and atomic operations where appropriate.
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::sync::Arc;
+///
+/// # #[tokio::main]
+/// # async fn main() -> RragResult<()> {
+/// // Create and share an agent across threads
+/// let agent = Arc::new(
+///     AgentBuilder::new()
+///         .with_name("Shared Agent")
+///         .with_tool(Arc::new(Calculator::new()))
+///         .build()?
+/// );
+///
+/// // Clone for use in async tasks
+/// let agent_clone = agent.clone();
+/// let handle = tokio::spawn(async move {
+///     agent_clone.process_message("Calculate 10 + 15", None).await
+/// });
+///
+/// let response = handle.await??;
+/// println!("Response: {}", response.text);
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Performance Notes
+///
+/// - Uses lazy initialization for conversation contexts
+/// - Implements efficient tool lookup with O(1) registry access
+/// - Supports concurrent conversation processing
+/// - Memory usage scales with active conversation count
 pub struct RragAgent {
     /// Agent configuration
     config: AgentConfig,
@@ -395,7 +787,57 @@ impl Default for RragAgent {
     }
 }
 
-/// Agent builder for fluent configuration
+/// Builder for creating and configuring RRAG agents
+///
+/// Provides a fluent interface for configuring all aspects of agent behavior
+/// including model settings, tools, memory, and operational parameters.
+/// Validates configuration during build to catch errors early.
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::sync::Arc;
+///
+/// # #[tokio::main]
+/// # async fn main() -> RragResult<()> {
+/// let agent = AgentBuilder::new()
+///     .with_name("Production Assistant")
+///     .with_model("openai", "gpt-4")
+///     .with_temperature(0.3)
+///     .with_system_prompt("You are a helpful assistant specializing in technical support.")
+///     .with_tool(Arc::new(Calculator::new()))
+///     # #[cfg(feature = "http")]
+///     .with_tool(Arc::new(HttpTool::new()))
+///     .with_memory(Arc::new(ConversationBufferMemory::new(1000)))
+///     .with_max_tool_calls(5)
+///     .with_verbose(true)
+///     .build()?;
+///
+/// println!("Created agent: {}", agent.config().name);
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Validation
+///
+/// The builder validates configuration during `build()` and returns detailed
+/// error information for any invalid settings:
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// let result = AgentBuilder::new()
+///     .with_temperature(5.0) // Invalid: must be 0.0-2.0
+///     .build();
+///
+/// match result {
+///     Err(RragError::Validation { field, constraint, value }) => {
+///         println!("Invalid {}: expected {}, got {}", field, constraint, value);
+///     }
+///     _ => {}
+/// }
+/// ```
 pub struct AgentBuilder {
     config: AgentConfig,
     tools: Vec<Arc<dyn Tool>>,

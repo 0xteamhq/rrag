@@ -186,6 +186,15 @@ impl RragError {
         }
     }
 
+    /// Create an evaluation error
+    pub fn evaluation(message: impl Into<String>) -> Self {
+        Self::Agent {
+            agent_id: "evaluation".to_string(),
+            message: message.into(),
+            source: None,
+        }
+    }
+
     /// Create a tool execution error
     pub fn tool_execution(tool: impl Into<String>, message: impl Into<String>) -> Self {
         Self::ToolExecution {
@@ -280,7 +289,13 @@ impl RragError {
             Self::Timeout { .. } => "timeout",
             Self::Memory { .. } => "memory",
             Self::Stream { .. } => "stream",
-            Self::Agent { .. } => "agent",
+            Self::Agent { agent_id, .. } => {
+                if agent_id == "evaluation" {
+                    "evaluation"
+                } else {
+                    "agent"
+                }
+            },
             Self::Validation { .. } => "validation",
         }
     }

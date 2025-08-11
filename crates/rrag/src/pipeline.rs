@@ -1,7 +1,209 @@
 //! # RRAG Pipeline System
-//! 
-//! Composable processing pipelines with Rust's async patterns and zero-cost abstractions.
-//! Designed for building complex RAG workflows from simple, reusable components.
+//!
+//! Composable, async-first processing pipelines for building complex RAG workflows
+//! from simple, reusable components. Features parallel execution, error handling,
+//! comprehensive monitoring, and type-safe data flow.
+//!
+//! ## Features
+//!
+//! - **Composable Steps**: Build complex workflows from simple, reusable components
+//! - **Type-Safe Data Flow**: Compile-time validation of pipeline data types
+//! - **Async Execution**: Full async/await support with parallel step execution
+//! - **Error Handling**: Robust error handling with optional error recovery
+//! - **Monitoring**: Built-in execution tracking and performance metrics
+//! - **Flexible Configuration**: Extensive configuration options for behavior tuning
+//! - **Caching Support**: Optional step result caching for performance
+//!
+//! ## Quick Start
+//!
+//! ### Basic Pipeline
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! // Create a simple text processing pipeline
+//! let pipeline = RagPipelineBuilder::new()
+//!     .add_step(TextPreprocessingStep::new(vec![
+//!         TextOperation::NormalizeWhitespace,
+//!         TextOperation::RemoveSpecialChars,
+//!     ]))
+//!     .add_step(DocumentChunkingStep::new(
+//!         ChunkingStrategy::FixedSize { size: 512, overlap: 64 }
+//!     ))
+//!     .build();
+//!
+//! // Execute pipeline
+//! let context = PipelineContext::new(PipelineData::Text(
+//!     "This is some text to process through the pipeline.".to_string()
+//! ));
+//!
+//! let result = pipeline.execute(context).await?;
+//! println!("Pipeline completed in {}ms", result.total_execution_time());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Advanced RAG Pipeline
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use std::sync::Arc;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! // Create a comprehensive RAG processing pipeline
+//! let embedding_provider = Arc::new(OpenAIEmbeddingProvider::new("api-key"));
+//! let embedding_service = Arc::new(EmbeddingService::new(embedding_provider));
+//!
+//! let pipeline = RagPipelineBuilder::new()
+//!     .with_config(PipelineConfig {
+//!         enable_parallelism: true,
+//!         max_parallel_steps: 4,
+//!         enable_caching: true,
+//!         ..Default::default()
+//!     })
+//!     .add_step(TextPreprocessingStep::new(vec![
+//!         TextOperation::NormalizeWhitespace,
+//!         TextOperation::RemoveExtraWhitespace,
+//!     ]))
+//!     .add_step(DocumentChunkingStep::new(
+//!         ChunkingStrategy::Semantic { similarity_threshold: 0.8 }
+//!     ))
+//!     .add_step(EmbeddingStep::new(embedding_service))
+//!     .add_step(RetrievalStep::new())
+//!     .build();
+//!
+//! // Process documents
+//! let documents = vec![
+//!     Document::new("First document content"),
+//!     Document::new("Second document content"),
+//! ];
+//!
+//! let context = PipelineContext::new(PipelineData::Documents(documents))
+//!     .with_metadata("batch_id", "batch-123".into())
+//!     .with_metadata("priority", "high".into());
+//!
+//! let result = pipeline.execute(context).await?;
+//! println!("Processed {} documents", result.execution_history.len());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ### Custom Pipeline Steps
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use async_trait::async_trait;
+//!
+//! // Define a custom pipeline step
+//! struct CustomValidationStep {
+//!     min_length: usize,
+//! }
+//!
+//! #[async_trait]
+//! impl PipelineStep for CustomValidationStep {
+//!     fn name(&self) -> &str { "custom_validation" }
+//!     fn description(&self) -> &str { "Validates document content length" }
+//!     fn input_types(&self) -> Vec<&'static str> { vec!["Document", "Documents"] }
+//!     fn output_type(&self) -> &'static str { "Document|Documents" }
+//!
+//!     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
+//!         // Custom validation logic here
+//!         match &context.data {
+//!             PipelineData::Document(doc) => {
+//!                 if doc.content_length() < self.min_length {
+//!                     return Err(RragError::validation(
+//!                         "document_length",
+//!                         format!("minimum {}", self.min_length),
+//!                         doc.content_length().to_string()
+//!                     ));
+//!                 }
+//!             }
+//!             _ => return Err(RragError::document_processing("Invalid input type"))
+//!         }
+//!         Ok(context)
+//!     }
+//! }
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! // Use the custom step in a pipeline
+//! let pipeline = RagPipelineBuilder::new()
+//!     .add_step(CustomValidationStep { min_length: 100 })
+//!     .add_step(TextPreprocessingStep::new(vec![TextOperation::NormalizeWhitespace]))
+//!     .build();
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Pipeline Configuration
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//!
+//! let config = PipelineConfig {
+//!     max_execution_time: 600, // 10 minutes
+//!     continue_on_error: true, // Continue processing on step failures
+//!     enable_parallelism: true,
+//!     max_parallel_steps: 8,
+//!     enable_caching: true,
+//!     custom_config: [
+//!         ("batch_size".to_string(), 100.into()),
+//!         ("retry_attempts".to_string(), 3.into()),
+//!     ].into_iter().collect(),
+//! };
+//! ```
+//!
+//! ## Error Handling
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//!
+//! # #[tokio::main]
+//! # async fn main() {
+//! match pipeline.execute(context).await {
+//!     Ok(result) => {
+//!         println!("Pipeline completed successfully");
+//!         println!("Total time: {}ms", result.total_execution_time());
+//!         
+//!         if result.has_failures() {
+//!             println!("Some steps failed but pipeline continued");
+//!             for step in &result.execution_history {
+//!                 if !step.success {
+//!                     println!("Step '{}' failed: {:?}", step.step_id, step.error_message);
+//!                 }
+//!             }
+//!         }
+//!     }
+//!     Err(RragError::Timeout { operation, duration_ms }) => {
+//!         eprintln!("Pipeline timed out in {}: {}ms", operation, duration_ms);
+//!     }
+//!     Err(e) => {
+//!         eprintln!("Pipeline failed: {}", e);
+//!     }
+//! }
+//! # }
+//! ```
+//!
+//! ## Performance Optimization
+//!
+//! - **Parallel Execution**: Steps that don't depend on each other run concurrently
+//! - **Caching**: Enable result caching for expensive operations
+//! - **Batch Processing**: Process multiple items together when possible
+//! - **Memory Management**: Efficient data structures and minimal copying
+//! - **Async Operations**: Non-blocking I/O and CPU-intensive operations
+//!
+//! ## Built-in Steps
+//!
+//! RRAG provides several built-in pipeline steps:
+//!
+//! - [`TextPreprocessingStep`]: Text normalization and cleaning
+//! - [`DocumentChunkingStep`]: Document chunking with various strategies  
+//! - [`EmbeddingStep`]: Embedding generation with provider abstraction
+//! - [`RetrievalStep`]: Vector similarity search and retrieval
+//! - Custom steps via the [`PipelineStep`] trait
 
 use crate::{
     RragError, RragResult, Document, DocumentChunk, Embedding,
@@ -14,7 +216,25 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-/// Pipeline execution context carrying data and metadata
+/// Execution context for pipeline processing
+///
+/// Carries data, metadata, configuration, and execution history through
+/// a pipeline. Each pipeline execution gets its own context that tracks
+/// all steps, timing, errors, and intermediate results.
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// let context = PipelineContext::new(PipelineData::Text(
+///     "Document content to process".to_string()
+/// ))
+/// .with_metadata("source", "api".into())
+/// .with_metadata("priority", "high".into());
+///
+/// println!("Processing execution: {}", context.execution_id);
+/// ```
 #[derive(Debug, Clone)]
 pub struct PipelineContext {
     /// Execution ID for tracking
@@ -33,7 +253,32 @@ pub struct PipelineContext {
     pub config: PipelineConfig,
 }
 
-/// Data flowing through the pipeline
+/// Data types that can flow through pipeline steps
+///
+/// Represents the various types of data that can be processed by pipeline steps.
+/// Each step declares which input types it accepts and which output type it produces,
+/// enabling compile-time validation of pipeline composition.
+///
+/// # Type Safety
+///
+/// The pipeline system uses these variants to ensure type safety:
+/// - Steps declare compatible input/output types
+/// - Runtime validation ensures data type correctness
+/// - Clear error messages for type mismatches
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// // Different data types that can flow through pipelines
+/// let text_data = PipelineData::Text("Raw text content".to_string());
+/// let doc_data = PipelineData::Document(Document::new("Document content"));
+/// let docs_data = PipelineData::Documents(vec![
+///     Document::new("First doc"),
+///     Document::new("Second doc"),
+/// ]);
+/// ```
 #[derive(Debug, Clone)]
 pub enum PipelineData {
     /// Raw text input
@@ -160,7 +405,73 @@ impl PipelineContext {
     }
 }
 
-/// Core pipeline step trait
+/// Core trait for implementing pipeline steps
+///
+/// Each pipeline step implements this trait to define its behavior, input/output types,
+/// dependencies, and execution logic. Steps are composable building blocks that can
+/// be combined to create complex processing workflows.
+///
+/// # Design Principles
+///
+/// - **Single Responsibility**: Each step should do one thing well
+/// - **Type Safety**: Declare input/output types for validation
+/// - **Async First**: All execution is async for better concurrency
+/// - **Error Handling**: Comprehensive error reporting with context
+/// - **Monitoring**: Built-in execution tracking and metrics
+///
+/// # Example Implementation
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use async_trait::async_trait;
+///
+/// struct UppercaseStep;
+///
+/// #[async_trait]
+/// impl PipelineStep for UppercaseStep {
+///     fn name(&self) -> &str { "uppercase_text" }
+///     fn description(&self) -> &str { "Converts text to uppercase" }
+///     fn input_types(&self) -> Vec<&'static str> { vec!["Text"] }
+///     fn output_type(&self) -> &'static str { "Text" }
+///
+///     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
+///         match &context.data {
+///             PipelineData::Text(text) => {
+///                 context.data = PipelineData::Text(text.to_uppercase());
+///                 Ok(context)
+///             }
+///             _ => Err(RragError::document_processing("Expected Text input"))
+///         }
+///     }
+/// }
+/// ```
+///
+/// # Parallel Execution
+///
+/// Steps can declare whether they support parallel execution:
+///
+/// ```rust
+/// # use rrag::prelude::*;
+/// # use async_trait::async_trait;
+/// # struct MyStep;
+/// # #[async_trait]
+/// # impl PipelineStep for MyStep {
+/// #   fn name(&self) -> &str { "my_step" }
+/// #   fn description(&self) -> &str { "description" }
+/// #   fn input_types(&self) -> Vec<&'static str> { vec!["Text"] }
+/// #   fn output_type(&self) -> &'static str { "Text" }
+/// #   async fn execute(&self, context: PipelineContext) -> RragResult<PipelineContext> { Ok(context) }
+/// // Override to disable parallelization for stateful operations
+/// fn is_parallelizable(&self) -> bool {
+///     false // This step cannot run in parallel
+/// }
+///
+/// // Declare dependencies on other steps
+/// fn dependencies(&self) -> Vec<&str> {
+///     vec!["preprocessing", "validation"]
+/// }
+/// # }
+/// ```
 #[async_trait]
 pub trait PipelineStep: Send + Sync {
     /// Step name/identifier
@@ -195,7 +506,45 @@ pub trait PipelineStep: Send + Sync {
     }
 }
 
-/// Text preprocessing step
+/// Built-in text preprocessing step for content normalization
+///
+/// Applies a sequence of text transformations to clean and normalize content
+/// before further processing. Supports common operations like whitespace
+/// normalization, case conversion, and special character handling.
+///
+/// # Supported Operations
+///
+/// - **Whitespace Normalization**: Collapse multiple spaces into single spaces
+/// - **Case Conversion**: Convert text to lowercase for consistency
+/// - **Special Character Removal**: Remove non-alphanumeric characters
+/// - **Regex Replacement**: Custom pattern-based text replacement
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// let step = TextPreprocessingStep::new(vec![
+///     TextOperation::NormalizeWhitespace,
+///     TextOperation::RemoveSpecialChars,
+///     TextOperation::ToLowercase,
+/// ]);
+///
+/// // Can also be built fluently
+/// let step = TextPreprocessingStep::new(vec![])
+///     .with_operation(TextOperation::NormalizeWhitespace)
+///     .with_operation(TextOperation::RegexReplace {
+///         pattern: r"\d+".to_string(),
+///         replacement: "[NUMBER]".to_string(),
+///     });
+/// ```
+///
+/// # Performance
+///
+/// - Operations are applied in sequence for predictable results
+/// - String allocations are minimized where possible
+/// - Regex operations are compiled once and reused
+/// - Supports batch processing for multiple documents
 pub struct TextPreprocessingStep {
     /// Preprocessing operations to apply
     operations: Vec<TextOperation>,

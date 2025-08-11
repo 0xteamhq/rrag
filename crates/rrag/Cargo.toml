@@ -2,12 +2,28 @@
 name = "rrag"
 version = "0.1.0"
 edition = "2021"
-description = "RRAG - A native Rust RAG (Retrieval-Augmented Generation) framework"
+rust-version = "1.70.0"
+description = "High-performance Rust framework for Retrieval-Augmented Generation with pluggable components, async-first design, and comprehensive observability"
 license = "MIT"
 keywords = ["rag", "llm", "rust", "retrieval", "generation"]
-authors = ["RRAG Team"]
+categories = ["text-processing", "api-bindings", "asynchronous", "science", "web-programming"]
+authors = ["RRAG Team <team@rrag.dev>"]
 repository = "https://github.com/rrag-team/rrag"
 documentation = "https://docs.rs/rrag"
+homepage = "https://rrag.dev"
+readme = "README.md"
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE*"
+]
+
+[package.metadata.docs.rs]
+features = ["rsllm-client", "observability", "security"]
+rustdoc-args = ["--cfg", "docsrs"]
+all-features = false
+targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
 
 [dependencies]
 # Core async runtime
@@ -31,6 +47,9 @@ tracing = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 chrono = { workspace = true, features = ["serde"] }
 regex = "1.10"
+num_cpus = "1.16"
+hostname = "0.3"
+rand = "0.8"
 
 # LLM interface
 rsllm = { path = "../rsllm", optional = true }
@@ -39,13 +58,51 @@ rsllm = { path = "../rsllm", optional = true }
 reqwest = { workspace = true, optional = true }
 dashmap = { version = "5.5", optional = true }
 async-stream = "0.3"
+bincode = "1.3"
+rmp-serde = "1.1"
+
+# Security dependencies
+jsonwebtoken = "9.0"
+sha2 = "0.10"
+hmac = "0.12"
+totp-rs = { version = "5.0", features = ["serde_support", "qr"], optional = true }
+base64 = "0.22"
+validator = { version = "0.16", features = ["derive"] }
+bcrypt = "0.15"
+rand_core = "0.6"
+sanitize-html = "0.4"
+http = "1.0"
+headers = "0.4"
+http-body-util = "0.1"
+hyper = { version = "1.0", features = ["full"], optional = true }
+hyper-util = { version = "0.1", features = ["full"], optional = true }
+tower = { version = "0.4", features = ["full"], optional = true }
+tower-http = { version = "0.5", features = ["full"], optional = true }
+memcache = { version = "0.17", optional = true }
+redis = { version = "0.24", features = ["tokio-comp"], optional = true }
+argon2 = "0.5"
+ring = "0.17"
+x509-parser = "0.15"
+pem = "3.0"
+csrf = "0.4"
+cookie = { version = "0.18", features = ["secure", "signed"], optional = true }
+session-store = { version = "0.12", optional = true }
+webauthn-rs = { version = "0.5", optional = true }
 
 [features]
-default = ["http", "concurrent"]
+default = ["http", "concurrent", "observability", "security"]
 rsllm-client = ["rsllm"]
 http = ["reqwest"]
 concurrent = ["dashmap"]
+observability = ["reqwest", "dashmap"]
+security = ["hyper", "hyper-util", "tower", "tower-http", "cookie", "session-store"]
+security-full = ["security", "redis", "memcache", "totp-rs", "webauthn-rs"]
 
 [dev-dependencies]
 tokio-test = "0.4"
 tempfile = "3.8"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+targets = ["x86_64-unknown-linux-gnu"]

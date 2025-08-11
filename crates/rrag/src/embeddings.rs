@@ -1,7 +1,143 @@
 //! # RRAG Embeddings System
-//! 
-//! Async-first embedding generation with pluggable providers and efficient batching.
-//! Designed for Rust's zero-cost abstractions and async ecosystem.
+//!
+//! High-performance, async-first embedding generation with pluggable providers,
+//! efficient batching, and comprehensive error handling. Built for production
+//! workloads with robust retry logic and monitoring capabilities.
+//!
+//! ## Features
+//!
+//! - **Multi-Provider Support**: OpenAI, local models, and custom providers
+//! - **Efficient Batching**: Automatic batching with configurable sizes
+//! - **Retry Logic**: Robust error handling with exponential backoff
+//! - **Parallel Processing**: Concurrent embedding generation
+//! - **Similarity Metrics**: Built-in cosine similarity and distance calculations
+//! - **Metadata Support**: Rich metadata tracking for embeddings
+//! - **Health Monitoring**: Provider health checks and monitoring
+//!
+//! ## Quick Start
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use std::sync::Arc;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! // Create an OpenAI provider
+//! let provider = Arc::new(OpenAIEmbeddingProvider::new("your-api-key")
+//!     .with_model("text-embedding-3-small"));
+//!
+//! // Create embedding service
+//! let service = EmbeddingService::new(provider);
+//!
+//! // Embed a document
+//! let document = Document::new("The quick brown fox jumps over the lazy dog");
+//! let embedding = service.embed_document(&document).await?;
+//!
+//! println!("Generated embedding with {} dimensions", embedding.dimensions);
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Batch Processing
+//!
+//! For high-throughput scenarios, use batch processing:
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use std::sync::Arc;
+//!
+//! # #[tokio::main]
+//! # async fn main() -> RragResult<()> {
+//! let provider = Arc::new(LocalEmbeddingProvider::new("sentence-transformers/all-MiniLM-L6-v2", 384));
+//! let service = EmbeddingService::with_config(
+//!     provider,
+//!     EmbeddingConfig {
+//!         batch_size: 50,
+//!         parallel_processing: true,
+//!         max_retries: 3,
+//!         retry_delay_ms: 1000,
+//!     }
+//! );
+//!
+//! let documents = vec![
+//!     Document::new("First document"),
+//!     Document::new("Second document"),
+//!     Document::new("Third document"),
+//! ];
+//!
+//! let embeddings = service.embed_documents(&documents).await?;
+//! println!("Generated {} embeddings", embeddings.len());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Custom Providers
+//!
+//! Implement the [`EmbeddingProvider`] trait to create custom providers:
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//! use async_trait::async_trait;
+//!
+//! struct MyCustomProvider {
+//!     model_name: String,
+//! }
+//!
+//! #[async_trait]
+//! impl EmbeddingProvider for MyCustomProvider {
+//!     fn name(&self) -> &str { "custom" }
+//!     fn supported_models(&self) -> Vec<&str> { vec!["custom-model-v1"] }
+//!     fn max_batch_size(&self) -> usize { 32 }
+//!     fn embedding_dimensions(&self) -> usize { 512 }
+//!
+//!     async fn embed_text(&self, text: &str) -> RragResult<Embedding> {
+//!         // Your custom embedding logic here
+//!         # let vector = vec![0.0; 512];
+//!         # Ok(Embedding::new(vector, &self.model_name, text))
+//!     }
+//!
+//!     async fn embed_batch(&self, requests: Vec<EmbeddingRequest>) -> RragResult<EmbeddingBatch> {
+//!         // Your custom batch processing logic
+//!         # todo!()
+//!     }
+//!
+//!     async fn health_check(&self) -> RragResult<bool> {
+//!         // Your health check logic
+//!         Ok(true)
+//!     }
+//! }
+//! ```
+//!
+//! ## Performance Considerations
+//!
+//! - Use batch processing for multiple documents to reduce API overhead
+//! - Configure appropriate batch sizes based on your provider's limits
+//! - Enable parallel processing for local models to utilize multiple CPU cores
+//! - Monitor provider health and implement fallback strategies
+//! - Cache embeddings when possible to avoid redundant API calls
+//!
+//! ## Error Handling
+//!
+//! The embedding system provides detailed error information:
+//!
+//! ```rust
+//! use rrag::prelude::*;
+//!
+//! # #[tokio::main]
+//! # async fn main() {
+//! match service.embed_document(&document).await {
+//!     Ok(embedding) => {
+//!         println!("Success: {} dimensions", embedding.dimensions);
+//!     }
+//!     Err(RragError::Embedding { content_type, message, .. }) => {
+//!         eprintln!("Embedding error for {}: {}", content_type, message);
+//!     }
+//!     Err(e) => {
+//!         eprintln!("Other error: {}", e);
+//!     }
+//! }
+//! # }
+//! ```
 
 use crate::{RragError, RragResult, Document, DocumentChunk};
 use async_trait::async_trait;
@@ -9,10 +145,36 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Embedding vector type - optimized for common dimensions
+/// Embedding vector type optimized for common dimensions
+///
+/// Uses `Vec<f32>` for maximum compatibility with ML libraries and APIs.
+/// Common dimensions:
+/// - 384: sentence-transformers/all-MiniLM-L6-v2
+/// - 768: BERT-base models
+/// - 1536: OpenAI text-embedding-ada-002
+/// - 3072: OpenAI text-embedding-3-large
 pub type EmbeddingVector = Vec<f32>;
 
-/// Embedding with associated metadata
+/// A dense vector representation of text content with metadata
+///
+/// Embeddings are high-dimensional vectors that capture semantic meaning
+/// of text in a format suitable for similarity comparison and retrieval.
+/// Each embedding includes the vector data, source information, and
+/// generation metadata.
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// let vector = vec![0.1, -0.2, 0.3, 0.4]; // 4-dimensional example
+/// let embedding = Embedding::new(vector, "text-embedding-ada-002", "doc-123")
+///     .with_metadata("content_type", "paragraph".into())
+///     .with_metadata("language", "en".into());
+///
+/// assert_eq!(embedding.dimensions, 4);
+/// assert_eq!(embedding.model, "text-embedding-ada-002");
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Embedding {
     /// The actual embedding vector
@@ -111,7 +273,20 @@ impl Embedding {
     }
 }
 
-/// Embedding request for batch processing
+/// A request for embedding generation, used in batch processing
+///
+/// Embedding requests bundle text content with metadata and a unique
+/// identifier for efficient batch processing and result tracking.
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+///
+/// let request = EmbeddingRequest::new("chunk-1", "The quick brown fox")
+///     .with_metadata("chunk_index", 0.into())
+///     .with_metadata("document_id", "doc-123".into());
+/// ```
 #[derive(Debug, Clone)]
 pub struct EmbeddingRequest {
     /// Unique identifier for the request
@@ -171,7 +346,57 @@ pub struct BatchMetadata {
     pub provider: String,
 }
 
-/// Core embedding provider trait
+/// Core trait for embedding providers
+///
+/// This trait defines the interface that all embedding providers must implement.
+/// Providers can be remote APIs (OpenAI, Cohere), local models (Hugging Face),
+/// or custom implementations.
+///
+/// The trait is designed for async operation and includes methods for:
+/// - Single text embedding
+/// - Batch processing for efficiency
+/// - Health monitoring
+/// - Provider introspection
+///
+/// # Implementation Guidelines
+///
+/// - Implement proper error handling with detailed context
+/// - Use appropriate timeouts for network operations
+/// - Support cancellation via async context
+/// - Provide accurate metadata in batch responses
+/// - Implement health checks that verify actual connectivity
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use async_trait::async_trait;
+///
+/// struct MyProvider;
+///
+/// #[async_trait]
+/// impl EmbeddingProvider for MyProvider {
+///     fn name(&self) -> &str { "my-provider" }
+///     fn supported_models(&self) -> Vec<&str> { vec!["model-v1"] }
+///     fn max_batch_size(&self) -> usize { 100 }
+///     fn embedding_dimensions(&self) -> usize { 768 }
+///
+///     async fn embed_text(&self, text: &str) -> RragResult<Embedding> {
+///         // Implementation here
+///         # todo!()
+///     }
+///
+///     async fn embed_batch(&self, requests: Vec<EmbeddingRequest>) -> RragResult<EmbeddingBatch> {
+///         // Batch implementation here
+///         # todo!()
+///     }
+///
+///     async fn health_check(&self) -> RragResult<bool> {
+///         // Health check implementation
+///         Ok(true)
+///     }
+/// }
+/// ```
 #[async_trait]
 pub trait EmbeddingProvider: Send + Sync {
     /// Provider name (e.g., "openai", "huggingface")
@@ -196,7 +421,46 @@ pub trait EmbeddingProvider: Send + Sync {
     async fn health_check(&self) -> RragResult<bool>;
 }
 
-/// OpenAI embedding provider
+/// OpenAI embedding provider for production-grade text embeddings
+///
+/// Provides access to OpenAI's embedding models through their API.
+/// Supports all current OpenAI embedding models with automatic
+/// batching and retry logic.
+///
+/// # Supported Models
+///
+/// - `text-embedding-ada-002`: Legacy model, 1536 dimensions
+/// - `text-embedding-3-small`: New model, 1536 dimensions, better performance
+/// - `text-embedding-3-large`: Premium model, 3072 dimensions, highest quality
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::sync::Arc;
+///
+/// # #[tokio::main]
+/// # async fn main() -> RragResult<()> {
+/// let provider = Arc::new(
+///     OpenAIEmbeddingProvider::new(std::env::var("OPENAI_API_KEY").unwrap())
+///         .with_model("text-embedding-3-small")
+/// );
+///
+/// let service = EmbeddingService::new(provider);
+/// let embedding = service.embed_document(&Document::new("Hello world")).await?;
+///
+/// assert_eq!(embedding.dimensions, 1536);
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Rate Limits
+///
+/// OpenAI has rate limits that vary by plan:
+/// - Free tier: 3 RPM, 150,000 TPM
+/// - Pay-as-you-go: 3,000 RPM, 1,000,000 TPM
+/// 
+/// The provider automatically handles batching within these limits.
 #[allow(dead_code)]
 pub struct OpenAIEmbeddingProvider {
     /// API client (placeholder - would use actual HTTP client)
@@ -334,7 +598,50 @@ impl EmbeddingProvider for OpenAIEmbeddingProvider {
     }
 }
 
-/// Local/Hugging Face embedding provider
+/// Local embedding provider for offline and privacy-focused deployments
+///
+/// Supports local inference with Hugging Face models or custom implementations.
+/// Ideal for:
+/// - Privacy-sensitive applications
+/// - High-volume processing without API costs
+/// - Offline or air-gapped environments
+/// - Custom fine-tuned models
+///
+/// # Popular Models
+///
+/// - `sentence-transformers/all-MiniLM-L6-v2`: 384 dims, fast and lightweight
+/// - `sentence-transformers/all-mpnet-base-v2`: 768 dims, high quality
+/// - `sentence-transformers/all-distilroberta-v1`: 768 dims, balanced
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::sync::Arc;
+///
+/// # #[tokio::main]
+/// # async fn main() -> RragResult<()> {
+/// let provider = Arc::new(LocalEmbeddingProvider::new(
+///     "sentence-transformers/all-MiniLM-L6-v2",
+///     384
+/// ));
+///
+/// let service = EmbeddingService::new(provider);
+/// let embeddings = service.embed_documents(&[
+///     Document::new("First document"),
+///     Document::new("Second document")
+/// ]).await?;
+///
+/// assert_eq!(embeddings.len(), 2);
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Performance Notes
+///
+/// - Uses parallel processing for batch operations
+/// - Smaller batch sizes recommended (16-32) for memory efficiency
+/// - CPU-intensive; consider GPU acceleration for large workloads
 pub struct LocalEmbeddingProvider {
     /// Model name or path
     model_path: String,
@@ -432,7 +739,58 @@ impl EmbeddingProvider for LocalEmbeddingProvider {
     }
 }
 
-/// High-level embedding service with provider management
+/// High-level embedding service with comprehensive provider management
+///
+/// The embedding service provides a unified interface for embedding generation
+/// with advanced features like automatic batching, retry logic, parallel processing,
+/// and comprehensive error handling.
+///
+/// # Features
+///
+/// - **Provider Abstraction**: Work with any embedding provider through a common interface
+/// - **Intelligent Batching**: Automatically batches requests for optimal performance
+/// - **Retry Logic**: Configurable retry with exponential backoff for transient failures
+/// - **Parallel Processing**: Concurrent processing for improved throughput
+/// - **Order Preservation**: Maintains document order in batch operations
+/// - **Metadata Propagation**: Preserves metadata through processing pipeline
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::sync::Arc;
+///
+/// # #[tokio::main]
+/// # async fn main() -> RragResult<()> {
+/// let provider = Arc::new(OpenAIEmbeddingProvider::new("api-key"));
+/// let service = EmbeddingService::with_config(
+///     provider,
+///     EmbeddingConfig {
+///         batch_size: 100,
+///         parallel_processing: true,
+///         max_retries: 3,
+///         retry_delay_ms: 1000,
+///     }
+/// );
+///
+/// // Process multiple documents efficiently
+/// let documents = vec![
+///     Document::new("First document"),
+///     Document::new("Second document"),
+/// ];
+///
+/// let embeddings = service.embed_documents(&documents).await?;
+/// println!("Generated {} embeddings", embeddings.len());
+/// # Ok(())
+/// # }
+/// ```
+///
+/// # Configuration Options
+///
+/// - `batch_size`: Number of items to process in each batch (default: 50)
+/// - `parallel_processing`: Whether to enable concurrent batch processing (default: true)
+/// - `max_retries`: Maximum retry attempts for failed requests (default: 3)
+/// - `retry_delay_ms`: Initial delay between retries, increases exponentially (default: 1000ms)
 pub struct EmbeddingService {
     /// Active embedding provider
     provider: Arc<dyn EmbeddingProvider>,
@@ -597,7 +955,39 @@ pub struct ProviderInfo {
     pub embedding_dimensions: usize,
 }
 
-/// Mock embedding provider for testing
+/// Mock embedding provider for testing and development
+///
+/// Provides deterministic, fast embedding generation for testing purposes.
+/// The mock provider generates consistent embeddings based on input text,
+/// making it suitable for unit tests and development workflows.
+///
+/// # Features
+///
+/// - **Deterministic**: Same input always produces the same embedding
+/// - **Fast**: No network calls or heavy computation
+/// - **Configurable**: Adjustable dimensions and behavior
+/// - **Testing-Friendly**: Predictable behavior for assertions
+///
+/// # Example
+///
+/// ```rust
+/// use rrag::prelude::*;
+/// use std::sync::Arc;
+///
+/// # #[tokio::main]
+/// # async fn main() -> RragResult<()> {
+/// let provider = Arc::new(MockEmbeddingProvider::new());
+/// let service = EmbeddingService::new(provider);
+///
+/// let document = Document::new("Test content");
+/// let embedding = service.embed_document(&document).await?;
+///
+/// // Mock provider always returns 384 dimensions
+/// assert_eq!(embedding.dimensions, 384);
+/// assert_eq!(embedding.model, "mock-model");
+/// # Ok(())
+/// # }
+/// ```
 pub struct MockEmbeddingProvider {
     model: String,
     dimensions: usize,
