@@ -55,12 +55,17 @@ path = "production_deployment_demo.rs"
 name = "getting_started_guide"
 path = "getting_started_guide.rs"
 
+[[bin]]
+name = "rgraph_demo"
+path = "rgraph_demo.rs"
+
 [features]
 default = ["rsllm-client"]
 rsllm-client = ["rrag/rsllm-client"]
 
 [dependencies]
 rrag = { path = "../crates/rrag", features = ["rsllm-client", "observability"] }
+rgraph = { path = "../crates/rgraph" }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 serde = { workspace = true }

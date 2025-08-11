@@ -1,0 +1,47 @@
+[package]
+name = "rgraph"
+version = "0.1.0"
+edition = "2021"
+authors = ["RRAG Team <team@rrag.dev>"]
+license = "MIT"
+description = "Graph-based agent orchestration system built on RRAG framework"
+homepage = "https://github.com/leval-ai/rrag"
+repository = "https://github.com/leval-ai/rrag"
+documentation = "https://docs.rs/rgraph"
+keywords = ["rag", "ai", "agents", "graph", "workflow"]
+categories = ["algorithms", "data-structures", "development-tools"]
+readme = "README.md"
+
+[features]
+default = ["serde", "rrag-integration"]
+serde = ["dep:serde", "dep:serde_json"]
+rrag-integration = ["dep:rrag"]
+observability = ["dep:tracing", "dep:metrics"]
+persistence = ["dep:sqlx"]
+
+[dependencies]
+# Core dependencies
+tokio = { workspace = true, features = ["full"] }
+async-trait = { workspace = true }
+futures = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+chrono = { workspace = true, features = ["serde"] }
+
+# Optional dependencies for features
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+rrag = { path = "../rrag", optional = true }
+tracing = { workspace = true, optional = true }
+metrics = { version = "0.22", optional = true }
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "sqlite", "chrono", "uuid"], optional = true }
+
+# Graph and state management
+petgraph = "0.6"
+dashmap = "5.5"
+parking_lot = "0.12"
+
+[dev-dependencies]
+tokio-test = "0.4"
+criterion = "0.5"

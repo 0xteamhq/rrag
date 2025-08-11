@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/rrag",      # RRAG - Rust RAG Framework
+    "crates/rgraph",    # RGraph - Graph-based Agent Orchestration
     "crates/rsllm",
     "examples",
 ]
@@ -54,6 +55,11 @@ redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
 
 # Vector databases
 qdrant-client = { version = "1.0", features = ["tonic"] }
+
+# Graph processing
+petgraph = "0.6"
+dashmap = "5.5"
+parking_lot = "0.12"
 
 # Text processing and embeddings
 tokenizers = "0.19"
