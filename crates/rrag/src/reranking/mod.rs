@@ -1,8 +1,90 @@
 //! # Advanced Reranking Module
 //! 
-//! Sophisticated reranking algorithms to improve retrieval precision after initial
-//! candidate retrieval. Includes cross-encoder models, learning-to-rank, and
-//! multi-signal reranking approaches.
+//! State-of-the-art reranking algorithms for improving retrieval relevance and precision.
+//! 
+//! This module provides multiple reranking strategies to refine initial retrieval results,
+//! ensuring the most relevant documents are ranked at the top. It supports various
+//! approaches from simple score-based reranking to sophisticated neural models.
+//! 
+//! ## Features
+//! 
+//! - **Cross-Encoder Reranking**: Transformer-based relevance scoring
+//! - **Neural Reranking**: Deep learning models for relevance prediction
+//! - **Learning-to-Rank**: Machine learning ranking with feature engineering
+//! - **Multi-Signal Fusion**: Combine multiple ranking signals
+//! - **Diversity Reranking**: Ensure result diversity while maintaining relevance
+//! 
+//! ## Performance
+//! 
+//! - Batch processing for efficiency
+//! - Async operations for non-blocking I/O
+//! - Caching of model predictions
+//! - GPU acceleration support (when available)
+//! 
+//! ## Examples
+//! 
+//! ### Cross-Encoder Reranking
+//! ```rust
+//! use rrag::reranking::{CrossEncoderReranker, CrossEncoderConfig};
+//! use rrag::Document;
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let reranker = CrossEncoderReranker::new(
+//!     CrossEncoderConfig::default()
+//!         .with_model("cross-encoder/ms-marco-MiniLM-L-12-v2")
+//!         .with_batch_size(32)
+//! );
+//! 
+//! let query = "What is machine learning?";
+//! let documents = vec![
+//!     Document::new("Machine learning is a subset of AI..."),
+//!     Document::new("Deep learning uses neural networks..."),
+//!     Document::new("Python is a programming language..."),
+//! ];
+//! 
+//! let reranked = reranker.rerank(query, documents).await?;
+//! // Most relevant documents are now at the top
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Learning-to-Rank
+//! ```rust
+//! use rrag::reranking::{LearningToRankReranker, LTRConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let ltr_reranker = LearningToRankReranker::new(
+//!     LTRConfig::default()
+//!         .with_features(vec!["bm25", "tfidf", "semantic_similarity"])
+//!         .with_model("lightgbm")
+//! );
+//! 
+//! let reranked = ltr_reranker.rerank_with_features(
+//!     query,
+//!     documents,
+//!     feature_matrix
+//! ).await?;
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Multi-Signal Reranking
+//! ```rust
+//! use rrag::reranking::{MultiSignalReranker, SignalWeight};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let multi_reranker = MultiSignalReranker::new()
+//!     .add_signal("relevance", 0.6)
+//!     .add_signal("recency", 0.2)
+//!     .add_signal("popularity", 0.2);
+//! 
+//! let reranked = multi_reranker.rerank_multi_signal(
+//!     documents,
+//!     signal_scores
+//! ).await?;
+//! # Ok(())
+//! # }
+//! ```
 
 use crate::RragResult;
 

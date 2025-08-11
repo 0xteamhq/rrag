@@ -1,7 +1,72 @@
 //! # Query Processing Module
 //! 
-//! Advanced query rewriting and expansion capabilities for improved retrieval.
-//! Implements state-of-the-art techniques like HyDE, query decomposition, and semantic expansion.
+//! Advanced query understanding, transformation, and optimization for RAG systems.
+//! 
+//! This module provides state-of-the-art query processing techniques to improve
+//! retrieval accuracy and relevance. It implements multiple strategies for query
+//! enhancement including rewriting, expansion, decomposition, and hypothetical
+//! document generation.
+//! 
+//! ## Features
+//! 
+//! - **Query Rewriting**: Transform queries for better retrieval
+//! - **Query Expansion**: Add synonyms and related terms
+//! - **Query Classification**: Understand query intent and type
+//! - **Query Decomposition**: Break complex queries into sub-queries
+//! - **HyDE**: Generate hypothetical documents for improved retrieval
+//! 
+//! ## Examples
+//! 
+//! ### Query Rewriting
+//! ```rust
+//! use rrag::query::{QueryRewriter, RewriteStrategy};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let rewriter = QueryRewriter::new()
+//!     .with_strategy(RewriteStrategy::Semantic)
+//!     .build();
+//! 
+//! let rewritten = rewriter.rewrite("What's RAG?").await?;
+//! assert!(rewritten.alternatives.contains(&"What is Retrieval Augmented Generation?".to_string()));
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Query Decomposition
+//! ```rust
+//! use rrag::query::{QueryDecomposer, DecompositionStrategy};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let decomposer = QueryDecomposer::new();
+//! 
+//! let query = "Compare the performance of BERT and GPT-3 on sentiment analysis";
+//! let sub_queries = decomposer.decompose(query).await?;
+//! 
+//! // Results in sub-queries like:
+//! // - "BERT performance on sentiment analysis"
+//! // - "GPT-3 performance on sentiment analysis"
+//! // - "Comparison between BERT and GPT-3"
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### HyDE (Hypothetical Document Embeddings)
+//! ```rust
+//! use rrag::query::{HyDEGenerator, HyDEConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let hyde = HyDEGenerator::new(HyDEConfig::default());
+//! 
+//! let query = "How does photosynthesis work?";
+//! let hypothetical_docs = hyde.generate(query).await?;
+//! 
+//! // Use hypothetical documents for retrieval
+//! for doc in hypothetical_docs.documents {
+//!     println!("Hypothetical answer: {}", doc.content);
+//! }
+//! # Ok(())
+//! # }
+//! ```
 
 pub mod rewriter;
 pub mod expander;

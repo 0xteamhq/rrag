@@ -1,6 +1,162 @@
-//! # Multi-modal Support for RAG
+//! # Multi-Modal RAG Processing
 //! 
-//! Comprehensive multi-modal processing for images, tables, charts, and structured data.
+//! Advanced multi-modal processing capabilities for handling diverse content types
+//! in RAG systems including images, tables, charts, PDFs, and structured documents.
+//! 
+//! This module enables RAG systems to process and understand content beyond plain text,
+//! making it possible to build applications that can reason over visual content,
+//! extract information from tables, analyze charts, and process complex document layouts.
+//! 
+//! ## Features
+//! 
+//! - **Image Processing**: Extract features, generate captions, detect objects
+//! - **Table Processing**: Extract structured data from HTML, CSV, and PDF tables
+//! - **Chart Analysis**: Understand charts, graphs, and visualizations
+//! - **OCR Integration**: Extract text from images and scanned documents
+//! - **Layout Analysis**: Understand document structure and reading order
+//! - **Embedding Fusion**: Combine embeddings from different modalities
+//! - **Multi-Modal Retrieval**: Search across text, images, and structured data
+//! 
+//! ## Supported Formats
+//! 
+//! - **Images**: PNG, JPEG, GIF, WebP, SVG
+//! - **Documents**: PDF, Word, PowerPoint, HTML
+//! - **Tables**: HTML tables, CSV, TSV, Excel
+//! - **Charts**: PNG/JPEG charts, SVG graphics
+//! - **Mixed Content**: Documents with embedded images and tables
+//! 
+//! ## Examples
+//! 
+//! ### Basic Multi-Modal Document Processing
+//! ```rust
+//! use rrag::multimodal::{MultiModalService, MultiModalConfig, MultiModalDocument};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let service = MultiModalService::new(
+//!     MultiModalConfig::default()
+//!         .enable_image_processing(true)
+//!         .enable_table_extraction(true)
+//!         .enable_chart_analysis(true)
+//! ).await?;
+//! 
+//! // Process a document with mixed content
+//! let document = MultiModalDocument::new()
+//!     .add_text("Q4 2024 Revenue Report")
+//!     .add_image("charts/revenue_chart.png")
+//!     .add_table("data/quarterly_results.csv");
+//! 
+//! let processed = service.process_document(document).await?;
+//! println!("Extracted {} text chunks, {} images, {} tables", 
+//!          processed.text_chunks.len(),
+//!          processed.images.len(), 
+//!          processed.tables.len());
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Image Analysis and Captioning
+//! ```rust
+//! use rrag::multimodal::image_processor::{ImageProcessor, ProcessingConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let processor = ImageProcessor::new(
+//!     ProcessingConfig::default()
+//!         .enable_object_detection(true)
+//!         .enable_captioning(true)
+//!         .enable_ocr(true)
+//! );
+//! 
+//! let image_path = "images/product_diagram.png";
+//! let analysis = processor.analyze_image(image_path).await?;
+//! 
+//! println!("Caption: {}", analysis.caption);
+//! println!("Detected {} objects", analysis.objects.len());
+//! println!("Extracted text: {}", analysis.text);
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Table Extraction and Analysis
+//! ```rust
+//! use rrag::multimodal::table_processor::{TableProcessor, TableConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let processor = TableProcessor::new(TableConfig::default());
+//! 
+//! // Extract tables from HTML
+//! let html = r#"<table><tr><th>Product</th><th>Revenue</th></tr>..."#;
+//! let tables = processor.extract_from_html(html).await?;
+//! 
+//! for table in tables {
+//!     println!("Table: {} rows, {} columns", 
+//!              table.rows.len(), 
+//!              table.headers.len());
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Chart Analysis
+//! ```rust
+//! use rrag::multimodal::chart_processor::{ChartProcessor, ChartConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let processor = ChartProcessor::new(ChartConfig::default());
+//! 
+//! let chart_path = "charts/sales_trend.png";
+//! let analysis = processor.analyze_chart(chart_path).await?;
+//! 
+//! println!("Chart type: {:?}", analysis.chart_type);
+//! println!("Description: {}", analysis.description);
+//! println!("Key insights: {:?}", analysis.insights);
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Multi-Modal Search
+//! ```rust
+//! use rrag::multimodal::retrieval::{MultiModalRetriever, SearchOptions};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let retriever = MultiModalRetriever::new().await?;
+//! 
+//! // Search across text, images, and tables
+//! let results = retriever.search_multi_modal(
+//!     "revenue trends Q4 2024",
+//!     SearchOptions::new()
+//!         .include_text(true)
+//!         .include_images(true)
+//!         .include_tables(true)
+//! ).await?;
+//! 
+//! for result in results {
+//!     match result.content_type {
+//!         ContentType::Text => println!("Text: {}", result.content),
+//!         ContentType::Image => println!("Image: {}", result.path),
+//!         ContentType::Table => println!("Table: {} rows", result.metadata["rows"]),
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ## Performance Considerations
+//! 
+//! - **Batch Processing**: Process multiple items together for efficiency
+//! - **Caching**: Cache embeddings and analysis results
+//! - **Parallel Processing**: Use multiple threads for CPU-intensive tasks
+//! - **GPU Acceleration**: Leverage CUDA for deep learning models (when available)
+//! - **Memory Management**: Stream large files to avoid memory issues
+//! 
+//! ## Model Integration
+//! 
+//! The module supports integration with various pre-trained models:
+//! 
+//! - **Vision Models**: CLIP, BLIP, ViT for image understanding
+//! - **OCR Models**: Tesseract, EasyOCR, TrOCR
+//! - **Layout Models**: LayoutLM, DiT for document layout
+//! - **Table Models**: TableNet, TableTransformer
+//! - **Chart Models**: ChartQA, PlotQA for chart understanding
 
 pub mod image_processor;
 pub mod table_processor;

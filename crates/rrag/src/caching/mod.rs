@@ -1,7 +1,302 @@
 //! # Intelligent Caching Layer
 //! 
-//! Multi-level caching system designed for RAG applications with semantic awareness,
-//! intelligent eviction policies, and performance optimization features.
+//! Enterprise-grade multi-level caching system designed specifically for RAG applications 
+//! with semantic awareness, intelligent eviction policies, and advanced performance 
+//! optimization features.
+//! 
+//! This module provides a comprehensive caching solution that understands the unique 
+//! characteristics of RAG workloads, including query similarity, embedding reuse,
+//! semantic relationships, and result patterns. It offers multiple cache layers 
+//! working together to minimize latency and computational overhead.
+//! 
+//! ## Key Features
+//! 
+//! - **Multi-Layer Architecture**: Query, embedding, semantic, and result caches
+//! - **Semantic Awareness**: Understanding query similarity and content relationships
+//! - **Intelligent Eviction**: Multiple policies (LRU, LFU, TTL, ARC, Semantic-aware)
+//! - **Persistence Support**: Durable caching across system restarts
+//! - **Performance Monitoring**: Comprehensive metrics and analytics
+//! - **Memory Management**: Automatic cleanup and pressure-based eviction
+//! - **Async Operations**: Non-blocking cache operations for high throughput
+//! 
+//! ## Architecture
+//! 
+//! The caching system consists of four specialized cache layers:
+//! 
+//! 1. **Query Cache**: Caches complete query-response pairs with similarity matching
+//! 2. **Embedding Cache**: Reuses expensive embedding computations
+//! 3. **Semantic Cache**: Groups semantically similar queries for broader cache hits
+//! 4. **Result Cache**: Caches search results for parameter combinations
+//! 
+//! ## Examples
+//! 
+//! ### Basic Cache Setup
+//! ```rust
+//! use rrag::caching::{CacheService, CacheConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let cache_config = CacheConfig::default()
+//!     .with_query_cache(true)
+//!     .with_embedding_cache(true)
+//!     .with_semantic_cache(true);
+//! 
+//! let mut cache = CacheService::new(cache_config)?;
+//! 
+//! // Cache will automatically optimize based on your RAG workload patterns
+//! println!("Cache initialized with {} layers", 4);
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Query Result Caching
+//! ```rust
+//! use rrag::caching::{QueryCacheEntry, CachedSearchResult};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
+//! let query = "What is machine learning?";
+//! 
+//! // Check cache first
+//! if let Some(cached_entry) = cache.get_query_results(query).await {
+//!     println!("Cache hit! Retrieved {} results", cached_entry.results.len());
+//!     return Ok(());
+//! }
+//! 
+//! // If not cached, perform search and cache results
+//! let search_results = vec![
+//!     CachedSearchResult {
+//!         document_id: "doc_1".to_string(),
+//!         content: "Machine learning is a subset of AI...".to_string(),
+//!         score: 0.95,
+//!         rank: 1,
+//!         metadata: std::collections::HashMap::new(),
+//!     }
+//! ];
+//! 
+//! let cache_entry = QueryCacheEntry {
+//!     query: query.to_string(),
+//!     embedding_hash: "hash123".to_string(),
+//!     results: search_results,
+//!     generated_answer: Some("ML is a field of AI...".to_string()),
+//!     metadata: rrag::caching::CacheEntryMetadata::new(),
+//! };
+//! 
+//! cache.cache_query_results(query.to_string(), cache_entry).await?;
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Embedding Caching for Performance
+//! ```rust
+//! # async fn example() -> rrag::RragResult<()> {
+//! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
+//! let text = "Advanced machine learning techniques";
+//! let model = "sentence-transformers/all-MiniLM-L6-v2";
+//! 
+//! // Check if embedding is already computed
+//! if let Some(cached_embedding) = cache.get_embedding(text, model).await {
+//!     println!("Using cached embedding of dimension {}", cached_embedding.len());
+//! } else {
+//!     // Compute embedding (expensive operation)
+//!     let embedding = compute_embedding(text, model).await?;
+//!     
+//!     // Cache for future use
+//!     cache.cache_embedding(
+//!         text.to_string(),
+//!         model.to_string(), 
+//!         embedding
+//!     ).await?;
+//!     
+//!     println!("Computed and cached new embedding");
+//! }
+//! 
+//! # async fn compute_embedding(text: &str, model: &str) -> rrag::RragResult<Vec<f32>> {
+//! #     Ok(vec![0.1, 0.2, 0.3]) // Mock embedding
+//! # }
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Semantic Similarity Caching
+//! ```rust
+//! use rrag::caching::{SemanticCacheEntry, SimilarEntry};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
+//! let similar_queries = [
+//!     "What is artificial intelligence?",
+//!     "Explain AI concepts",
+//!     "Define artificial intelligence",
+//! ];
+//! 
+//! // Check for semantically similar cached results
+//! for query in &similar_queries {
+//!     if let Some(semantic_entry) = cache.get_semantic_results(query).await {
+//!         println!("Found semantic match for: {}", query);
+//!         println!("Representative: {}", semantic_entry.representative);
+//!         println!("Similar entries: {}", semantic_entry.similar_entries.len());
+//!         return Ok(());
+//!     }
+//! }
+//! 
+//! // Create semantic cache entry for related queries
+//! let semantic_entry = SemanticCacheEntry {
+//!     representative: "What is artificial intelligence?".to_string(),
+//!     cluster_id: Some(1),
+//!     similar_entries: vec![
+//!         SimilarEntry {
+//!             text: "Explain AI concepts".to_string(),
+//!             similarity: 0.92,
+//!             added_at: std::time::SystemTime::now(),
+//!         },
+//!         SimilarEntry {
+//!             text: "Define artificial intelligence".to_string(),
+//!             similarity: 0.89,
+//!             added_at: std::time::SystemTime::now(),
+//!         },
+//!     ],
+//!     results: vec![], // Shared results for all similar queries
+//!     metadata: rrag::caching::CacheEntryMetadata::new(),
+//! };
+//! 
+//! cache.cache_semantic_results(
+//!     "ai_concepts_cluster".to_string(), 
+//!     semantic_entry
+//! ).await?;
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Advanced Cache Configuration
+//! ```rust
+//! use rrag::caching::{
+//!     CacheConfig, QueryCacheConfig, EmbeddingCacheConfig, 
+//!     EvictionPolicy, PersistenceConfig, PersistenceFormat
+//! };
+//! use std::time::Duration;
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let advanced_config = CacheConfig {
+//!     enabled: true,
+//!     query_cache: QueryCacheConfig {
+//!         enabled: true,
+//!         max_size: 5000,
+//!         ttl: Duration::from_secs(7200), // 2 hours
+//!         eviction_policy: EvictionPolicy::SemanticAware,
+//!         similarity_threshold: 0.92,
+//!     },
+//!     embedding_cache: EmbeddingCacheConfig {
+//!         enabled: true,
+//!         max_size: 50000,
+//!         ttl: Duration::from_secs(86400), // 24 hours
+//!         eviction_policy: EvictionPolicy::LFU,
+//!         compression_enabled: true,
+//!     },
+//!     persistence: PersistenceConfig {
+//!         enabled: true,
+//!         storage_path: "/data/rag_cache".to_string(),
+//!         auto_save_interval: Duration::from_secs(300),
+//!         format: PersistenceFormat::MessagePack,
+//!     },
+//!     ..Default::default()
+//! };
+//! 
+//! let cache = CacheService::new(advanced_config)?;
+//! println!("Advanced cache configured with persistence and compression");
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Cache Performance Monitoring
+//! ```rust
+//! # async fn example() -> rrag::RragResult<()> {
+//! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
+//! // Get comprehensive cache metrics
+//! let metrics = cache.get_metrics();
+//! 
+//! println!("📊 Cache Performance Report");
+//! println!("Query Cache: {:.1}% hit rate, {} entries", 
+//!          metrics.query_cache.hit_rate * 100.0,
+//!          metrics.query_cache.total_entries);
+//! 
+//! println!("Embedding Cache: {:.1}% hit rate, {:.1}MB memory", 
+//!          metrics.embedding_cache.hit_rate * 100.0,
+//!          metrics.embedding_cache.memory_usage as f32 / 1024.0 / 1024.0);
+//! 
+//! println!("Semantic Cache: {:.1}% hit rate, {} evictions", 
+//!          metrics.semantic_cache.hit_rate * 100.0,
+//!          metrics.semantic_cache.evictions);
+//! 
+//! println!("Overall Efficiency: {:.1}%, Time Saved: {:.1}ms",
+//!          metrics.overall.efficiency_score * 100.0,
+//!          metrics.overall.time_saved_ms);
+//! 
+//! // Performance optimization based on metrics
+//! if metrics.overall.memory_pressure > 0.8 {
+//!     println!("⚠️  High memory pressure detected, triggering cleanup");
+//!     cache.maintenance().await?;
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ## Cache Eviction Policies
+//! 
+//! ### LRU (Least Recently Used)
+//! Best for: General-purpose caching with temporal locality
+//! - Evicts items that haven't been accessed recently
+//! - Good memory efficiency
+//! - Simple and fast
+//! 
+//! ### LFU (Least Frequently Used)
+//! Best for: Embedding caches where popular items should stay
+//! - Evicts items with lowest access frequency
+//! - Excellent for reusable computations
+//! - Handles long-term access patterns
+//! 
+//! ### TTL (Time-To-Live)
+//! Best for: Fresh data requirements
+//! - Evicts items after fixed time period
+//! - Ensures data freshness
+//! - Predictable memory usage
+//! 
+//! ### Semantic-Aware
+//! Best for: RAG-specific query patterns
+//! - Considers semantic similarity in eviction decisions
+//! - Maintains representative queries from clusters
+//! - Optimizes for query pattern diversity
+//! 
+//! ## Performance Optimization Tips
+//! 
+//! 1. **Tune Cache Sizes**: Monitor hit rates and adjust max_size accordingly
+//! 2. **Enable Compression**: For embedding caches with large vectors
+//! 3. **Use Persistence**: For frequently reused embeddings across sessions
+//! 4. **Semantic Clustering**: Enable for diverse query workloads
+//! 5. **Async Operations**: Enable for high-throughput applications
+//! 6. **Memory Monitoring**: Set appropriate pressure thresholds
+//! 
+//! ## Integration with RAG Systems
+//! 
+//! ```rust
+//! use rrag::{RragSystemBuilder, caching::CacheConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let rag_system = RragSystemBuilder::new()
+//!     .with_caching(
+//!         CacheConfig::production()
+//!             .with_semantic_awareness(true)
+//!             .with_persistence(true)
+//!             .with_intelligent_eviction(true)
+//!     )
+//!     .build()
+//!     .await?;
+//! 
+//! // Cache automatically optimizes based on your query patterns
+//! let results = rag_system.search("machine learning applications", Some(10)).await?;
+//! // Subsequent similar queries will benefit from semantic caching
+//! # Ok(())
+//! # }
+//! ```
 
 pub mod cache_core;
 pub mod semantic_cache;

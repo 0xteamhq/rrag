@@ -1,8 +1,391 @@
 //! # RRAG Evaluation Framework
 //! 
-//! Comprehensive evaluation framework for RAG systems based on RAGAS metrics
-//! and additional custom evaluation methods. Provides both component-level
-//! and end-to-end evaluation capabilities.
+//! Enterprise-grade evaluation framework for RAG systems providing comprehensive
+//! assessment capabilities based on RAGAS metrics, custom evaluation methods,
+//! and industry-standard benchmarks.
+//! 
+//! This module offers a complete evaluation suite for RAG systems, enabling
+//! both component-level analysis (retrieval, generation) and end-to-end system
+//! evaluation. It supports multiple evaluation methodologies, automated benchmarking,
+//! and detailed performance analytics.
+//! 
+//! ## Key Features
+//! 
+//! - **RAGAS Integration**: Industry-standard RAG evaluation metrics
+//! - **Multi-Level Evaluation**: Component and system-level assessments
+//! - **Automated Benchmarking**: Built-in benchmark datasets and evaluation
+//! - **Custom Metrics**: Extensible framework for domain-specific evaluation
+//! - **Performance Analytics**: Detailed insights and recommendations
+//! - **Export Capabilities**: Multiple output formats (JSON, CSV, HTML, Markdown)
+//! - **Real-time Monitoring**: Live evaluation during system operation
+//! 
+//! ## Evaluation Types
+//! 
+//! 1. **RAGAS Metrics**: Faithfulness, Answer Relevancy, Context Precision, Context Recall
+//! 2. **Retrieval Evaluation**: Precision@K, Recall@K, MRR, NDCG
+//! 3. **Generation Evaluation**: BLEU, ROUGE, BERTScore, Semantic similarity
+//! 4. **End-to-End Evaluation**: Complete pipeline assessment
+//! 5. **Benchmark Evaluation**: Performance on standard datasets
+//! 
+//! ## Examples
+//! 
+//! ### Basic Evaluation Setup
+//! ```rust
+//! use rrag::evaluation::{
+//!     EvaluationService, EvaluationConfig, EvaluationType,
+//!     EvaluationData, TestQuery, GroundTruth
+//! };
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let config = EvaluationConfig {
+//!     enabled_evaluations: vec![
+//!         EvaluationType::Ragas,
+//!         EvaluationType::Retrieval,
+//!         EvaluationType::Generation,
+//!     ],
+//!     ..Default::default()
+//! };
+//! 
+//! let mut evaluator = EvaluationService::new(config);
+//! println!("📊 Evaluation service initialized with {} evaluators", 3);
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Running Comprehensive Evaluation
+//! ```rust
+//! use std::collections::HashMap;
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! # let mut evaluator = rrag::evaluation::EvaluationService::new(rrag::evaluation::EvaluationConfig::default());
+//! // Prepare test data
+//! let test_queries = vec![
+//!     rrag::evaluation::TestQuery {
+//!         id: "q1".to_string(),
+//!         query: "What is machine learning?".to_string(),
+//!         query_type: Some("factual".to_string()),
+//!         metadata: HashMap::new(),
+//!     },
+//!     rrag::evaluation::TestQuery {
+//!         id: "q2".to_string(),
+//!         query: "Explain neural networks in detail".to_string(),
+//!         query_type: Some("conceptual".to_string()),
+//!         metadata: HashMap::new(),
+//!     },
+//! ];
+//! 
+//! let ground_truth = vec![
+//!     rrag::evaluation::GroundTruth {
+//!         query_id: "q1".to_string(),
+//!         relevant_docs: vec!["doc_ml_intro".to_string(), "doc_ml_basics".to_string()],
+//!         expected_answer: Some(
+//!             "Machine learning is a subset of AI that enables computers to learn...".to_string()
+//!         ),
+//!         relevance_judgments: [("doc_ml_intro".to_string(), 1.0)].iter().cloned().collect(),
+//!         metadata: HashMap::new(),
+//!     },
+//! ];
+//! 
+//! let evaluation_data = rrag::evaluation::EvaluationData {
+//!     queries: test_queries,
+//!     ground_truth,
+//!     system_responses: vec![], // Would be populated with actual system responses
+//!     context: HashMap::new(),
+//! };
+//! 
+//! // Run evaluation
+//! let results = evaluator.evaluate(evaluation_data).await?;
+//! 
+//! for (eval_type, result) in results {
+//!     println!("🏆 {:?} Evaluation Results:", eval_type);
+//!     for (metric, score) in result.overall_scores {
+//!         println!("  {}: {:.4}", metric, score);
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### RAGAS Evaluation
+//! ```rust
+//! use rrag::evaluation::{
+//!     ragas::{RagasEvaluator, RagasConfig, RagasMetric},
+//!     SystemResponse, RetrievedDocument, SystemTiming
+//! };
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let ragas_config = RagasConfig {
+//!     enabled_metrics: vec![
+//!         RagasMetric::Faithfulness,
+//!         RagasMetric::AnswerRelevancy,
+//!         RagasMetric::ContextPrecision,
+//!         RagasMetric::ContextRecall,
+//!     ],
+//!     ..Default::default()
+//! };
+//! 
+//! let ragas_evaluator = RagasEvaluator::new(ragas_config);
+//! 
+//! // Prepare system response for evaluation
+//! let system_response = SystemResponse {
+//!     query_id: "q1".to_string(),
+//!     retrieved_docs: vec![
+//!         RetrievedDocument {
+//!             doc_id: "doc_1".to_string(),
+//!             content: "Machine learning is a method of data analysis...".to_string(),
+//!             score: 0.95,
+//!             rank: 1,
+//!             metadata: HashMap::new(),
+//!         }
+//!     ],
+//!     generated_answer: Some(
+//!         "Machine learning is a subset of artificial intelligence...".to_string()
+//!     ),
+//!     timing: SystemTiming {
+//!         total_time_ms: 250.0,
+//!         retrieval_time_ms: 120.0,
+//!         generation_time_ms: Some(130.0),
+//!         reranking_time_ms: None,
+//!     },
+//!     metadata: HashMap::new(),
+//! };
+//! 
+//! println!("📈 RAGAS evaluation completed with {} metrics", 4);
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Retrieval-Specific Evaluation
+//! ```rust
+//! use rrag::evaluation::retrieval_eval::{
+//!     RetrievalEvaluator, RetrievalEvalConfig, RetrievalMetric
+//! };
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let retrieval_config = RetrievalEvalConfig {
+//!     metrics: vec![
+//!         RetrievalMetric::PrecisionAtK(10),
+//!         RetrievalMetric::RecallAtK(10),
+//!         RetrievalMetric::MeanReciprocalRank,
+//!         RetrievalMetric::NDCG(10),
+//!     ],
+//!     k_values: vec![1, 5, 10, 20],
+//!     ..Default::default()
+//! };
+//! 
+//! let retrieval_evaluator = RetrievalEvaluator::new(retrieval_config);
+//! 
+//! // Results will include:
+//! // - Precision@1, @5, @10, @20
+//! // - Recall@1, @5, @10, @20  
+//! // - Mean Reciprocal Rank
+//! // - Normalized Discounted Cumulative Gain
+//! 
+//! println!("🏁 Retrieval evaluation configured for multiple K values");
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Generation Quality Evaluation
+//! ```rust
+//! use rrag::evaluation::generation_eval::{
+//!     GenerationEvaluator, GenerationEvalConfig, GenerationMetric
+//! };
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let generation_config = GenerationEvalConfig {
+//!     metrics: vec![
+//!         GenerationMetric::BLEU,
+//!         GenerationMetric::ROUGE("rouge-l".to_string()),
+//!         GenerationMetric::BERTScore,
+//!         GenerationMetric::SemanticSimilarity,
+//!     ],
+//!     reference_free: false,
+//!     ..Default::default()
+//! };
+//! 
+//! let generation_evaluator = GenerationEvaluator::new(generation_config);
+//! 
+//! // Evaluates generated answers against reference answers
+//! // Provides detailed analysis of:
+//! // - Lexical similarity (BLEU, ROUGE)
+//! // - Semantic similarity (BERTScore, embeddings)
+//! // - Factual accuracy
+//! // - Fluency and coherence
+//! 
+//! println!("✍️ Generation evaluation ready for quality assessment");
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### End-to-End System Evaluation
+//! ```rust
+//! use rrag::evaluation::end_to_end::{
+//!     EndToEndEvaluator, EndToEndConfig, E2EMetric
+//! };
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let e2e_config = EndToEndConfig {
+//!     metrics: vec![
+//!         E2EMetric::OverallAccuracy,
+//!         E2EMetric::ResponseTime,
+//!         E2EMetric::UserSatisfaction,
+//!         E2EMetric::CostEfficiency,
+//!     ],
+//!     include_ablation_study: true,
+//!     ..Default::default()
+//! };
+//! 
+//! let e2e_evaluator = EndToEndEvaluator::new(e2e_config);
+//! 
+//! // Comprehensive system evaluation including:
+//! // - End-to-end accuracy
+//! // - Performance benchmarks
+//! // - Resource utilization
+//! // - Error analysis
+//! // - Component contribution analysis
+//! 
+//! println!("🎆 End-to-end evaluation configured for complete system assessment");
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Automated Benchmarking
+//! ```rust
+//! use rrag::evaluation::benchmarks::{
+//!     BenchmarkEvaluator, BenchmarkSuite, BenchmarkDataset
+//! };
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let benchmark_evaluator = BenchmarkEvaluator::new();
+//! 
+//! let benchmark_suite = BenchmarkSuite {
+//!     datasets: vec![
+//!         BenchmarkDataset::MS_MARCO,
+//!         BenchmarkDataset::Natural_Questions,
+//!         BenchmarkDataset::SQuAD_2_0,
+//!         BenchmarkDataset::BEIR,
+//!     ],
+//!     custom_datasets: vec![], // Add domain-specific datasets
+//!     evaluation_mode: "comprehensive".to_string(),
+//! };
+//! 
+//! // Run against standard benchmarks
+//! // let results = benchmark_evaluator.run_benchmark_suite(benchmark_suite).await?;
+//! 
+//! println!("📅 Benchmark evaluation ready with {} standard datasets", 4);
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Exporting Evaluation Results
+//! ```rust
+//! use rrag::evaluation::{ExportFormat, OutputConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! # let evaluator = rrag::evaluation::EvaluationService::new(rrag::evaluation::EvaluationConfig::default());
+//! # let results = std::collections::HashMap::new(); // Mock results
+//! // Configure export options
+//! let output_config = OutputConfig {
+//!     export_formats: vec![
+//!         ExportFormat::Json,    // Machine-readable results
+//!         ExportFormat::Html,    // Interactive reports
+//!         ExportFormat::Csv,     // Spreadsheet analysis
+//!         ExportFormat::Markdown // Documentation
+//!     ],
+//!     output_dir: "./evaluation_results".to_string(),
+//!     include_detailed_logs: true,
+//!     generate_visualizations: true,
+//! };
+//! 
+//! // Export comprehensive results
+//! evaluator.export_results(&results).await?;
+//! 
+//! println!("📊 Results exported in multiple formats:");
+//! println!("  • evaluation_results.json - Complete data");
+//! println!("  • evaluation_report.html - Interactive dashboard");
+//! println!("  • evaluation_summary.csv - Quick analysis");
+//! println!("  • evaluation_report.md - Documentation");
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Real-time Evaluation Monitoring
+//! ```rust
+//! # async fn example() -> rrag::RragResult<()> {
+//! # let evaluator = rrag::evaluation::EvaluationService::new(rrag::evaluation::EvaluationConfig::default());
+//! // Monitor evaluation metrics in real-time
+//! let metrics = evaluator.get_metrics()?;
+//! 
+//! for (metric_name, records) in metrics {
+//!     let latest = records.last().unwrap();
+//!     match metric_name.as_str() {
+//!         "evaluation_time_ms" => {
+//!             if latest.value > 5000.0 {
+//!                 println!("⚠️  Evaluation taking longer than expected: {:.1}ms", latest.value);
+//!             }
+//!         }
+//!         "evaluation_errors" => {
+//!             if latest.value > 0.0 {
+//!                 println!("❌ Evaluation errors detected: {}", latest.value);
+//!             }
+//!         }
+//!         _ => {
+//!             println!("📈 {}: {:.3}", metric_name, latest.value);
+//!         }
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ## Evaluation Best Practices
+//! 
+//! ### Dataset Preparation
+//! - Use diverse, representative test queries
+//! - Include edge cases and challenging examples
+//! - Ensure high-quality ground truth annotations
+//! - Balance different query types and complexities
+//! 
+//! ### Metric Selection
+//! - Choose metrics aligned with your use case
+//! - Combine automatic and human evaluation
+//! - Consider both accuracy and efficiency metrics
+//! - Include domain-specific evaluation criteria
+//! 
+//! ### Performance Optimization
+//! - Run evaluations in batch for efficiency
+//! - Use parallel evaluation when possible
+//! - Cache expensive computations
+//! - Monitor resource usage during evaluation
+//! 
+//! ### Result Interpretation
+//! - Consider statistical significance
+//! - Analyze results by query type and complexity
+//! - Look for systematic errors and patterns
+//! - Compare against established baselines
+//! 
+//! ## Integration with RAG Systems
+//! 
+//! ```rust
+//! use rrag::{RragSystemBuilder, evaluation::EvaluationConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let rag_system = RragSystemBuilder::new()
+//!     .with_evaluation(
+//!         EvaluationConfig::production()
+//!             .with_ragas_metrics(true)
+//!             .with_real_time_monitoring(true)
+//!             .with_automated_benchmarking(true)
+//!     )
+//!     .build()
+//!     .await?;
+//! 
+//! // System automatically evaluates performance and provides insights
+//! let results = rag_system.search_with_evaluation("query", Some(10)).await?;
+//! # Ok(())
+//! # }
+//! ```
 
 pub mod ragas;
 pub mod retrieval_eval;

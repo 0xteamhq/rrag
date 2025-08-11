@@ -39,6 +39,22 @@ path = "observability_dashboard_demo.rs"
 name = "simple_observability_demo"
 path = "simple_observability_demo.rs"
 
+[[bin]]
+name = "multimodal_rag_demo"
+path = "multimodal_rag_demo.rs"
+
+[[bin]]
+name = "caching_performance_demo"
+path = "caching_performance_demo.rs"
+
+[[bin]]
+name = "production_deployment_demo"
+path = "production_deployment_demo.rs"
+
+[[bin]]
+name = "getting_started_guide"
+path = "getting_started_guide.rs"
+
 [features]
 default = ["rsllm-client"]
 rsllm-client = ["rrag/rsllm-client"]

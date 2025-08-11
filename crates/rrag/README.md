@@ -1,8 +1,9 @@
-# RRAG - Rust RAG Framework
+# RRAG - Enterprise Rust RAG Framework
 
 [![Crates.io](https://img.shields.io/crates/v/rrag.svg)](https://crates.io/crates/rrag)
 [![Documentation](https://docs.rs/rrag/badge.svg)](https://docs.rs/rrag)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://img.shields.io/crates/d/rrag.svg)](https://crates.io/crates/rrag)
 [![Rust](https://img.shields.io/badge/rust-1.70+-blue.svg)](https://www.rust-lang.org)
 
 **RRAG** (Rust RAG) is a high-performance, enterprise-ready framework for building Retrieval-Augmented Generation applications in Rust. Built from the ground up with safety, performance, and developer experience in mind.

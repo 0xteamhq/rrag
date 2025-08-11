@@ -1,7 +1,206 @@
-//! # Observability System for RRAG
+//! # RRAG Observability System
 //! 
-//! Comprehensive monitoring, metrics, and dashboard system for RRAG framework.
-//! Provides real-time visibility into system performance, health, and usage patterns.
+//! Enterprise-grade observability and monitoring for production RAG deployments.
+//! 
+//! This module provides comprehensive monitoring, metrics collection, alerting,
+//! and visualization capabilities to ensure your RAG system operates reliably
+//! at scale. It includes real-time dashboards, intelligent alerting, performance
+//! profiling, and data export capabilities.
+//! 
+//! ## Features
+//! 
+//! - **Metrics Collection**: Prometheus-compatible metrics with custom dashboards
+//! - **Real-time Monitoring**: Live system health and performance tracking
+//! - **Intelligent Alerting**: Smart alerts with multiple notification channels
+//! - **Performance Profiling**: Bottleneck detection and optimization insights
+//! - **Health Monitoring**: Component-level health checks and diagnostics
+//! - **Log Aggregation**: Structured logging with search and analysis
+//! - **Data Export**: Export metrics and logs for external analysis
+//! - **Data Retention**: Configurable retention policies for long-term storage
+//! 
+//! ## Quick Start
+//! 
+//! ### Basic Observability Setup
+//! ```rust
+//! use rrag::observability::{ObservabilitySystem, ObservabilityConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let observability = ObservabilitySystem::new(
+//!     ObservabilityConfig::default()
+//!         .with_metrics(true)
+//!         .with_monitoring(true)
+//!         .with_alerting(true)
+//!         .with_dashboard(true)
+//! ).await?;
+//! 
+//! // Start the observability system
+//! observability.start().await?;
+//! 
+//! // Access components
+//! let metrics = observability.metrics();
+//! let monitoring = observability.monitoring();
+//! let alerting = observability.alerting();
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Custom Metrics Collection
+//! ```rust
+//! use rrag::observability::{MetricsCollector, MetricType};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let metrics = MetricsCollector::new();
+//! 
+//! // Counter metrics
+//! metrics.inc_counter("requests_total").await?;
+//! metrics.inc_counter_by("documents_processed", 10).await?;
+//! 
+//! // Gauge metrics
+//! metrics.set_gauge("active_users", 150.0).await?;
+//! metrics.set_gauge("memory_usage_mb", 512.0).await?;
+//! 
+//! // Histogram metrics for latency
+//! metrics.observe_histogram("request_duration_ms", 45.2).await?;
+//! 
+//! // Timer metrics
+//! let timer = metrics.start_timer("query_processing_time");
+//! // ... do work ...
+//! timer.stop().await?;
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Alert Configuration
+//! ```rust
+//! use rrag::observability::{AlertManager, AlertRule, AlertSeverity};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let alert_manager = AlertManager::new();
+//! 
+//! // High latency alert
+//! let latency_alert = AlertRule::new("high_latency")
+//!     .condition("avg(request_duration_ms) > 1000")
+//!     .severity(AlertSeverity::High)
+//!     .description("Query latency is too high")
+//!     .notification_channels(vec!["slack", "email"])
+//!     .cooldown_minutes(5);
+//! 
+//! alert_manager.add_rule(latency_alert).await?;
+//! 
+//! // Error rate alert
+//! let error_alert = AlertRule::new("high_error_rate")
+//!     .condition("rate(error_count) > 0.05")
+//!     .severity(AlertSeverity::Critical)
+//!     .description("Error rate exceeded 5%")
+//!     .notification_channels(vec!["pagerduty", "slack"]);
+//! 
+//! alert_manager.add_rule(error_alert).await?;
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Health Monitoring
+//! ```rust
+//! use rrag::observability::{HealthMonitor, HealthCheck};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let health_monitor = HealthMonitor::new();
+//! 
+//! // Add custom health checks
+//! health_monitor.add_check(
+//!     "database", 
+//!     Box::new(|_| async { 
+//!         // Check database connectivity
+//!         Ok(true) 
+//!     })
+//! ).await?;
+//! 
+//! health_monitor.add_check(
+//!     "embedding_service",
+//!     Box::new(|_| async {
+//!         // Check embedding service
+//!         Ok(true)
+//!     })
+//! ).await?;
+//! 
+//! // Get overall health status
+//! let status = health_monitor.check_all().await?;
+//! println!("System health: {:?}", status.overall_status);
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Performance Profiling
+//! ```rust
+//! use rrag::observability::{PerformanceProfiler, ProfileConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let profiler = PerformanceProfiler::new(ProfileConfig::default());
+//! 
+//! // Start profiling a specific operation
+//! let profile_id = profiler.start_profile("document_processing").await?;
+//! 
+//! // ... perform work ...
+//! 
+//! let profile = profiler.stop_profile(profile_id).await?;
+//! 
+//! // Analyze bottlenecks
+//! let bottlenecks = profiler.analyze_bottlenecks(5).await?;
+//! for bottleneck in bottlenecks.bottlenecks {
+//!     println!("Bottleneck: {} took {:.2}ms", 
+//!              bottleneck.operation, 
+//!              bottleneck.average_duration_ms);
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ### Dashboard and Visualization
+//! ```rust
+//! use rrag::observability::{DashboardServer, DashboardConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let dashboard = DashboardServer::new(
+//!     DashboardConfig::default()
+//!         .with_port(3000)
+//!         .with_realtime_updates(true)
+//!         .with_custom_charts(vec![
+//!             "query_latency_histogram",
+//!             "documents_processed_rate",
+//!             "error_rate_by_component"
+//!         ])
+//! );
+//! 
+//! // Start dashboard server
+//! dashboard.start().await?;
+//! println!("Dashboard available at: http://localhost:3000");
+//! # Ok(())
+//! # }
+//! ```
+//! 
+//! ## Integration Examples
+//! 
+//! ### With RAG System
+//! ```rust
+//! use rrag::{RragSystemBuilder, observability::ObservabilityConfig};
+//! 
+//! # async fn example() -> rrag::RragResult<()> {
+//! let rag = RragSystemBuilder::new()
+//!     .with_observability(
+//!         ObservabilityConfig::production()
+//!             .with_prometheus_endpoint(true)
+//!             .with_health_checks(true)
+//!             .with_performance_profiling(true)
+//!     )
+//!     .build()
+//!     .await?;
+//! 
+//! // System automatically reports metrics
+//! let results = rag.search("query", Some(10)).await?;
+//! // Metrics like query_count, search_latency, results_returned are automatic
+//! # Ok(())
+//! # }
+//! ```
 
 pub mod metrics;
 pub mod monitoring;
