@@ -1,5 +1,5 @@
 //! # RSLLM Error Handling
-//! 
+//!
 //! Comprehensive error types for the RSLLM client library.
 //! Designed for precise error categorization and helpful debugging.
 
@@ -13,7 +13,7 @@ pub type RsllmResult<T> = Result<T, RsllmError>;
 pub enum RsllmError {
     /// Configuration errors
     #[error("Configuration error: {message}")]
-    Configuration { 
+    Configuration {
         message: String,
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
@@ -21,7 +21,7 @@ pub enum RsllmError {
 
     /// Provider-specific errors
     #[error("Provider error ({provider}): {message}")]
-    Provider { 
+    Provider {
         provider: String,
         message: String,
         #[source]
@@ -30,7 +30,7 @@ pub enum RsllmError {
 
     /// HTTP/Network errors
     #[error("Network error: {message}")]
-    Network { 
+    Network {
         message: String,
         status_code: Option<u16>,
         #[source]
@@ -39,20 +39,18 @@ pub enum RsllmError {
 
     /// Authentication errors
     #[error("Authentication error: {message}")]
-    Authentication { 
-        message: String,
-    },
+    Authentication { message: String },
 
     /// Rate limiting errors
     #[error("Rate limit exceeded: {message}")]
-    RateLimit { 
+    RateLimit {
         message: String,
         retry_after: Option<std::time::Duration>,
     },
 
     /// API errors from providers
     #[error("API error ({provider}): {message} (code: {code})")]
-    Api { 
+    Api {
         provider: String,
         message: String,
         code: String,
@@ -62,7 +60,7 @@ pub enum RsllmError {
 
     /// Serialization/Deserialization errors
     #[error("Serialization error: {message}")]
-    Serialization { 
+    Serialization {
         message: String,
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
@@ -70,7 +68,7 @@ pub enum RsllmError {
 
     /// Streaming errors
     #[error("Streaming error: {message}")]
-    Streaming { 
+    Streaming {
         message: String,
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
@@ -78,29 +76,19 @@ pub enum RsllmError {
 
     /// Timeout errors
     #[error("Operation timed out after {timeout_ms}ms: {operation}")]
-    Timeout { 
-        operation: String,
-        timeout_ms: u64,
-    },
+    Timeout { operation: String, timeout_ms: u64 },
 
     /// Validation errors
     #[error("Validation error: {field} - {message}")]
-    Validation { 
-        field: String,
-        message: String,
-    },
+    Validation { field: String, message: String },
 
     /// Resource not found errors
     #[error("Resource not found: {resource}")]
-    NotFound { 
-        resource: String,
-    },
+    NotFound { resource: String },
 
     /// Invalid state errors
     #[error("Invalid state: {message}")]
-    InvalidState { 
-        message: String,
-    },
+    InvalidState { message: String },
 }
 
 impl RsllmError {
@@ -124,10 +112,7 @@ impl RsllmError {
     }
 
     /// Create a provider error
-    pub fn provider(
-        provider: impl Into<String>,
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn provider(provider: impl Into<String>, message: impl Into<String>) -> Self {
         Self::Provider {
             provider: provider.into(),
             message: message.into(),
@@ -158,10 +143,7 @@ impl RsllmError {
     }
 
     /// Create a network error with status code
-    pub fn network_with_status(
-        message: impl Into<String>,
-        status_code: u16,
-    ) -> Self {
+    pub fn network_with_status(message: impl Into<String>, status_code: u16) -> Self {
         Self::Network {
             message: message.into(),
             status_code: Some(status_code),
@@ -309,10 +291,7 @@ impl From<reqwest::Error> for RsllmError {
         } else if err.is_connect() {
             Self::network(format!("Connection error: {}", err))
         } else if let Some(status) = err.status() {
-            Self::network_with_status(
-                format!("HTTP error: {}", err),
-                status.as_u16(),
-            )
+            Self::network_with_status(format!("HTTP error: {}", err), status.as_u16())
         } else {
             Self::network(format!("Request error: {}", err))
         }

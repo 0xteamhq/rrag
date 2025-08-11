@@ -1,5 +1,5 @@
 //! # RRAG Streaming System
-//! 
+//!
 //! Real-time streaming responses using Rust's async ecosystem.
 //! Leverages tokio-stream and futures for efficient token streaming.
 
@@ -16,16 +16,16 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 pub struct StreamToken {
     /// Token content
     pub content: String,
-    
+
     /// Token type (text, tool_call, metadata, etc.)
     pub token_type: TokenType,
-    
+
     /// Position in the stream
     pub position: usize,
-    
+
     /// Whether this is the final token
     pub is_final: bool,
-    
+
     /// Token metadata
     pub metadata: Option<serde_json::Value>,
 }
@@ -72,19 +72,19 @@ impl StreamToken {
 pub enum TokenType {
     /// Regular text content
     Text,
-    
+
     /// Tool call information
     ToolCall,
-    
+
     /// Tool result
     ToolResult,
-    
+
     /// Metadata/system information
     Metadata,
-    
+
     /// Stream end marker
     End,
-    
+
     /// Error token
     Error,
 }
@@ -101,9 +101,7 @@ impl StreamingResponse {
         let tokens: Vec<_> = text
             .split_whitespace()
             .enumerate()
-            .map(|(i, word)| {
-                Ok(StreamToken::text(format!("{} ", word), i))
-            })
+            .map(|(i, word)| Ok(StreamToken::text(format!("{} ", word), i)))
             .collect();
 
         // Add final token
@@ -112,7 +110,7 @@ impl StreamingResponse {
         tokens.push(Ok(StreamToken::final_token(final_pos)));
 
         let stream = futures::stream::iter(tokens);
-        
+
         Self {
             stream: Box::pin(stream),
         }
@@ -137,7 +135,7 @@ impl StreamingResponse {
     /// Collect all tokens into a single string
     pub async fn collect_text(mut self) -> RragResult<String> {
         let mut result = String::new();
-        
+
         while let Some(token_result) = self.stream.next().await {
             match token_result? {
                 token if token.token_type == TokenType::Text => {
@@ -147,7 +145,7 @@ impl StreamingResponse {
                 _ => {} // Skip non-text tokens
             }
         }
-        
+
         Ok(result.trim().to_string())
     }
 
@@ -165,9 +163,7 @@ impl StreamingResponse {
         F: Fn(StreamToken) -> T + Send + 'static,
         T: Send + 'static,
     {
-        let mapped_stream = self.stream.map(move |result| {
-            result.map(&f)
-        });
+        let mapped_stream = self.stream.map(move |result| result.map(&f));
 
         MappedStream {
             stream: Box::pin(mapped_stream),
@@ -232,12 +228,12 @@ impl TokenStreamBuilder {
     /// Create a new token stream builder
     pub fn new() -> (Self, mpsc::UnboundedReceiver<RragResult<StreamToken>>) {
         let (sender, receiver) = mpsc::unbounded_channel();
-        
+
         let builder = Self {
             sender,
             position: 0,
         };
-        
+
         (builder, receiver)
     }
 
@@ -245,11 +241,11 @@ impl TokenStreamBuilder {
     pub fn send_text(&mut self, content: impl Into<String>) -> RragResult<()> {
         let token = StreamToken::text(content, self.position);
         self.position += 1;
-        
+
         self.sender
             .send(Ok(token))
             .map_err(|_| RragError::stream("token_builder", "Channel closed"))?;
-            
+
         Ok(())
     }
 
@@ -257,11 +253,11 @@ impl TokenStreamBuilder {
     pub fn send_tool_call(&mut self, content: impl Into<String>) -> RragResult<()> {
         let token = StreamToken::tool_call(content, self.position);
         self.position += 1;
-        
+
         self.sender
             .send(Ok(token))
             .map_err(|_| RragError::stream("token_builder", "Channel closed"))?;
-            
+
         Ok(())
     }
 
@@ -270,21 +266,21 @@ impl TokenStreamBuilder {
         self.sender
             .send(Err(error))
             .map_err(|_| RragError::stream("token_builder", "Channel closed"))?;
-            
+
         Ok(())
     }
 
     /// Finalize the stream
     pub fn finish(self) -> RragResult<()> {
         let final_token = StreamToken::final_token(self.position);
-        
+
         self.sender
             .send(Ok(final_token))
             .map_err(|_| RragError::stream("token_builder", "Channel closed"))?;
-            
+
         // Close the channel
         drop(self.sender);
-        
+
         Ok(())
     }
 }
@@ -305,10 +301,7 @@ pub mod stream_utils {
     use std::time::Duration;
 
     /// Create a stream that emits tokens with a delay (for demo purposes)
-    pub fn create_delayed_stream(
-        text: impl Into<String>,
-        delay: Duration,
-    ) -> StreamingResponse {
+    pub fn create_delayed_stream(text: impl Into<String>, delay: Duration) -> StreamingResponse {
         let text = text.into();
         let words: Vec<String> = text.split_whitespace().map(|s| s.to_string()).collect();
 
@@ -336,14 +329,12 @@ pub mod stream_utils {
     }
 
     /// Merge multiple streams into one
-    pub async fn merge_streams(
-        streams: Vec<StreamingResponse>,
-    ) -> RragResult<StreamingResponse> {
+    pub async fn merge_streams(streams: Vec<StreamingResponse>) -> RragResult<StreamingResponse> {
         let (mut builder, receiver) = TokenStreamBuilder::new();
 
         tokio::spawn(async move {
             let mut position = 0;
-            
+
             for mut stream in streams {
                 while let Some(token_result) = stream.next().await {
                     match token_result {
@@ -351,7 +342,7 @@ pub mod stream_utils {
                             if !token.is_final {
                                 token.position = position;
                                 position += 1;
-                                
+
                                 if let Err(_) = builder.sender.send(Ok(token)) {
                                     break;
                                 }
@@ -364,7 +355,7 @@ pub mod stream_utils {
                     }
                 }
             }
-            
+
             let _ = builder.finish();
         });
 
@@ -382,40 +373,40 @@ mod tests {
     async fn test_streaming_response_from_text() {
         let response = StreamingResponse::from_text("Hello world test");
         let text = response.collect_text().await.unwrap();
-        
+
         assert_eq!(text, "Hello world test");
     }
 
     #[tokio::test]
     async fn test_token_stream_builder() {
         let (mut builder, receiver) = TokenStreamBuilder::new();
-        
+
         tokio::spawn(async move {
             builder.send_text("Hello").unwrap();
             builder.send_text("world").unwrap();
             builder.finish().unwrap();
         });
-        
+
         let response = StreamingResponse::from_channel(receiver);
         let text = response.collect_text().await.unwrap();
-        
+
         assert_eq!(text, "Hello world");
     }
 
     #[tokio::test]
     async fn test_filtered_stream() {
         let (mut builder, receiver) = TokenStreamBuilder::new();
-        
+
         tokio::spawn(async move {
             builder.send_text("Hello").unwrap();
             builder.send_tool_call("tool_call").unwrap();
             builder.send_text("world").unwrap();
             builder.finish().unwrap();
         });
-        
+
         let response = StreamingResponse::from_channel(receiver);
         let mut text_stream = response.filter_by_type(TokenType::Text);
-        
+
         let mut text_tokens = Vec::new();
         while let Some(token_result) = text_stream.next().await {
             match token_result.unwrap() {
@@ -426,22 +417,19 @@ mod tests {
                 _ => {}
             }
         }
-        
+
         assert_eq!(text_tokens, vec!["Hello ", "world "]);
     }
 
     #[tokio::test]
     async fn test_stream_utils_delayed() {
         use std::time::Duration;
-        
+
         let start = std::time::Instant::now();
-        let response = stream_utils::create_delayed_stream(
-            "one two", 
-            Duration::from_millis(10)
-        );
+        let response = stream_utils::create_delayed_stream("one two", Duration::from_millis(10));
         let text = response.collect_text().await.unwrap();
         let elapsed = start.elapsed();
-        
+
         assert_eq!(text, "one two");
         assert!(elapsed >= Duration::from_millis(20)); // At least 2 delays
     }
@@ -453,7 +441,7 @@ mod tests {
         assert_eq!(token.token_type, TokenType::Text);
         assert_eq!(token.position, 0);
         assert!(!token.is_final);
-        
+
         let final_token = StreamToken::final_token(10);
         assert!(final_token.is_final);
         assert_eq!(final_token.token_type, TokenType::End);

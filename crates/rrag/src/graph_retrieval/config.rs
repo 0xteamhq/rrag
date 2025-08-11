@@ -1,12 +1,10 @@
 //! # Graph Retrieval Configuration
-//! 
+//!
 //! Centralized configuration structures for the graph-based retrieval system.
 
 use super::{
-    entity::EntityExtractionConfig,
+    algorithms::PageRankConfig, entity::EntityExtractionConfig, query_expansion::ExpansionConfig,
     storage::GraphStorageConfig,
-    query_expansion::ExpansionConfig,
-    algorithms::PageRankConfig,
 };
 use serde::{Deserialize, Serialize};
 
@@ -15,19 +13,19 @@ use serde::{Deserialize, Serialize};
 pub struct GraphConfig {
     /// Entity extraction configuration
     pub entity_extraction: EntityExtractionConfig,
-    
+
     /// Graph storage configuration
     pub storage: GraphStorageConfig,
-    
+
     /// Query expansion configuration
     pub query_expansion: ExpansionConfig,
-    
+
     /// Algorithm configurations
     pub algorithms: AlgorithmConfig,
-    
+
     /// Performance configuration
     pub performance: PerformanceConfig,
-    
+
     /// Feature flags
     pub features: FeatureFlags,
 }
@@ -37,13 +35,13 @@ pub struct GraphConfig {
 pub struct AlgorithmConfig {
     /// PageRank algorithm configuration
     pub pagerank: PageRankConfig,
-    
+
     /// Graph traversal limits
     pub traversal: TraversalConfig,
-    
+
     /// Similarity computation settings
     pub similarity: SimilarityConfig,
-    
+
     /// Path-finding configuration
     pub pathfinding: PathFindingConfig,
 }
@@ -53,13 +51,13 @@ pub struct AlgorithmConfig {
 pub struct TraversalConfig {
     /// Maximum depth for graph traversal
     pub max_depth: usize,
-    
+
     /// Maximum number of nodes to visit
     pub max_nodes: usize,
-    
+
     /// Maximum distance for weighted traversals
     pub max_distance: f32,
-    
+
     /// Enable early termination optimizations
     pub enable_early_termination: bool,
 }
@@ -69,16 +67,16 @@ pub struct TraversalConfig {
 pub struct SimilarityConfig {
     /// Default similarity metric
     pub default_metric: SimilarityMetric,
-    
+
     /// Threshold for considering nodes similar
     pub similarity_threshold: f32,
-    
+
     /// Enable embedding-based similarity
     pub enable_embedding_similarity: bool,
-    
+
     /// Enable structural similarity
     pub enable_structural_similarity: bool,
-    
+
     /// Weights for different similarity factors
     pub similarity_weights: SimilarityWeights,
 }
@@ -88,16 +86,16 @@ pub struct SimilarityConfig {
 pub struct PathFindingConfig {
     /// Maximum path length to consider
     pub max_path_length: usize,
-    
+
     /// Maximum number of paths to find
     pub max_paths: usize,
-    
+
     /// Minimum path score threshold
     pub min_path_score: f32,
-    
+
     /// Enable bidirectional search
     pub enable_bidirectional_search: bool,
-    
+
     /// Path scoring method
     pub scoring_method: PathScoringMethod,
 }
@@ -107,19 +105,19 @@ pub struct PathFindingConfig {
 pub struct PerformanceConfig {
     /// Enable parallel processing
     pub enable_parallel_processing: bool,
-    
+
     /// Number of worker threads
     pub num_workers: usize,
-    
+
     /// Batch size for bulk operations
     pub batch_size: usize,
-    
+
     /// Cache size limits
     pub cache_limits: CacheLimits,
-    
+
     /// Memory usage limits
     pub memory_limits: MemoryLimits,
-    
+
     /// Timeout settings
     pub timeouts: TimeoutConfig,
 }
@@ -129,31 +127,31 @@ pub struct PerformanceConfig {
 pub struct FeatureFlags {
     /// Enable entity extraction
     pub entity_extraction: bool,
-    
+
     /// Enable relationship extraction
     pub relationship_extraction: bool,
-    
+
     /// Enable query expansion
     pub query_expansion: bool,
-    
+
     /// Enable PageRank scoring
     pub pagerank_scoring: bool,
-    
+
     /// Enable path-based retrieval
     pub path_based_retrieval: bool,
-    
+
     /// Enable result diversification
     pub result_diversification: bool,
-    
+
     /// Enable semantic search
     pub semantic_search: bool,
-    
+
     /// Enable graph-based re-ranking
     pub graph_reranking: bool,
-    
+
     /// Enable incremental updates
     pub incremental_updates: bool,
-    
+
     /// Enable distributed processing
     pub distributed_processing: bool,
 }
@@ -163,16 +161,16 @@ pub struct FeatureFlags {
 pub enum SimilarityMetric {
     /// Cosine similarity
     Cosine,
-    
+
     /// Euclidean distance (converted to similarity)
     Euclidean,
-    
+
     /// Jaccard similarity
     Jaccard,
-    
+
     /// Dice coefficient
     Dice,
-    
+
     /// Custom similarity function
     Custom(String),
 }
@@ -182,16 +180,16 @@ pub enum SimilarityMetric {
 pub struct SimilarityWeights {
     /// Weight for content similarity
     pub content: f32,
-    
+
     /// Weight for structural similarity
     pub structural: f32,
-    
+
     /// Weight for semantic similarity
     pub semantic: f32,
-    
+
     /// Weight for temporal similarity
     pub temporal: f32,
-    
+
     /// Weight for metadata similarity
     pub metadata: f32,
 }
@@ -201,13 +199,13 @@ pub struct SimilarityWeights {
 pub enum PathScoringMethod {
     /// Simple path length-based scoring
     Length,
-    
+
     /// Edge weight-based scoring
     EdgeWeight,
-    
+
     /// PageRank-based scoring
     PageRank,
-    
+
     /// Combined scoring using multiple factors
     Combined(Vec<PathScoringFactor>),
 }
@@ -217,7 +215,7 @@ pub enum PathScoringMethod {
 pub struct PathScoringFactor {
     /// Factor type
     pub factor_type: PathFactorType,
-    
+
     /// Weight of this factor
     pub weight: f32,
 }
@@ -227,16 +225,16 @@ pub struct PathScoringFactor {
 pub enum PathFactorType {
     /// Path length
     Length,
-    
+
     /// Average edge weight
     AverageEdgeWeight,
-    
+
     /// Minimum edge weight
     MinEdgeWeight,
-    
+
     /// PageRank of nodes in path
     NodePageRank,
-    
+
     /// Semantic coherence of path
     SemanticCoherence,
 }
@@ -246,16 +244,16 @@ pub enum PathFactorType {
 pub struct CacheLimits {
     /// Maximum number of cached queries
     pub max_cached_queries: usize,
-    
+
     /// Maximum number of cached PageRank scores
     pub max_cached_pagerank: usize,
-    
+
     /// Maximum number of cached entity embeddings
     pub max_cached_embeddings: usize,
-    
+
     /// Maximum number of cached paths
     pub max_cached_paths: usize,
-    
+
     /// Cache TTL in seconds
     pub cache_ttl_seconds: u64,
 }
@@ -265,13 +263,13 @@ pub struct CacheLimits {
 pub struct MemoryLimits {
     /// Maximum graph size in MB
     pub max_graph_size_mb: usize,
-    
+
     /// Maximum number of nodes
     pub max_nodes: usize,
-    
+
     /// Maximum number of edges
     pub max_edges: usize,
-    
+
     /// Memory threshold for triggering cleanup
     pub cleanup_threshold_mb: usize,
 }
@@ -281,13 +279,13 @@ pub struct MemoryLimits {
 pub struct TimeoutConfig {
     /// Query timeout in seconds
     pub query_timeout_seconds: u64,
-    
+
     /// Entity extraction timeout in seconds
     pub extraction_timeout_seconds: u64,
-    
+
     /// Graph traversal timeout in seconds
     pub traversal_timeout_seconds: u64,
-    
+
     /// PageRank computation timeout in seconds
     pub pagerank_timeout_seconds: u64,
 }
@@ -522,7 +520,12 @@ impl GraphConfigBuilder {
     }
 
     /// Set memory limits
-    pub fn with_memory_limits(mut self, max_graph_size_mb: usize, max_nodes: usize, max_edges: usize) -> Self {
+    pub fn with_memory_limits(
+        mut self,
+        max_graph_size_mb: usize,
+        max_nodes: usize,
+        max_edges: usize,
+    ) -> Self {
         self.config.performance.memory_limits.max_graph_size_mb = max_graph_size_mb;
         self.config.performance.memory_limits.max_nodes = max_nodes;
         self.config.performance.memory_limits.max_edges = max_edges;
@@ -590,10 +593,12 @@ impl GraphConfig {
 
         // Validate entity extraction settings
         if self.features.entity_extraction {
-            if self.entity_extraction.min_confidence < 0.0 || self.entity_extraction.min_confidence > 1.0 {
+            if self.entity_extraction.min_confidence < 0.0
+                || self.entity_extraction.min_confidence > 1.0
+            {
                 errors.push("Entity extraction confidence must be between 0.0 and 1.0".to_string());
             }
-            
+
             if self.entity_extraction.max_entity_length == 0 {
                 errors.push("Maximum entity length must be greater than 0".to_string());
             }
@@ -602,12 +607,16 @@ impl GraphConfig {
         // Validate query expansion settings
         if self.features.query_expansion {
             if self.query_expansion.max_expansion_terms == 0 {
-                warnings.push("Maximum expansion terms is 0, query expansion will be ineffective".to_string());
+                warnings.push(
+                    "Maximum expansion terms is 0, query expansion will be ineffective".to_string(),
+                );
             }
         }
 
         // Validate algorithm settings
-        if self.algorithms.pagerank.damping_factor < 0.0 || self.algorithms.pagerank.damping_factor > 1.0 {
+        if self.algorithms.pagerank.damping_factor < 0.0
+            || self.algorithms.pagerank.damping_factor > 1.0
+        {
             errors.push("PageRank damping factor must be between 0.0 and 1.0".to_string());
         }
 
@@ -615,7 +624,9 @@ impl GraphConfig {
             errors.push("Maximum traversal depth must be greater than 0".to_string());
         }
 
-        if self.algorithms.similarity.similarity_threshold < 0.0 || self.algorithms.similarity.similarity_threshold > 1.0 {
+        if self.algorithms.similarity.similarity_threshold < 0.0
+            || self.algorithms.similarity.similarity_threshold > 1.0
+        {
             errors.push("Similarity threshold must be between 0.0 and 1.0".to_string());
         }
 
@@ -639,11 +650,16 @@ impl GraphConfig {
 
         // Check for logical inconsistencies
         if !self.features.entity_extraction && self.features.relationship_extraction {
-            warnings.push("Relationship extraction requires entity extraction to be enabled".to_string());
+            warnings.push(
+                "Relationship extraction requires entity extraction to be enabled".to_string(),
+            );
         }
 
-        if !self.features.pagerank_scoring && self.algorithms.pathfinding.scoring_method.uses_pagerank() {
-            warnings.push("Path scoring uses PageRank but PageRank scoring is disabled".to_string());
+        if !self.features.pagerank_scoring
+            && self.algorithms.pathfinding.scoring_method.uses_pagerank()
+        {
+            warnings
+                .push("Path scoring uses PageRank but PageRank scoring is disabled".to_string());
         }
 
         if errors.is_empty() {
@@ -659,9 +675,9 @@ impl PathScoringMethod {
     pub fn uses_pagerank(&self) -> bool {
         match self {
             PathScoringMethod::PageRank => true,
-            PathScoringMethod::Combined(factors) => {
-                factors.iter().any(|f| matches!(f.factor_type, PathFactorType::NodePageRank))
-            }
+            PathScoringMethod::Combined(factors) => factors
+                .iter()
+                .any(|f| matches!(f.factor_type, PathFactorType::NodePageRank)),
             _ => false,
         }
     }
@@ -674,12 +690,12 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = GraphConfig::default();
-        
+
         // Verify that all features are enabled by default
         assert!(config.features.entity_extraction);
         assert!(config.features.query_expansion);
         assert!(config.features.pagerank_scoring);
-        
+
         // Verify reasonable default values
         assert!(config.algorithms.pagerank.damping_factor > 0.0);
         assert!(config.algorithms.pagerank.damping_factor < 1.0);
@@ -700,7 +716,7 @@ mod tests {
             .with_num_workers(4)
             .with_batch_size(50)
             .build();
-        
+
         assert!(config.features.entity_extraction);
         assert_eq!(config.entity_extraction.min_confidence, 0.8);
         assert!(config.features.query_expansion);
@@ -715,16 +731,16 @@ mod tests {
     #[test]
     fn test_config_validation() {
         let mut config = GraphConfig::default();
-        
+
         // Valid configuration should pass
         let result = config.validate();
         assert!(result.is_ok());
-        
+
         // Invalid damping factor should fail
         config.algorithms.pagerank.damping_factor = 1.5;
         let result = config.validate();
         assert!(result.is_err());
-        
+
         // Reset and test another invalid setting
         config.algorithms.pagerank.damping_factor = 0.85;
         config.performance.num_workers = 0;
@@ -734,18 +750,14 @@ mod tests {
 
     #[test]
     fn test_minimal_and_full_features() {
-        let minimal_config = GraphConfigBuilder::new()
-            .with_minimal_features()
-            .build();
-        
+        let minimal_config = GraphConfigBuilder::new().with_minimal_features().build();
+
         assert!(minimal_config.features.entity_extraction);
         assert!(!minimal_config.features.relationship_extraction);
         assert!(!minimal_config.features.pagerank_scoring);
-        
-        let full_config = GraphConfigBuilder::new()
-            .with_all_features()
-            .build();
-        
+
+        let full_config = GraphConfigBuilder::new().with_all_features().build();
+
         assert!(full_config.features.entity_extraction);
         assert!(full_config.features.relationship_extraction);
         assert!(full_config.features.pagerank_scoring);

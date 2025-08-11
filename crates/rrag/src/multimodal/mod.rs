@@ -1,14 +1,14 @@
 //! # Multi-Modal RAG Processing
-//! 
+//!
 //! Advanced multi-modal processing capabilities for handling diverse content types
 //! in RAG systems including images, tables, charts, PDFs, and structured documents.
-//! 
+//!
 //! This module enables RAG systems to process and understand content beyond plain text,
 //! making it possible to build applications that can reason over visual content,
 //! extract information from tables, analyze charts, and process complex document layouts.
-//! 
+//!
 //! ## Features
-//! 
+//!
 //! - **Image Processing**: Extract features, generate captions, detect objects
 //! - **Table Processing**: Extract structured data from HTML, CSV, and PDF tables
 //! - **Chart Analysis**: Understand charts, graphs, and visualizations
@@ -16,21 +16,21 @@
 //! - **Layout Analysis**: Understand document structure and reading order
 //! - **Embedding Fusion**: Combine embeddings from different modalities
 //! - **Multi-Modal Retrieval**: Search across text, images, and structured data
-//! 
+//!
 //! ## Supported Formats
-//! 
+//!
 //! - **Images**: PNG, JPEG, GIF, WebP, SVG
 //! - **Documents**: PDF, Word, PowerPoint, HTML
 //! - **Tables**: HTML tables, CSV, TSV, Excel
 //! - **Charts**: PNG/JPEG charts, SVG graphics
 //! - **Mixed Content**: Documents with embedded images and tables
-//! 
+//!
 //! ## Examples
-//! 
+//!
 //! ### Basic Multi-Modal Document Processing
 //! ```rust
 //! use rrag::multimodal::{MultiModalService, MultiModalConfig, MultiModalDocument};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let service = MultiModalService::new(
 //!     MultiModalConfig::default()
@@ -38,26 +38,26 @@
 //!         .enable_table_extraction(true)
 //!         .enable_chart_analysis(true)
 //! ).await?;
-//! 
+//!
 //! // Process a document with mixed content
 //! let document = MultiModalDocument::new()
 //!     .add_text("Q4 2024 Revenue Report")
 //!     .add_image("charts/revenue_chart.png")
 //!     .add_table("data/quarterly_results.csv");
-//! 
+//!
 //! let processed = service.process_document(document).await?;
-//! println!("Extracted {} text chunks, {} images, {} tables", 
+//! println!("Extracted {} text chunks, {} images, {} tables",
 //!          processed.text_chunks.len(),
-//!          processed.images.len(), 
+//!          processed.images.len(),
 //!          processed.tables.len());
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Image Analysis and Captioning
 //! ```rust
 //! use rrag::multimodal::image_processor::{ImageProcessor, ProcessingConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let processor = ImageProcessor::new(
 //!     ProcessingConfig::default()
@@ -65,61 +65,61 @@
 //!         .enable_captioning(true)
 //!         .enable_ocr(true)
 //! );
-//! 
+//!
 //! let image_path = "images/product_diagram.png";
 //! let analysis = processor.analyze_image(image_path).await?;
-//! 
+//!
 //! println!("Caption: {}", analysis.caption);
 //! println!("Detected {} objects", analysis.objects.len());
 //! println!("Extracted text: {}", analysis.text);
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Table Extraction and Analysis
 //! ```rust
 //! use rrag::multimodal::table_processor::{TableProcessor, TableConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let processor = TableProcessor::new(TableConfig::default());
-//! 
+//!
 //! // Extract tables from HTML
 //! let html = r#"<table><tr><th>Product</th><th>Revenue</th></tr>..."#;
 //! let tables = processor.extract_from_html(html).await?;
-//! 
+//!
 //! for table in tables {
-//!     println!("Table: {} rows, {} columns", 
-//!              table.rows.len(), 
+//!     println!("Table: {} rows, {} columns",
+//!              table.rows.len(),
 //!              table.headers.len());
 //! }
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Chart Analysis
 //! ```rust
 //! use rrag::multimodal::chart_processor::{ChartProcessor, ChartConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let processor = ChartProcessor::new(ChartConfig::default());
-//! 
+//!
 //! let chart_path = "charts/sales_trend.png";
 //! let analysis = processor.analyze_chart(chart_path).await?;
-//! 
+//!
 //! println!("Chart type: {:?}", analysis.chart_type);
 //! println!("Description: {}", analysis.description);
 //! println!("Key insights: {:?}", analysis.insights);
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Multi-Modal Search
 //! ```rust
 //! use rrag::multimodal::retrieval::{MultiModalRetriever, SearchOptions};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let retriever = MultiModalRetriever::new().await?;
-//! 
+//!
 //! // Search across text, images, and tables
 //! let results = retriever.search_multi_modal(
 //!     "revenue trends Q4 2024",
@@ -128,7 +128,7 @@
 //!         .include_images(true)
 //!         .include_tables(true)
 //! ).await?;
-//! 
+//!
 //! for result in results {
 //!     match result.content_type {
 //!         ContentType::Text => println!("Text: {}", result.content),
@@ -139,33 +139,33 @@
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ## Performance Considerations
-//! 
+//!
 //! - **Batch Processing**: Process multiple items together for efficiency
 //! - **Caching**: Cache embeddings and analysis results
 //! - **Parallel Processing**: Use multiple threads for CPU-intensive tasks
 //! - **GPU Acceleration**: Leverage CUDA for deep learning models (when available)
 //! - **Memory Management**: Stream large files to avoid memory issues
-//! 
+//!
 //! ## Model Integration
-//! 
+//!
 //! The module supports integration with various pre-trained models:
-//! 
+//!
 //! - **Vision Models**: CLIP, BLIP, ViT for image understanding
 //! - **OCR Models**: Tesseract, EasyOCR, TrOCR
 //! - **Layout Models**: LayoutLM, DiT for document layout
 //! - **Table Models**: TableNet, TableTransformer
 //! - **Chart Models**: ChartQA, PlotQA for chart understanding
 
-pub mod image_processor;
-pub mod table_processor;
 pub mod chart_processor;
 pub mod document_parser;
 pub mod embedding_fusion;
-pub mod retrieval;
-pub mod ocr;
+pub mod image_processor;
 pub mod layout_analysis;
+pub mod ocr;
+pub mod retrieval;
+pub mod table_processor;
 
 use crate::RragResult;
 use serde::{Deserialize, Serialize};
@@ -175,22 +175,22 @@ use std::path::Path;
 pub struct MultiModalService {
     /// Configuration
     config: MultiModalConfig,
-    
+
     /// Image processor
     image_processor: Box<dyn ImageProcessor>,
-    
+
     /// Table processor
     table_processor: Box<dyn TableProcessor>,
-    
+
     /// Chart processor
     chart_processor: Box<dyn ChartProcessor>,
-    
+
     /// OCR engine
     ocr_engine: Box<dyn OCREngine>,
-    
+
     /// Layout analyzer
     layout_analyzer: Box<dyn LayoutAnalyzer>,
-    
+
     /// Embedding fusion strategy
     fusion_strategy: Box<dyn EmbeddingFusionStrategy>,
 }
@@ -200,28 +200,28 @@ pub struct MultiModalService {
 pub struct MultiModalConfig {
     /// Enable image processing
     pub process_images: bool,
-    
+
     /// Enable table extraction
     pub process_tables: bool,
-    
+
     /// Enable chart analysis
     pub process_charts: bool,
-    
+
     /// Image processing config
     pub image_config: ImageProcessingConfig,
-    
+
     /// Table extraction config
     pub table_config: TableExtractionConfig,
-    
+
     /// Chart analysis config
     pub chart_config: ChartAnalysisConfig,
-    
+
     /// OCR configuration
     pub ocr_config: OCRConfig,
-    
+
     /// Layout analysis config
     pub layout_config: LayoutAnalysisConfig,
-    
+
     /// Fusion strategy
     pub fusion_strategy: FusionStrategy,
 }
@@ -232,19 +232,19 @@ pub struct ImageProcessingConfig {
     /// Maximum image dimensions
     pub max_width: u32,
     pub max_height: u32,
-    
+
     /// Image formats to process
     pub supported_formats: Vec<ImageFormat>,
-    
+
     /// Enable CLIP embeddings
     pub use_clip: bool,
-    
+
     /// Enable image captioning
     pub generate_captions: bool,
-    
+
     /// Extract visual features
     pub extract_features: bool,
-    
+
     /// Compression quality (0-100)
     pub compression_quality: u8,
 }
@@ -254,19 +254,19 @@ pub struct ImageProcessingConfig {
 pub struct TableExtractionConfig {
     /// Minimum rows for valid table
     pub min_rows: usize,
-    
+
     /// Minimum columns for valid table
     pub min_cols: usize,
-    
+
     /// Extract headers
     pub extract_headers: bool,
-    
+
     /// Infer data types
     pub infer_types: bool,
-    
+
     /// Generate summaries
     pub generate_summaries: bool,
-    
+
     /// Output format
     pub output_format: TableOutputFormat,
 }
@@ -276,13 +276,13 @@ pub struct TableExtractionConfig {
 pub struct ChartAnalysisConfig {
     /// Chart types to recognize
     pub chart_types: Vec<ChartType>,
-    
+
     /// Extract data points
     pub extract_data: bool,
-    
+
     /// Generate descriptions
     pub generate_descriptions: bool,
-    
+
     /// Analyze trends
     pub analyze_trends: bool,
 }
@@ -292,16 +292,16 @@ pub struct ChartAnalysisConfig {
 pub struct OCRConfig {
     /// OCR engine to use
     pub engine: OCREngineType,
-    
+
     /// Languages to recognize
     pub languages: Vec<String>,
-    
+
     /// Confidence threshold
     pub confidence_threshold: f32,
-    
+
     /// Enable spell correction
     pub spell_correction: bool,
-    
+
     /// Preserve formatting
     pub preserve_formatting: bool,
 }
@@ -311,13 +311,13 @@ pub struct OCRConfig {
 pub struct LayoutAnalysisConfig {
     /// Detect document structure
     pub detect_structure: bool,
-    
+
     /// Identify sections
     pub identify_sections: bool,
-    
+
     /// Extract reading order
     pub extract_reading_order: bool,
-    
+
     /// Detect columns
     pub detect_columns: bool,
 }
@@ -327,25 +327,25 @@ pub struct LayoutAnalysisConfig {
 pub struct MultiModalDocument {
     /// Document ID
     pub id: String,
-    
+
     /// Text content
     pub text_content: String,
-    
+
     /// Images in document
     pub images: Vec<ProcessedImage>,
-    
+
     /// Tables in document
     pub tables: Vec<ExtractedTable>,
-    
+
     /// Charts in document
     pub charts: Vec<AnalyzedChart>,
-    
+
     /// Document layout
     pub layout: DocumentLayout,
-    
+
     /// Combined embeddings
     pub embeddings: MultiModalEmbeddings,
-    
+
     /// Metadata
     pub metadata: DocumentMetadata,
 }
@@ -355,22 +355,22 @@ pub struct MultiModalDocument {
 pub struct ProcessedImage {
     /// Image ID
     pub id: String,
-    
+
     /// Original path or URL
     pub source: String,
-    
+
     /// Image caption
     pub caption: Option<String>,
-    
+
     /// OCR text if applicable
     pub ocr_text: Option<String>,
-    
+
     /// Visual features
     pub features: Option<VisualFeatures>,
-    
+
     /// CLIP embedding
     pub clip_embedding: Option<Vec<f32>>,
-    
+
     /// Image metadata
     pub metadata: ImageMetadata,
 }
@@ -380,22 +380,22 @@ pub struct ProcessedImage {
 pub struct ExtractedTable {
     /// Table ID
     pub id: String,
-    
+
     /// Table headers
     pub headers: Vec<String>,
-    
+
     /// Table data rows
     pub rows: Vec<Vec<TableCell>>,
-    
+
     /// Table summary
     pub summary: Option<String>,
-    
+
     /// Column types
     pub column_types: Vec<DataType>,
-    
+
     /// Table embedding
     pub embedding: Option<Vec<f32>>,
-    
+
     /// Statistics
     pub statistics: Option<TableStatistics>,
 }
@@ -405,25 +405,25 @@ pub struct ExtractedTable {
 pub struct AnalyzedChart {
     /// Chart ID
     pub id: String,
-    
+
     /// Chart type
     pub chart_type: ChartType,
-    
+
     /// Chart title
     pub title: Option<String>,
-    
+
     /// Axis labels
     pub axes: ChartAxes,
-    
+
     /// Data points
     pub data_points: Vec<DataPoint>,
-    
+
     /// Trend analysis
     pub trends: Option<TrendAnalysis>,
-    
+
     /// Description
     pub description: Option<String>,
-    
+
     /// Chart embedding
     pub embedding: Option<Vec<f32>>,
 }
@@ -433,16 +433,16 @@ pub struct AnalyzedChart {
 pub struct DocumentLayout {
     /// Page count
     pub pages: usize,
-    
+
     /// Document sections
     pub sections: Vec<DocumentSection>,
-    
+
     /// Reading order
     pub reading_order: Vec<String>,
-    
+
     /// Column layout
     pub columns: Option<ColumnLayout>,
-    
+
     /// Document type
     pub document_type: DocumentType,
 }
@@ -452,16 +452,16 @@ pub struct DocumentLayout {
 pub struct MultiModalEmbeddings {
     /// Text embeddings
     pub text_embeddings: Vec<f32>,
-    
+
     /// Visual embeddings (averaged)
     pub visual_embeddings: Option<Vec<f32>>,
-    
+
     /// Table embeddings (averaged)
     pub table_embeddings: Option<Vec<f32>>,
-    
+
     /// Fused embedding
     pub fused_embedding: Vec<f32>,
-    
+
     /// Embedding weights
     pub weights: EmbeddingWeights,
 }
@@ -470,13 +470,13 @@ pub struct MultiModalEmbeddings {
 pub trait ImageProcessor: Send + Sync {
     /// Process image
     fn process_image(&self, image_path: &Path) -> RragResult<ProcessedImage>;
-    
+
     /// Extract features
     fn extract_features(&self, image_path: &Path) -> RragResult<VisualFeatures>;
-    
+
     /// Generate caption
     fn generate_caption(&self, image_path: &Path) -> RragResult<String>;
-    
+
     /// Generate CLIP embedding
     fn generate_clip_embedding(&self, image_path: &Path) -> RragResult<Vec<f32>>;
 }
@@ -485,13 +485,13 @@ pub trait ImageProcessor: Send + Sync {
 pub trait TableProcessor: Send + Sync {
     /// Extract table from document
     fn extract_table(&self, content: &str) -> RragResult<Vec<ExtractedTable>>;
-    
+
     /// Parse table structure
     fn parse_structure(&self, table_html: &str) -> RragResult<ExtractedTable>;
-    
+
     /// Generate table summary
     fn generate_summary(&self, table: &ExtractedTable) -> RragResult<String>;
-    
+
     /// Calculate statistics
     fn calculate_statistics(&self, table: &ExtractedTable) -> RragResult<TableStatistics>;
 }
@@ -500,13 +500,13 @@ pub trait TableProcessor: Send + Sync {
 pub trait ChartProcessor: Send + Sync {
     /// Analyze chart
     fn analyze_chart(&self, image_path: &Path) -> RragResult<AnalyzedChart>;
-    
+
     /// Extract data points
     fn extract_data_points(&self, chart_image: &Path) -> RragResult<Vec<DataPoint>>;
-    
+
     /// Identify chart type
     fn identify_type(&self, chart_image: &Path) -> RragResult<ChartType>;
-    
+
     /// Analyze trends
     fn analyze_trends(&self, data_points: &[DataPoint]) -> RragResult<TrendAnalysis>;
 }
@@ -515,10 +515,10 @@ pub trait ChartProcessor: Send + Sync {
 pub trait OCREngine: Send + Sync {
     /// Perform OCR on image
     fn ocr(&self, image_path: &Path) -> RragResult<OCRResult>;
-    
+
     /// Get text with confidence
     fn get_text_with_confidence(&self, image_path: &Path) -> RragResult<Vec<(String, f32)>>;
-    
+
     /// Get text layout
     fn get_layout(&self, image_path: &Path) -> RragResult<TextLayout>;
 }
@@ -527,10 +527,10 @@ pub trait OCREngine: Send + Sync {
 pub trait LayoutAnalyzer: Send + Sync {
     /// Analyze document layout
     fn analyze_layout(&self, document_path: &Path) -> RragResult<DocumentLayout>;
-    
+
     /// Detect sections
     fn detect_sections(&self, content: &str) -> RragResult<Vec<DocumentSection>>;
-    
+
     /// Extract reading order
     fn extract_reading_order(&self, layout: &DocumentLayout) -> RragResult<Vec<String>>;
 }
@@ -539,7 +539,7 @@ pub trait LayoutAnalyzer: Send + Sync {
 pub trait EmbeddingFusionStrategy: Send + Sync {
     /// Fuse multi-modal embeddings
     fn fuse_embeddings(&self, embeddings: &MultiModalEmbeddings) -> RragResult<Vec<f32>>;
-    
+
     /// Calculate optimal weights
     fn calculate_weights(&self, document: &MultiModalDocument) -> RragResult<EmbeddingWeights>;
 }
@@ -617,16 +617,16 @@ pub enum DataType {
 pub enum FusionStrategy {
     /// Simple averaging
     Average,
-    
+
     /// Weighted average based on content
     Weighted,
-    
+
     /// Concatenation
     Concatenate,
-    
+
     /// Attention-based fusion
     Attention,
-    
+
     /// Learned fusion
     Learned,
 }
@@ -636,16 +636,16 @@ pub enum FusionStrategy {
 pub struct VisualFeatures {
     /// Dominant colors
     pub colors: Vec<Color>,
-    
+
     /// Detected objects
     pub objects: Vec<DetectedObject>,
-    
+
     /// Scene classification
     pub scene: Option<String>,
-    
+
     /// Image quality metrics
     pub quality: ImageQuality,
-    
+
     /// Spatial layout
     pub layout: SpatialLayout,
 }
@@ -655,10 +655,10 @@ pub struct VisualFeatures {
 pub struct TableCell {
     /// Cell value
     pub value: String,
-    
+
     /// Cell type
     pub data_type: DataType,
-    
+
     /// Cell formatting
     pub formatting: Option<CellFormatting>,
 }
@@ -668,13 +668,13 @@ pub struct TableCell {
 pub struct TableStatistics {
     /// Row count
     pub row_count: usize,
-    
+
     /// Column count
     pub column_count: usize,
-    
+
     /// Null percentage per column
     pub null_percentages: Vec<f32>,
-    
+
     /// Column statistics
     pub column_stats: Vec<ColumnStatistics>,
 }
@@ -684,13 +684,13 @@ pub struct TableStatistics {
 pub struct ColumnStatistics {
     /// Column name
     pub name: String,
-    
+
     /// For numeric columns
     pub numeric_stats: Option<NumericStatistics>,
-    
+
     /// For text columns
     pub text_stats: Option<TextStatistics>,
-    
+
     /// Unique values count
     pub unique_count: usize,
 }
@@ -737,16 +737,16 @@ pub struct DataPoint {
 pub struct TrendAnalysis {
     /// Trend direction
     pub direction: TrendDirection,
-    
+
     /// Trend strength (0-1)
     pub strength: f32,
-    
+
     /// Seasonality detected
     pub seasonality: Option<Seasonality>,
-    
+
     /// Outliers
     pub outliers: Vec<DataPoint>,
-    
+
     /// Forecast
     pub forecast: Option<Vec<DataPoint>>,
 }
@@ -773,13 +773,13 @@ pub struct Seasonality {
 pub struct OCRResult {
     /// Extracted text
     pub text: String,
-    
+
     /// Overall confidence
     pub confidence: f32,
-    
+
     /// Word-level results
     pub words: Vec<OCRWord>,
-    
+
     /// Detected languages
     pub languages: Vec<String>,
 }
@@ -806,10 +806,10 @@ pub struct BoundingBox {
 pub struct TextLayout {
     /// Text blocks
     pub blocks: Vec<TextBlock>,
-    
+
     /// Reading order
     pub reading_order: Vec<usize>,
-    
+
     /// Detected columns
     pub columns: Option<Vec<Column>>,
 }
@@ -963,21 +963,31 @@ impl MultiModalService {
     pub fn new(config: MultiModalConfig) -> RragResult<Self> {
         Ok(Self {
             config: config.clone(),
-            image_processor: Box::new(image_processor::DefaultImageProcessor::new(config.image_config)?),
-            table_processor: Box::new(table_processor::DefaultTableProcessor::new(config.table_config)?),
-            chart_processor: Box::new(chart_processor::DefaultChartProcessor::new(config.chart_config)?),
+            image_processor: Box::new(image_processor::DefaultImageProcessor::new(
+                config.image_config,
+            )?),
+            table_processor: Box::new(table_processor::DefaultTableProcessor::new(
+                config.table_config,
+            )?),
+            chart_processor: Box::new(chart_processor::DefaultChartProcessor::new(
+                config.chart_config,
+            )?),
             ocr_engine: Box::new(ocr::DefaultOCREngine::new(config.ocr_config)?),
-            layout_analyzer: Box::new(layout_analysis::DefaultLayoutAnalyzer::new(config.layout_config)?),
-            fusion_strategy: Box::new(embedding_fusion::DefaultFusionStrategy::new(config.fusion_strategy)?),
+            layout_analyzer: Box::new(layout_analysis::DefaultLayoutAnalyzer::new(
+                config.layout_config,
+            )?),
+            fusion_strategy: Box::new(embedding_fusion::DefaultFusionStrategy::new(
+                config.fusion_strategy,
+            )?),
         })
     }
-    
+
     /// Process multi-modal document
     pub async fn process_document(&self, _document_path: &Path) -> RragResult<MultiModalDocument> {
         // Implementation would process all modalities
         todo!("Implement multi-modal document processing")
     }
-    
+
     /// Extract all modalities
     pub async fn extract_modalities(&self, _content: &[u8]) -> RragResult<MultiModalDocument> {
         // Implementation would extract different modalities
@@ -1006,11 +1016,7 @@ impl Default for ImageProcessingConfig {
         Self {
             max_width: 1920,
             max_height: 1080,
-            supported_formats: vec![
-                ImageFormat::JPEG,
-                ImageFormat::PNG,
-                ImageFormat::WEBP,
-            ],
+            supported_formats: vec![ImageFormat::JPEG, ImageFormat::PNG, ImageFormat::WEBP],
             use_clip: true,
             generate_captions: true,
             extract_features: true,
@@ -1074,7 +1080,7 @@ impl Default for LayoutAnalysisConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_multimodal_config() {
         let config = MultiModalConfig::default();
@@ -1082,7 +1088,7 @@ mod tests {
         assert!(config.process_tables);
         assert!(config.process_charts);
     }
-    
+
     #[test]
     fn test_image_config() {
         let config = ImageProcessingConfig::default();

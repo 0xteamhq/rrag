@@ -1,12 +1,12 @@
 //! # RRAG Error Types
-//! 
+//!
 //! Comprehensive error handling designed for the Rust ecosystem.
 //! Focuses on providing detailed context while maintaining performance.
 
 use thiserror::Error;
 
 /// Main error type for RRAG operations
-/// 
+///
 /// Designed with Rust's error handling best practices:
 /// - Uses `thiserror` for automatic trait implementations
 /// - Provides structured error data for programmatic handling
@@ -16,7 +16,7 @@ use thiserror::Error;
 pub enum RragError {
     /// Document processing errors
     #[error("Document processing failed: {message}")]
-    DocumentProcessing { 
+    DocumentProcessing {
         message: String,
         #[source]
         source: Option<Box<dyn std::error::Error + Send + Sync>>,
@@ -90,24 +90,15 @@ pub enum RragError {
 
     /// Timeout errors
     #[error("Operation timed out after {duration_ms}ms: {operation}")]
-    Timeout {
-        operation: String,
-        duration_ms: u64,
-    },
+    Timeout { operation: String, duration_ms: u64 },
 
     /// Memory/conversation errors
     #[error("Memory operation failed: {operation}")]
-    Memory {
-        operation: String,
-        message: String,
-    },
+    Memory { operation: String, message: String },
 
     /// Streaming errors
     #[error("Stream error in {context}: {message}")]
-    Stream {
-        context: String,
-        message: String,
-    },
+    Stream { context: String, message: String },
 
     /// Agent execution errors
     #[error("Agent execution failed: {agent_id}")]
@@ -310,10 +301,10 @@ impl RragError {
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
-            Self::Network { .. } 
-            | Self::Timeout { .. } 
-            | Self::RsllmClient { .. }
-            | Self::Stream { .. }
+            Self::Network { .. }
+                | Self::Timeout { .. }
+                | Self::RsllmClient { .. }
+                | Self::Stream { .. }
         )
     }
 
@@ -338,7 +329,7 @@ impl RragError {
                 } else {
                     "agent"
                 }
-            },
+            }
             Self::Validation { .. } => "validation",
         }
     }
@@ -385,7 +376,7 @@ pub type RragResult<T> = std::result::Result<T, RragError>;
 pub trait RragResultExt<T> {
     /// Add context to an error
     fn with_rrag_context(self, context: &str) -> RragResult<T>;
-    
+
     /// Map to a specific RRAG error type
     fn map_to_rrag_error<F>(self, f: F) -> RragResult<T>
     where
@@ -397,12 +388,10 @@ where
     E: std::error::Error + Send + Sync + 'static,
 {
     fn with_rrag_context(self, context: &str) -> RragResult<T> {
-        self.map_err(|e| {
-            RragError::Agent {
-                agent_id: context.to_string(),
-                message: e.to_string(),
-                source: Some(Box::new(e)),
-            }
+        self.map_err(|e| RragError::Agent {
+            agent_id: context.to_string(),
+            message: e.to_string(),
+            source: Some(Box::new(e)),
         })
     }
 
@@ -449,16 +438,32 @@ mod tests {
 
     #[test]
     fn test_error_categories() {
-        assert_eq!(RragError::document_processing("test").category(), "document_processing");
+        assert_eq!(
+            RragError::document_processing("test").category(),
+            "document_processing"
+        );
         assert_eq!(RragError::timeout("op", 1000).category(), "timeout");
-        assert_eq!(RragError::config("field", "expected", "actual").category(), "configuration");
+        assert_eq!(
+            RragError::config("field", "expected", "actual").category(),
+            "configuration"
+        );
     }
 
     #[test]
     fn test_error_severity() {
-        assert_eq!(RragError::config("field", "expected", "actual").severity(), ErrorSeverity::Critical);
-        assert_eq!(RragError::timeout("op", 1000).severity(), ErrorSeverity::Low);
-        assert_eq!(RragError::storage("op", std::io::Error::new(std::io::ErrorKind::Other, "test")).severity(), ErrorSeverity::High);
+        assert_eq!(
+            RragError::config("field", "expected", "actual").severity(),
+            ErrorSeverity::Critical
+        );
+        assert_eq!(
+            RragError::timeout("op", 1000).severity(),
+            ErrorSeverity::Low
+        );
+        assert_eq!(
+            RragError::storage("op", std::io::Error::new(std::io::ErrorKind::Other, "test"))
+                .severity(),
+            ErrorSeverity::High
+        );
     }
 
     #[test]

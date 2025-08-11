@@ -1,10 +1,10 @@
 //! # Rollback System
-//! 
+//!
 //! Provides comprehensive rollback capabilities for failed operations.
 //! Includes operation logging, state snapshots, and recovery mechanisms.
 
-use crate::RragResult;
 use crate::incremental::index_manager::{IndexUpdate, UpdateResult};
+use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
@@ -16,25 +16,25 @@ use uuid::Uuid;
 pub struct RollbackConfig {
     /// Maximum operations to keep in log
     pub max_operation_log_size: usize,
-    
+
     /// Enable state snapshots
     pub enable_snapshots: bool,
-    
+
     /// Snapshot interval (number of operations)
     pub snapshot_interval: usize,
-    
+
     /// Maximum snapshots to retain
     pub max_snapshots: usize,
-    
+
     /// Enable automatic rollback on failures
     pub enable_auto_rollback: bool,
-    
+
     /// Rollback timeout in seconds
     pub rollback_timeout_secs: u64,
-    
+
     /// Enable rollback verification
     pub enable_verification: bool,
-    
+
     /// Rollback strategy
     pub rollback_strategy: RollbackStrategy,
 }
@@ -77,27 +77,23 @@ pub enum RollbackOperation {
         snapshot_id: String,
         target_state: SystemState,
     },
-    
+
     /// Undo specific operations
-    UndoOperations {
-        operation_ids: Vec<String>,
-    },
-    
+    UndoOperations { operation_ids: Vec<String> },
+
     /// Revert to timestamp
     RevertToTimestamp {
         timestamp: chrono::DateTime<chrono::Utc>,
     },
-    
+
     /// Selective document rollback
     SelectiveRollback {
         document_ids: Vec<String>,
         target_versions: HashMap<String, String>,
     },
-    
+
     /// Complete system reset
-    SystemReset {
-        reset_to_snapshot: String,
-    },
+    SystemReset { reset_to_snapshot: String },
 }
 
 /// System state snapshot
@@ -105,25 +101,25 @@ pub enum RollbackOperation {
 pub struct SystemState {
     /// Snapshot ID
     pub snapshot_id: String,
-    
+
     /// Snapshot timestamp
     pub created_at: chrono::DateTime<chrono::Utc>,
-    
+
     /// Document states at time of snapshot
     pub document_states: HashMap<String, DocumentState>,
-    
+
     /// Index states
     pub index_states: HashMap<String, IndexState>,
-    
+
     /// System metadata at snapshot time
     pub system_metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Operations count at snapshot time
     pub operations_count: u64,
-    
+
     /// Snapshot size in bytes
     pub size_bytes: u64,
-    
+
     /// Snapshot compression ratio
     pub compression_ratio: f64,
 }
@@ -133,19 +129,19 @@ pub struct SystemState {
 pub struct DocumentState {
     /// Document ID
     pub document_id: String,
-    
+
     /// Document version at snapshot time
     pub version_id: String,
-    
+
     /// Content hash
     pub content_hash: String,
-    
+
     /// Metadata hash
     pub metadata_hash: String,
-    
+
     /// Chunk states
     pub chunk_states: Vec<ChunkState>,
-    
+
     /// Embedding states
     pub embedding_states: Vec<EmbeddingState>,
 }
@@ -155,10 +151,10 @@ pub struct DocumentState {
 pub struct ChunkState {
     /// Chunk index
     pub chunk_index: usize,
-    
+
     /// Chunk hash
     pub chunk_hash: String,
-    
+
     /// Chunk size
     pub size_bytes: usize,
 }
@@ -168,13 +164,13 @@ pub struct ChunkState {
 pub struct EmbeddingState {
     /// Embedding ID
     pub embedding_id: String,
-    
+
     /// Source chunk or document
     pub source_id: String,
-    
+
     /// Embedding vector (simplified)
     pub vector_hash: String,
-    
+
     /// Embedding metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -184,16 +180,16 @@ pub struct EmbeddingState {
 pub struct IndexState {
     /// Index name
     pub index_name: String,
-    
+
     /// Index type
     pub index_type: String,
-    
+
     /// Document count in index
     pub document_count: usize,
-    
+
     /// Index metadata
     pub metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Index health status
     pub health_status: String,
 }
@@ -203,25 +199,25 @@ pub struct IndexState {
 pub struct OperationLogEntry {
     /// Entry ID
     pub entry_id: String,
-    
+
     /// Operation that was performed
     pub operation: IndexUpdate,
-    
+
     /// Operation result
     pub result: Option<UpdateResult>,
-    
+
     /// Pre-operation state hash
     pub pre_state_hash: String,
-    
+
     /// Post-operation state hash
     pub post_state_hash: Option<String>,
-    
+
     /// Operation timestamp
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    
+
     /// Operation source
     pub source: String,
-    
+
     /// Rollback information for this operation
     pub rollback_info: RollbackOperationInfo,
 }
@@ -231,16 +227,16 @@ pub struct OperationLogEntry {
 pub struct RollbackOperationInfo {
     /// Can this operation be rolled back?
     pub is_rollbackable: bool,
-    
+
     /// Rollback priority (higher = more critical)
     pub rollback_priority: u8,
-    
+
     /// Dependencies that must be rolled back first
     pub rollback_dependencies: Vec<String>,
-    
+
     /// Custom rollback steps
     pub custom_rollback_steps: Vec<CustomRollbackStep>,
-    
+
     /// Estimated rollback time
     pub estimated_rollback_time_ms: u64,
 }
@@ -250,13 +246,13 @@ pub struct RollbackOperationInfo {
 pub struct CustomRollbackStep {
     /// Step name
     pub step_name: String,
-    
+
     /// Step type
     pub step_type: RollbackStepType,
-    
+
     /// Step parameters
     pub parameters: HashMap<String, serde_json::Value>,
-    
+
     /// Step order
     pub order: u32,
 }
@@ -281,22 +277,22 @@ pub enum RollbackStepType {
 pub struct RollbackPoint {
     /// Rollback point ID
     pub rollback_point_id: String,
-    
+
     /// Point creation timestamp
     pub created_at: chrono::DateTime<chrono::Utc>,
-    
+
     /// Description of the rollback point
     pub description: String,
-    
+
     /// Operations included in this point
     pub operation_ids: Vec<String>,
-    
+
     /// System state at this point
     pub system_state: SystemState,
-    
+
     /// Point metadata
     pub metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Whether this point can be automatically used
     pub auto_rollback_eligible: bool,
 }
@@ -306,25 +302,25 @@ pub struct RollbackPoint {
 pub struct RecoveryResult {
     /// Recovery operation ID
     pub recovery_id: String,
-    
+
     /// Whether recovery was successful
     pub success: bool,
-    
+
     /// Operations that were rolled back
     pub rolled_back_operations: Vec<String>,
-    
+
     /// Final system state after recovery
     pub final_state: Option<SystemState>,
-    
+
     /// Recovery time in milliseconds
     pub recovery_time_ms: u64,
-    
+
     /// Recovery verification results
     pub verification_results: Vec<VerificationResult>,
-    
+
     /// Errors encountered during recovery
     pub errors: Vec<String>,
-    
+
     /// Recovery metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -334,13 +330,13 @@ pub struct RecoveryResult {
 pub struct VerificationResult {
     /// Verification check name
     pub check_name: String,
-    
+
     /// Whether verification passed
     pub passed: bool,
-    
+
     /// Verification details
     pub details: String,
-    
+
     /// Expected vs actual values
     pub comparison: Option<HashMap<String, serde_json::Value>>,
 }
@@ -349,10 +345,10 @@ pub struct VerificationResult {
 pub struct OperationLog {
     /// Log entries
     entries: VecDeque<OperationLogEntry>,
-    
+
     /// Maximum log size
     max_size: usize,
-    
+
     /// Total operations logged
     total_operations: u64,
 }
@@ -411,7 +407,10 @@ impl OperationLog {
     where
         F: Fn(&OperationLogEntry) -> bool,
     {
-        self.entries.iter().filter(|entry| predicate(entry)).collect()
+        self.entries
+            .iter()
+            .filter(|entry| predicate(entry))
+            .collect()
     }
 }
 
@@ -419,22 +418,22 @@ impl OperationLog {
 pub struct RollbackManager {
     /// Configuration
     config: RollbackConfig,
-    
+
     /// Operation log
     operation_log: Arc<RwLock<OperationLog>>,
-    
+
     /// System snapshots
     snapshots: Arc<RwLock<VecDeque<SystemState>>>,
-    
+
     /// Rollback points
     rollback_points: Arc<RwLock<HashMap<String, RollbackPoint>>>,
-    
+
     /// Recovery history
     recovery_history: Arc<RwLock<VecDeque<RecoveryResult>>>,
-    
+
     /// Rollback statistics
     stats: Arc<RwLock<RollbackStats>>,
-    
+
     /// Background task handles
     task_handles: Arc<tokio::sync::Mutex<Vec<tokio::task::JoinHandle<()>>>>,
 }
@@ -444,28 +443,28 @@ pub struct RollbackManager {
 pub struct RollbackStats {
     /// Total operations logged
     pub total_operations_logged: u64,
-    
+
     /// Total rollbacks performed
     pub total_rollbacks: u64,
-    
+
     /// Successful rollbacks
     pub successful_rollbacks: u64,
-    
+
     /// Failed rollbacks
     pub failed_rollbacks: u64,
-    
+
     /// Average rollback time
     pub avg_rollback_time_ms: f64,
-    
+
     /// Total snapshots created
     pub total_snapshots: u64,
-    
+
     /// Current storage usage
     pub storage_usage_bytes: u64,
-    
+
     /// Last snapshot timestamp
     pub last_snapshot_at: Option<chrono::DateTime<chrono::Utc>>,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -475,7 +474,9 @@ impl RollbackManager {
     pub async fn new(config: RollbackConfig) -> RragResult<Self> {
         let manager = Self {
             config: config.clone(),
-            operation_log: Arc::new(RwLock::new(OperationLog::new(config.max_operation_log_size))),
+            operation_log: Arc::new(RwLock::new(OperationLog::new(
+                config.max_operation_log_size,
+            ))),
             snapshots: Arc::new(RwLock::new(VecDeque::new())),
             rollback_points: Arc::new(RwLock::new(HashMap::new())),
             recovery_history: Arc::new(RwLock::new(VecDeque::new())),
@@ -516,8 +517,9 @@ impl RollbackManager {
         }
 
         // Check if snapshot is needed
-        if self.config.enable_snapshots && 
-           log.total_operations % self.config.snapshot_interval as u64 == 0 {
+        if self.config.enable_snapshots
+            && log.total_operations % self.config.snapshot_interval as u64 == 0
+        {
             drop(log);
             self.create_snapshot("auto_snapshot".to_string()).await?;
         }
@@ -528,7 +530,7 @@ impl RollbackManager {
     /// Create a system state snapshot
     pub async fn create_snapshot(&self, _description: String) -> RragResult<String> {
         let snapshot_id = Uuid::new_v4().to_string();
-        
+
         // Collect current system state
         let snapshot = SystemState {
             snapshot_id: snapshot_id.clone(),
@@ -574,13 +576,19 @@ impl RollbackManager {
         auto_eligible: bool,
     ) -> RragResult<String> {
         let rollback_point_id = Uuid::new_v4().to_string();
-        
+
         // Create snapshot for rollback point
-        let snapshot_id = self.create_snapshot(format!("rollback_point_{}", description)).await?;
-        
+        let snapshot_id = self
+            .create_snapshot(format!("rollback_point_{}", description))
+            .await?;
+
         let snapshot = {
             let snapshots = self.snapshots.read().await;
-            snapshots.iter().find(|s| s.snapshot_id == snapshot_id).unwrap().clone()
+            snapshots
+                .iter()
+                .find(|s| s.snapshot_id == snapshot_id)
+                .unwrap()
+                .clone()
         };
 
         let rollback_point = RollbackPoint {
@@ -629,7 +637,7 @@ impl RollbackManager {
                     }
                 }
             }
-            
+
             RollbackOperation::UndoOperations { operation_ids } => {
                 match self.undo_operations(&operation_ids).await {
                     Ok(operations) => {
@@ -641,7 +649,7 @@ impl RollbackManager {
                     }
                 }
             }
-            
+
             RollbackOperation::RevertToTimestamp { timestamp } => {
                 match self.revert_to_timestamp(timestamp).await {
                     Ok(operations) => {
@@ -653,9 +661,11 @@ impl RollbackManager {
                     }
                 }
             }
-            
+
             _ => {
-                recovery_result.errors.push("Rollback operation not implemented".to_string());
+                recovery_result
+                    .errors
+                    .push("Rollback operation not implemented".to_string());
             }
         }
 
@@ -670,7 +680,7 @@ impl RollbackManager {
         {
             let mut history = self.recovery_history.write().await;
             history.push_back(recovery_result.clone());
-            
+
             // Limit history size
             if history.len() > 100 {
                 history.pop_front();
@@ -686,7 +696,7 @@ impl RollbackManager {
             } else {
                 stats.failed_rollbacks += 1;
             }
-            stats.avg_rollback_time_ms = 
+            stats.avg_rollback_time_ms =
                 (stats.avg_rollback_time_ms + recovery_result.recovery_time_ms as f64) / 2.0;
             stats.last_updated = chrono::Utc::now();
         }
@@ -715,21 +725,21 @@ impl RollbackManager {
     pub async fn health_check(&self) -> RragResult<bool> {
         let handles = self.task_handles.lock().await;
         let all_running = handles.iter().all(|handle| !handle.is_finished());
-        
+
         let stats = self.get_stats().await;
         let healthy_stats = stats.failed_rollbacks < stats.successful_rollbacks * 2; // Arbitrary threshold
-        
+
         Ok(all_running && healthy_stats)
     }
 
     /// Start background maintenance tasks
     async fn start_background_tasks(&self) -> RragResult<()> {
         let mut handles = self.task_handles.lock().await;
-        
+
         if self.config.enable_snapshots {
             handles.push(self.start_snapshot_cleanup_task().await);
         }
-        
+
         Ok(())
     }
 
@@ -737,20 +747,20 @@ impl RollbackManager {
     async fn start_snapshot_cleanup_task(&self) -> tokio::task::JoinHandle<()> {
         let snapshots = Arc::clone(&self.snapshots);
         let config = self.config.clone();
-        
+
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(3600)); // 1 hour
-            
+
             loop {
                 interval.tick().await;
-                
+
                 let mut snapshots_guard = snapshots.write().await;
-                
+
                 // Remove old snapshots beyond retention limit
                 while snapshots_guard.len() > config.max_snapshots {
                     snapshots_guard.pop_front();
                 }
-                
+
                 // Could also implement time-based cleanup here
             }
         })
@@ -781,13 +791,19 @@ impl RollbackManager {
     }
 
     /// Revert to timestamp (placeholder)
-    async fn revert_to_timestamp(&self, _timestamp: chrono::DateTime<chrono::Utc>) -> RragResult<Vec<String>> {
+    async fn revert_to_timestamp(
+        &self,
+        _timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> RragResult<Vec<String>> {
         // In production, this would revert to the specified timestamp
         Ok(Vec::new())
     }
 
     /// Verify rollback results (placeholder)
-    async fn verify_rollback(&self, _result: &RecoveryResult) -> RragResult<Vec<VerificationResult>> {
+    async fn verify_rollback(
+        &self,
+        _result: &RecoveryResult,
+    ) -> RragResult<Vec<VerificationResult>> {
         // In production, this would verify the rollback was successful
         Ok(vec![VerificationResult {
             check_name: "system_integrity".to_string(),
@@ -813,15 +829,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_operation_logging() {
-        let manager = RollbackManager::new(RollbackConfig::default()).await.unwrap();
-        
+        let manager = RollbackManager::new(RollbackConfig::default())
+            .await
+            .unwrap();
+
         let doc = Document::new("Test content");
         let operation = IndexOperation::Add {
             document: doc,
             chunks: Vec::new(),
             embeddings: Vec::new(),
         };
-        
+
         let update = IndexUpdate {
             operation_id: Uuid::new_v4().to_string(),
             operation,
@@ -833,45 +851,58 @@ mod tests {
             max_retries: 3,
             retry_count: 0,
         };
-        
-        manager.log_operation(
-            update,
-            None,
-            "pre_hash".to_string(),
-            Some("post_hash".to_string()),
-        ).await.unwrap();
-        
+
+        manager
+            .log_operation(
+                update,
+                None,
+                "pre_hash".to_string(),
+                Some("post_hash".to_string()),
+            )
+            .await
+            .unwrap();
+
         let stats = manager.get_stats().await;
         assert_eq!(stats.total_operations_logged, 1);
     }
 
     #[tokio::test]
     async fn test_snapshot_creation() {
-        let manager = RollbackManager::new(RollbackConfig::default()).await.unwrap();
-        
-        let snapshot_id = manager.create_snapshot("test_snapshot".to_string()).await.unwrap();
+        let manager = RollbackManager::new(RollbackConfig::default())
+            .await
+            .unwrap();
+
+        let snapshot_id = manager
+            .create_snapshot("test_snapshot".to_string())
+            .await
+            .unwrap();
         assert!(!snapshot_id.is_empty());
-        
+
         let snapshots = manager.get_snapshots().await.unwrap();
         assert_eq!(snapshots.len(), 1);
         assert_eq!(snapshots[0].snapshot_id, snapshot_id);
-        
+
         let stats = manager.get_stats().await;
         assert_eq!(stats.total_snapshots, 1);
     }
 
     #[tokio::test]
     async fn test_rollback_point_creation() {
-        let manager = RollbackManager::new(RollbackConfig::default()).await.unwrap();
-        
-        let point_id = manager.create_rollback_point(
-            "test_point".to_string(),
-            vec!["op1".to_string(), "op2".to_string()],
-            true,
-        ).await.unwrap();
-        
+        let manager = RollbackManager::new(RollbackConfig::default())
+            .await
+            .unwrap();
+
+        let point_id = manager
+            .create_rollback_point(
+                "test_point".to_string(),
+                vec!["op1".to_string(), "op2".to_string()],
+                true,
+            )
+            .await
+            .unwrap();
+
         assert!(!point_id.is_empty());
-        
+
         let points = manager.get_rollback_points().await.unwrap();
         assert_eq!(points.len(), 1);
         assert_eq!(points[0].rollback_point_id, point_id);
@@ -880,11 +911,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_rollback_operation() {
-        let manager = RollbackManager::new(RollbackConfig::default()).await.unwrap();
-        
+        let manager = RollbackManager::new(RollbackConfig::default())
+            .await
+            .unwrap();
+
         // Create a snapshot first
-        let snapshot_id = manager.create_snapshot("test_snapshot".to_string()).await.unwrap();
-        
+        let snapshot_id = manager
+            .create_snapshot("test_snapshot".to_string())
+            .await
+            .unwrap();
+
         // Perform rollback
         let rollback_op = RollbackOperation::RestoreSnapshot {
             snapshot_id,
@@ -899,11 +935,11 @@ mod tests {
                 compression_ratio: 1.0,
             },
         };
-        
+
         let result = manager.rollback(rollback_op).await.unwrap();
         assert!(result.success);
         assert!(result.recovery_time_ms > 0);
-        
+
         let stats = manager.get_stats().await;
         assert_eq!(stats.total_rollbacks, 1);
         assert_eq!(stats.successful_rollbacks, 1);
@@ -918,7 +954,7 @@ mod tests {
             RollbackStrategy::Complete,
             RollbackStrategy::Custom("custom".to_string()),
         ];
-        
+
         // Ensure all strategies are different
         for (i, strategy1) in strategies.iter().enumerate() {
             for (j, strategy2) in strategies.iter().enumerate() {
@@ -938,7 +974,7 @@ mod tests {
             RollbackStepType::RebuildIndex,
             RollbackStepType::Custom("custom".to_string()),
         ];
-        
+
         // Ensure all step types are different
         for (i, type1) in step_types.iter().enumerate() {
             for (j, type2) in step_types.iter().enumerate() {

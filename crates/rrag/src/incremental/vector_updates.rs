@@ -1,9 +1,9 @@
 //! # Vector Update Manager
-//! 
+//!
 //! Manages incremental updates to vector indexes without requiring full rebuilds.
 //! Handles embedding updates, index optimization, and performance monitoring.
 
-use crate::{RragResult, Embedding};
+use crate::{Embedding, RragResult};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
@@ -15,31 +15,31 @@ use uuid::Uuid;
 pub struct VectorUpdateConfig {
     /// Enable batch processing for vector updates
     pub enable_batch_processing: bool,
-    
+
     /// Maximum batch size for vector operations
     pub max_batch_size: usize,
-    
+
     /// Batch timeout in milliseconds
     pub batch_timeout_ms: u64,
-    
+
     /// Index update strategy
     pub update_strategy: IndexUpdateStrategy,
-    
+
     /// Enable index optimization
     pub enable_optimization: bool,
-    
+
     /// Optimization interval in seconds
     pub optimization_interval_secs: u64,
-    
+
     /// Enable similarity threshold updates
     pub enable_similarity_updates: bool,
-    
+
     /// Similarity update threshold
     pub similarity_threshold: f32,
-    
+
     /// Maximum concurrent operations
     pub max_concurrent_operations: usize,
-    
+
     /// Performance monitoring settings
     pub monitoring: VectorMonitoringConfig,
 }
@@ -64,13 +64,13 @@ pub enum IndexUpdateStrategy {
 pub struct VectorMonitoringConfig {
     /// Enable performance tracking
     pub enable_performance_tracking: bool,
-    
+
     /// Enable memory usage monitoring
     pub enable_memory_monitoring: bool,
-    
+
     /// Enable index quality metrics
     pub enable_quality_metrics: bool,
-    
+
     /// Metrics collection interval in seconds
     pub metrics_interval_secs: u64,
 }
@@ -111,31 +111,31 @@ pub enum VectorOperation {
         embeddings: Vec<Embedding>,
         index_name: String,
     },
-    
+
     /// Update existing embeddings
     Update {
         embedding_updates: Vec<EmbeddingUpdate>,
         index_name: String,
     },
-    
+
     /// Remove embeddings from index
     Remove {
         embedding_ids: Vec<String>,
         index_name: String,
     },
-    
+
     /// Optimize index structure
     Optimize {
         index_name: String,
         optimization_type: OptimizationType,
     },
-    
+
     /// Rebuild index from scratch
     Rebuild {
         index_name: String,
         embeddings: Vec<Embedding>,
     },
-    
+
     /// Update similarity thresholds
     UpdateThresholds {
         index_name: String,
@@ -148,13 +148,13 @@ pub enum VectorOperation {
 pub struct EmbeddingUpdate {
     /// Embedding ID to update
     pub embedding_id: String,
-    
+
     /// New embedding data
     pub new_embedding: Embedding,
-    
+
     /// Update reason
     pub update_reason: UpdateReason,
-    
+
     /// Update metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -198,22 +198,22 @@ pub enum OptimizationType {
 pub struct VectorBatch {
     /// Batch ID
     pub batch_id: String,
-    
+
     /// Operations in this batch
     pub operations: Vec<VectorOperation>,
-    
+
     /// Batch creation timestamp
     pub created_at: chrono::DateTime<chrono::Utc>,
-    
+
     /// Target index name
     pub index_name: String,
-    
+
     /// Batch priority
     pub priority: u8,
-    
+
     /// Expected processing time
     pub estimated_duration_ms: u64,
-    
+
     /// Batch metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -223,25 +223,25 @@ pub struct VectorBatch {
 pub struct VectorOperationResult {
     /// Operation ID
     pub operation_id: String,
-    
+
     /// Whether operation succeeded
     pub success: bool,
-    
+
     /// Number of embeddings processed
     pub embeddings_processed: usize,
-    
+
     /// Processing time in milliseconds
     pub processing_time_ms: u64,
-    
+
     /// Index statistics after operation
     pub index_stats: Option<IndexStats>,
-    
+
     /// Performance metrics
     pub performance_metrics: OperationMetrics,
-    
+
     /// Errors encountered
     pub errors: Vec<String>,
-    
+
     /// Operation metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -251,28 +251,28 @@ pub struct VectorOperationResult {
 pub struct IndexStats {
     /// Index name
     pub index_name: String,
-    
+
     /// Number of embeddings in index
     pub embedding_count: usize,
-    
+
     /// Index size in bytes
     pub size_bytes: u64,
-    
+
     /// Index dimensions
     pub dimensions: usize,
-    
+
     /// Index type/algorithm
     pub index_type: String,
-    
+
     /// Memory usage in bytes
     pub memory_usage_bytes: u64,
-    
+
     /// Last optimization timestamp
     pub last_optimized_at: Option<chrono::DateTime<chrono::Utc>>,
-    
+
     /// Index quality metrics
     pub quality_metrics: IndexQualityMetrics,
-    
+
     /// Performance metrics
     pub performance_metrics: IndexPerformanceMetrics,
 }
@@ -282,16 +282,16 @@ pub struct IndexStats {
 pub struct IndexQualityMetrics {
     /// Average recall at k=10
     pub recall_at_10: f32,
-    
+
     /// Average precision
     pub precision: f32,
-    
+
     /// Index freshness (how up-to-date it is)
     pub freshness_score: f32,
-    
+
     /// Clustering quality
     pub clustering_quality: f32,
-    
+
     /// Distribution balance
     pub distribution_balance: f32,
 }
@@ -301,16 +301,16 @@ pub struct IndexQualityMetrics {
 pub struct IndexPerformanceMetrics {
     /// Average query time in milliseconds
     pub avg_query_time_ms: f32,
-    
+
     /// 95th percentile query time
     pub p95_query_time_ms: f32,
-    
+
     /// Throughput (queries per second)
     pub queries_per_second: f32,
-    
+
     /// Index build time in milliseconds
     pub build_time_ms: u64,
-    
+
     /// Memory efficiency score
     pub memory_efficiency: f32,
 }
@@ -320,16 +320,16 @@ pub struct IndexPerformanceMetrics {
 pub struct OperationMetrics {
     /// CPU time used
     pub cpu_time_ms: u64,
-    
+
     /// Memory peak usage
     pub peak_memory_mb: f32,
-    
+
     /// I/O operations performed
     pub io_operations: u64,
-    
+
     /// Cache hit rate
     pub cache_hit_rate: f32,
-    
+
     /// Throughput (embeddings per second)
     pub throughput_eps: f32,
 }
@@ -338,22 +338,22 @@ pub struct OperationMetrics {
 pub struct VectorUpdateManager {
     /// Configuration
     config: VectorUpdateConfig,
-    
+
     /// Pending operations queue
     pending_operations: Arc<RwLock<VecDeque<VectorOperation>>>,
-    
+
     /// Active batches
     active_batches: Arc<RwLock<HashMap<String, VectorBatch>>>,
-    
+
     /// Index metadata
     index_metadata: Arc<RwLock<HashMap<String, IndexStats>>>,
-    
+
     /// Operation history
     operation_history: Arc<RwLock<VecDeque<VectorOperationResult>>>,
-    
+
     /// Performance metrics
     metrics: Arc<RwLock<VectorUpdateMetrics>>,
-    
+
     /// Background task handles
     task_handles: Arc<tokio::sync::Mutex<Vec<tokio::task::JoinHandle<()>>>>,
 }
@@ -363,25 +363,25 @@ pub struct VectorUpdateManager {
 pub struct VectorUpdateMetrics {
     /// Total operations processed
     pub total_operations: u64,
-    
+
     /// Operations by type
     pub operations_by_type: HashMap<String, u64>,
-    
+
     /// Success rate
     pub success_rate: f32,
-    
+
     /// Average processing time
     pub avg_processing_time_ms: f32,
-    
+
     /// Total embeddings processed
     pub total_embeddings_processed: u64,
-    
+
     /// Index statistics
     pub index_stats: HashMap<String, IndexStats>,
-    
+
     /// System performance
     pub system_performance: SystemPerformanceMetrics,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -391,19 +391,19 @@ pub struct VectorUpdateMetrics {
 pub struct SystemPerformanceMetrics {
     /// Overall throughput
     pub overall_throughput_eps: f32,
-    
+
     /// Memory usage
     pub memory_usage_mb: f32,
-    
+
     /// CPU utilization
     pub cpu_utilization_percent: f32,
-    
+
     /// Queue depth
     pub queue_depth: usize,
-    
+
     /// Active operations count
     pub active_operations: usize,
-    
+
     /// System health score
     pub health_score: f32,
 }
@@ -444,7 +444,7 @@ impl VectorUpdateManager {
     /// Submit vector operation for processing
     pub async fn submit_operation(&self, operation: VectorOperation) -> RragResult<String> {
         let operation_id = Uuid::new_v4().to_string();
-        
+
         if self.config.enable_batch_processing {
             match self.config.update_strategy {
                 IndexUpdateStrategy::Batch => {
@@ -479,7 +479,10 @@ impl VectorUpdateManager {
         let mut errors = Vec::new();
 
         for update in &updates {
-            match self.process_single_embedding_update(update, index_name).await {
+            match self
+                .process_single_embedding_update(update, index_name)
+                .await
+            {
                 Ok(_) => processed_count += 1,
                 Err(e) => errors.push(e.to_string()),
             }
@@ -524,7 +527,9 @@ impl VectorUpdateManager {
         let operation_id = Uuid::new_v4().to_string();
 
         // Perform optimization based on type
-        let optimization_result = self.perform_optimization(index_name, &optimization_type).await?;
+        let optimization_result = self
+            .perform_optimization(index_name, &optimization_type)
+            .await?;
         let processing_time = start_time.elapsed().as_millis() as u64;
 
         // Update index metadata
@@ -571,24 +576,27 @@ impl VectorUpdateManager {
     /// Get system metrics
     pub async fn get_metrics(&self) -> VectorUpdateMetrics {
         let mut metrics = self.metrics.read().await.clone();
-        
+
         // Update real-time metrics
         metrics.system_performance.queue_depth = {
             let pending = self.pending_operations.read().await;
             pending.len()
         };
-        
+
         metrics.system_performance.active_operations = {
             let batches = self.active_batches.read().await;
             batches.len()
         };
-        
+
         metrics.last_updated = chrono::Utc::now();
         metrics
     }
 
     /// Get operation history
-    pub async fn get_operation_history(&self, limit: Option<usize>) -> RragResult<Vec<VectorOperationResult>> {
+    pub async fn get_operation_history(
+        &self,
+        limit: Option<usize>,
+    ) -> RragResult<Vec<VectorOperationResult>> {
         let history = self.operation_history.read().await;
         let limit = limit.unwrap_or(history.len());
         Ok(history.iter().rev().take(limit).cloned().collect())
@@ -598,43 +606,43 @@ impl VectorUpdateManager {
     pub async fn health_check(&self) -> RragResult<bool> {
         let handles = self.task_handles.lock().await;
         let all_running = handles.iter().all(|handle| !handle.is_finished());
-        
+
         let metrics = self.get_metrics().await;
         let healthy_performance = metrics.system_performance.health_score > 0.8;
         let low_error_rate = metrics.success_rate > 0.9;
-        
+
         Ok(all_running && healthy_performance && low_error_rate)
     }
 
     /// Start background processing tasks
     async fn start_background_tasks(&self) -> RragResult<()> {
         let mut handles = self.task_handles.lock().await;
-        
+
         // Operation processor
         handles.push(self.start_operation_processor().await);
-        
+
         // Batch processor
         if self.config.enable_batch_processing {
             handles.push(self.start_batch_processor().await);
         }
-        
+
         // Index optimizer
         if self.config.enable_optimization {
             handles.push(self.start_index_optimizer().await);
         }
-        
+
         // Metrics collector
         if self.config.monitoring.enable_performance_tracking {
             handles.push(self.start_metrics_collector().await);
         }
-        
+
         Ok(())
     }
 
     /// Start operation processing task
     async fn start_operation_processor(&self) -> tokio::task::JoinHandle<()> {
         let pending_operations = Arc::clone(&self.pending_operations);
-        
+
         tokio::spawn(async move {
             loop {
                 let operation = {
@@ -657,15 +665,14 @@ impl VectorUpdateManager {
     async fn start_batch_processor(&self) -> tokio::task::JoinHandle<()> {
         let active_batches = Arc::clone(&self.active_batches);
         let config = self.config.clone();
-        
+
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_millis(config.batch_timeout_ms)
-            );
-            
+            let mut interval =
+                tokio::time::interval(tokio::time::Duration::from_millis(config.batch_timeout_ms));
+
             loop {
                 interval.tick().await;
-                
+
                 // Process ready batches
                 let batches_to_process = {
                     let batches = active_batches.read().await;
@@ -673,9 +680,12 @@ impl VectorUpdateManager {
                 };
 
                 for batch in batches_to_process {
-                    if batch.operations.len() >= config.max_batch_size ||
-                       chrono::Utc::now().signed_duration_since(batch.created_at).num_milliseconds() 
-                       >= config.batch_timeout_ms as i64 {
+                    if batch.operations.len() >= config.max_batch_size
+                        || chrono::Utc::now()
+                            .signed_duration_since(batch.created_at)
+                            .num_milliseconds()
+                            >= config.batch_timeout_ms as i64
+                    {
                         // Process batch
                         {
                             let mut batches = active_batches.write().await;
@@ -692,24 +702,28 @@ impl VectorUpdateManager {
     async fn start_index_optimizer(&self) -> tokio::task::JoinHandle<()> {
         let index_metadata = Arc::clone(&self.index_metadata);
         let config = self.config.clone();
-        
+
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.optimization_interval_secs)
-            );
-            
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.optimization_interval_secs,
+            ));
+
             loop {
                 interval.tick().await;
-                
+
                 // Check which indexes need optimization
                 let indexes_to_optimize = {
                     let metadata = index_metadata.read().await;
-                    metadata.keys()
+                    metadata
+                        .keys()
                         .filter(|index_name| {
                             if let Some(stats) = metadata.get(*index_name) {
                                 // Simple heuristic: optimize if not done in last hour
                                 stats.last_optimized_at.map_or(true, |last_opt| {
-                                    chrono::Utc::now().signed_duration_since(last_opt).num_hours() >= 1
+                                    chrono::Utc::now()
+                                        .signed_duration_since(last_opt)
+                                        .num_hours()
+                                        >= 1
                                 })
                             } else {
                                 false
@@ -732,27 +746,27 @@ impl VectorUpdateManager {
     async fn start_metrics_collector(&self) -> tokio::task::JoinHandle<()> {
         let metrics = Arc::clone(&self.metrics);
         let config = self.config.clone();
-        
+
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.monitoring.metrics_interval_secs)
-            );
-            
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.monitoring.metrics_interval_secs,
+            ));
+
             loop {
                 interval.tick().await;
-                
+
                 // Update system metrics
                 let mut metrics_guard = metrics.write().await;
-                
+
                 metrics_guard.system_performance = SystemPerformanceMetrics {
                     overall_throughput_eps: 100.0, // Would be calculated
-                    memory_usage_mb: 256.0, // Would be measured
+                    memory_usage_mb: 256.0,        // Would be measured
                     cpu_utilization_percent: 45.0, // Would be measured
-                    queue_depth: 0, // Updated elsewhere
-                    active_operations: 0, // Updated elsewhere
-                    health_score: 0.95, // Would be calculated
+                    queue_depth: 0,                // Updated elsewhere
+                    active_operations: 0,          // Updated elsewhere
+                    health_score: 0.95,            // Would be calculated
                 };
-                
+
                 metrics_guard.last_updated = chrono::Utc::now();
             }
         })
@@ -762,10 +776,11 @@ impl VectorUpdateManager {
     async fn add_to_batch(&self, operation: VectorOperation) -> RragResult<()> {
         let index_name = self.extract_index_name(&operation)?;
         let batch_id = format!("batch_{}", index_name);
-        
+
         let mut batches = self.active_batches.write().await;
-        let batch = batches.entry(batch_id.clone()).or_insert_with(|| {
-            VectorBatch {
+        let batch = batches
+            .entry(batch_id.clone())
+            .or_insert_with(|| VectorBatch {
                 batch_id: batch_id.clone(),
                 operations: Vec::new(),
                 created_at: chrono::Utc::now(),
@@ -773,9 +788,8 @@ impl VectorUpdateManager {
                 priority: 5,
                 estimated_duration_ms: 1000,
                 metadata: HashMap::new(),
-            }
-        });
-        
+            });
+
         batch.operations.push(operation);
         Ok(())
     }
@@ -799,7 +813,11 @@ impl VectorUpdateManager {
     }
 
     /// Update index statistics
-    async fn update_index_stats(&self, index_name: &str, processed_count: usize) -> RragResult<IndexStats> {
+    async fn update_index_stats(
+        &self,
+        index_name: &str,
+        processed_count: usize,
+    ) -> RragResult<IndexStats> {
         let mut metadata = self.index_metadata.write().await;
         let stats = metadata.entry(index_name.to_string()).or_insert_with(|| {
             IndexStats {
@@ -838,7 +856,7 @@ impl VectorUpdateManager {
     async fn store_operation_result(&self, result: VectorOperationResult) -> RragResult<()> {
         let mut history = self.operation_history.write().await;
         history.push_back(result.clone());
-        
+
         // Limit history size
         if history.len() > 1000 {
             history.pop_front();
@@ -848,17 +866,19 @@ impl VectorUpdateManager {
         let mut metrics = self.metrics.write().await;
         metrics.total_operations += 1;
         metrics.total_embeddings_processed += result.embeddings_processed as u64;
-        
+
         if result.success {
-            metrics.success_rate = 
-                (metrics.success_rate * (metrics.total_operations - 1) as f32 + 1.0) / metrics.total_operations as f32;
+            metrics.success_rate = (metrics.success_rate * (metrics.total_operations - 1) as f32
+                + 1.0)
+                / metrics.total_operations as f32;
         } else {
-            metrics.success_rate = 
-                (metrics.success_rate * (metrics.total_operations - 1) as f32) / metrics.total_operations as f32;
+            metrics.success_rate = (metrics.success_rate * (metrics.total_operations - 1) as f32)
+                / metrics.total_operations as f32;
         }
-        
-        metrics.avg_processing_time_ms = 
-            (metrics.avg_processing_time_ms * (metrics.total_operations - 1) as f32 + result.processing_time_ms as f32) 
+
+        metrics.avg_processing_time_ms = (metrics.avg_processing_time_ms
+            * (metrics.total_operations - 1) as f32
+            + result.processing_time_ms as f32)
             / metrics.total_operations as f32;
 
         Ok(())
@@ -884,7 +904,7 @@ impl VectorUpdateManager {
     ) -> RragResult<OptimizationResult> {
         // Placeholder for actual optimization logic
         tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-        
+
         Ok(OptimizationResult {
             success: true,
             embeddings_affected: 1000,
@@ -937,22 +957,26 @@ mod tests {
 
     #[tokio::test]
     async fn test_submit_operation() {
-        let manager = VectorUpdateManager::new(VectorUpdateConfig::default()).await.unwrap();
-        
+        let manager = VectorUpdateManager::new(VectorUpdateConfig::default())
+            .await
+            .unwrap();
+
         let embedding = Embedding::new("test_id".to_string(), vec![0.1, 0.2, 0.3]);
         let operation = VectorOperation::Add {
             embeddings: vec![embedding],
             index_name: "test_index".to_string(),
         };
-        
+
         let op_id = manager.submit_operation(operation).await.unwrap();
         assert!(!op_id.is_empty());
     }
 
     #[tokio::test]
     async fn test_embedding_updates() {
-        let manager = VectorUpdateManager::new(VectorUpdateConfig::default()).await.unwrap();
-        
+        let manager = VectorUpdateManager::new(VectorUpdateConfig::default())
+            .await
+            .unwrap();
+
         let embedding = Embedding::new("test_id".to_string(), vec![0.1, 0.2, 0.3]);
         let update = EmbeddingUpdate {
             embedding_id: "test_id".to_string(),
@@ -960,42 +984,46 @@ mod tests {
             update_reason: UpdateReason::ContentChanged,
             metadata: HashMap::new(),
         };
-        
-        let result = manager.process_embedding_updates(
-            vec![update],
-            "test_index",
-        ).await.unwrap();
-        
+
+        let result = manager
+            .process_embedding_updates(vec![update], "test_index")
+            .await
+            .unwrap();
+
         assert!(result.success);
         assert_eq!(result.embeddings_processed, 1);
     }
 
     #[tokio::test]
     async fn test_index_optimization() {
-        let manager = VectorUpdateManager::new(VectorUpdateConfig::default()).await.unwrap();
-        
-        let result = manager.optimize_index(
-            "test_index",
-            OptimizationType::Compact,
-        ).await.unwrap();
-        
+        let manager = VectorUpdateManager::new(VectorUpdateConfig::default())
+            .await
+            .unwrap();
+
+        let result = manager
+            .optimize_index("test_index", OptimizationType::Compact)
+            .await
+            .unwrap();
+
         assert!(result.success);
         assert!(result.processing_time_ms > 0);
     }
 
     #[tokio::test]
     async fn test_metrics_collection() {
-        let manager = VectorUpdateManager::new(VectorUpdateConfig::default()).await.unwrap();
-        
+        let manager = VectorUpdateManager::new(VectorUpdateConfig::default())
+            .await
+            .unwrap();
+
         // Submit some operations to generate metrics
         let embedding = Embedding::new("test_id".to_string(), vec![0.1, 0.2, 0.3]);
         let operation = VectorOperation::Add {
             embeddings: vec![embedding],
             index_name: "test_index".to_string(),
         };
-        
+
         manager.submit_operation(operation).await.unwrap();
-        
+
         let metrics = manager.get_metrics().await;
         assert!(metrics.system_performance.health_score >= 0.0);
         assert!(metrics.system_performance.health_score <= 1.0);
@@ -1010,7 +1038,7 @@ mod tests {
             IndexUpdateStrategy::Adaptive,
             IndexUpdateStrategy::Custom("custom".to_string()),
         ];
-        
+
         // Ensure all strategies are different
         for (i, strategy1) in strategies.iter().enumerate() {
             for (j, strategy2) in strategies.iter().enumerate() {
@@ -1031,7 +1059,7 @@ mod tests {
             OptimizationType::MemoryOptimization,
             OptimizationType::Full,
         ];
-        
+
         // Ensure all optimization types are different
         for (i, type1) in opt_types.iter().enumerate() {
             for (j, type2) in opt_types.iter().enumerate() {

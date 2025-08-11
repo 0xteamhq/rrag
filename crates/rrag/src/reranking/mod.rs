@@ -1,64 +1,64 @@
 //! # Advanced Reranking Module
-//! 
+//!
 //! State-of-the-art reranking algorithms for improving retrieval relevance and precision.
-//! 
+//!
 //! This module provides multiple reranking strategies to refine initial retrieval results,
 //! ensuring the most relevant documents are ranked at the top. It supports various
 //! approaches from simple score-based reranking to sophisticated neural models.
-//! 
+//!
 //! ## Features
-//! 
+//!
 //! - **Cross-Encoder Reranking**: Transformer-based relevance scoring
 //! - **Neural Reranking**: Deep learning models for relevance prediction
 //! - **Learning-to-Rank**: Machine learning ranking with feature engineering
 //! - **Multi-Signal Fusion**: Combine multiple ranking signals
 //! - **Diversity Reranking**: Ensure result diversity while maintaining relevance
-//! 
+//!
 //! ## Performance
-//! 
+//!
 //! - Batch processing for efficiency
 //! - Async operations for non-blocking I/O
 //! - Caching of model predictions
 //! - GPU acceleration support (when available)
-//! 
+//!
 //! ## Examples
-//! 
+//!
 //! ### Cross-Encoder Reranking
 //! ```rust
 //! use rrag::reranking::{CrossEncoderReranker, CrossEncoderConfig};
 //! use rrag::Document;
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let reranker = CrossEncoderReranker::new(
 //!     CrossEncoderConfig::default()
 //!         .with_model("cross-encoder/ms-marco-MiniLM-L-12-v2")
 //!         .with_batch_size(32)
 //! );
-//! 
+//!
 //! let query = "What is machine learning?";
 //! let documents = vec![
 //!     Document::new("Machine learning is a subset of AI..."),
 //!     Document::new("Deep learning uses neural networks..."),
 //!     Document::new("Python is a programming language..."),
 //! ];
-//! 
+//!
 //! let reranked = reranker.rerank(query, documents).await?;
 //! // Most relevant documents are now at the top
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Learning-to-Rank
 //! ```rust
 //! use rrag::reranking::{LearningToRankReranker, LTRConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let ltr_reranker = LearningToRankReranker::new(
 //!     LTRConfig::default()
 //!         .with_features(vec!["bm25", "tfidf", "semantic_similarity"])
 //!         .with_model("lightgbm")
 //! );
-//! 
+//!
 //! let reranked = ltr_reranker.rerank_with_features(
 //!     query,
 //!     documents,
@@ -67,17 +67,17 @@
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Multi-Signal Reranking
 //! ```rust
 //! use rrag::reranking::{MultiSignalReranker, SignalWeight};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let multi_reranker = MultiSignalReranker::new()
 //!     .add_signal("relevance", 0.6)
 //!     .add_signal("recency", 0.2)
 //!     .add_signal("popularity", 0.2);
-//! 
+//!
 //! let reranked = multi_reranker.rerank_multi_signal(
 //!     documents,
 //!     signal_scores
@@ -95,36 +95,36 @@ pub mod neural_reranker;
 
 // Re-exports
 pub use cross_encoder::{
-    CrossEncoderReranker, CrossEncoderConfig, CrossEncoderModel,
-    RerankedResult, RerankingStrategy, ScoreAggregation
+    CrossEncoderConfig, CrossEncoderModel, CrossEncoderReranker, RerankedResult, RerankingStrategy,
+    ScoreAggregation,
 };
 pub use learning_to_rank::{
-    LearningToRankReranker, LTRConfig, LTRModel, LTRFeatures,
-    RankingFeature, FeatureExtractor, FeatureType
+    FeatureExtractor, FeatureType, LTRConfig, LTRFeatures, LTRModel, LearningToRankReranker,
+    RankingFeature,
 };
 pub use multi_signal::{
-    MultiSignalReranker, MultiSignalConfig, SignalWeight,
-    RelevanceSignal, SignalType, SignalAggregation
+    MultiSignalConfig, MultiSignalReranker, RelevanceSignal, SignalAggregation, SignalType,
+    SignalWeight,
 };
 pub use neural_reranker::{
-    NeuralReranker, NeuralConfig, AttentionMechanism,
-    TransformerReranker, BertReranker, RobertaReranker
+    AttentionMechanism, BertReranker, NeuralConfig, NeuralReranker, RobertaReranker,
+    TransformerReranker,
 };
 
 /// Main reranking interface that coordinates different reranking strategies
 pub struct AdvancedReranker {
     /// Cross-encoder for query-document relevance
     cross_encoder: Option<CrossEncoderReranker>,
-    
+
     /// Learning-to-rank model
     ltr_model: Option<LearningToRankReranker>,
-    
+
     /// Multi-signal aggregation
     multi_signal: Option<MultiSignalReranker>,
-    
+
     /// Neural reranking models
     neural_reranker: Option<NeuralReranker>,
-    
+
     /// Configuration
     config: AdvancedRerankingConfig,
 }
@@ -134,31 +134,31 @@ pub struct AdvancedReranker {
 pub struct AdvancedRerankingConfig {
     /// Enable cross-encoder reranking
     pub enable_cross_encoder: bool,
-    
+
     /// Enable learning-to-rank
     pub enable_ltr: bool,
-    
+
     /// Enable multi-signal reranking
     pub enable_multi_signal: bool,
-    
+
     /// Enable neural reranking
     pub enable_neural: bool,
-    
+
     /// Maximum number of candidates to rerank
     pub max_candidates: usize,
-    
+
     /// Minimum score threshold
     pub score_threshold: f32,
-    
+
     /// Reranking strategy priority order
     pub strategy_order: Vec<RerankingStrategyType>,
-    
+
     /// Score combination method
     pub score_combination: ScoreCombination,
-    
+
     /// Cache reranking results
     pub enable_caching: bool,
-    
+
     /// Batch size for neural models
     pub batch_size: usize,
 }
@@ -212,25 +212,25 @@ pub enum ScoreCombination {
 pub struct AdvancedRerankedResult {
     /// Document identifier
     pub document_id: String,
-    
+
     /// Final combined score
     pub final_score: f32,
-    
+
     /// Individual scores from each reranker
     pub component_scores: std::collections::HashMap<String, f32>,
-    
+
     /// Original retrieval rank
     pub original_rank: usize,
-    
+
     /// New rank after reranking
     pub new_rank: usize,
-    
+
     /// Confidence in the reranking decision
     pub confidence: f32,
-    
+
     /// Explanation of the reranking decision
     pub explanation: Option<String>,
-    
+
     /// Processing metadata
     pub metadata: RerankingMetadata,
 }
@@ -240,16 +240,16 @@ pub struct AdvancedRerankedResult {
 pub struct RerankingMetadata {
     /// Time taken for reranking
     pub reranking_time_ms: u64,
-    
+
     /// Rerankers used
     pub rerankers_used: Vec<String>,
-    
+
     /// Features extracted
     pub features_extracted: usize,
-    
+
     /// Model versions used
     pub model_versions: std::collections::HashMap<String, String>,
-    
+
     /// Warnings or notices
     pub warnings: Vec<String>,
 }
@@ -281,7 +281,7 @@ impl AdvancedReranker {
             config,
         }
     }
-    
+
     /// Rerank a list of initial retrieval results
     pub async fn rerank(
         &self,
@@ -289,24 +289,27 @@ impl AdvancedReranker {
         initial_results: Vec<crate::SearchResult>,
     ) -> RragResult<Vec<AdvancedRerankedResult>> {
         let start_time = std::time::Instant::now();
-        
+
         // Limit candidates if needed
         let candidates: Vec<_> = initial_results
             .into_iter()
             .take(self.config.max_candidates)
             .enumerate()
             .collect();
-        
+
         let mut component_scores = std::collections::HashMap::new();
         let mut rerankers_used = Vec::new();
         let mut warnings = Vec::new();
-        
+
         // Apply reranking strategies in order
         for strategy in &self.config.strategy_order {
             match strategy {
                 RerankingStrategyType::CrossEncoder => {
                     if let Some(ref cross_encoder) = self.cross_encoder {
-                        let candidate_results: Vec<_> = candidates.iter().map(|(_, result)| result.clone()).collect();
+                        let candidate_results: Vec<_> = candidates
+                            .iter()
+                            .map(|(_, result)| result.clone())
+                            .collect();
                         match cross_encoder.rerank(query, &candidate_results).await {
                             Ok(scores) => {
                                 component_scores.insert("cross_encoder".to_string(), scores);
@@ -320,7 +323,10 @@ impl AdvancedReranker {
                 }
                 RerankingStrategyType::MultiSignal => {
                     if let Some(ref multi_signal) = self.multi_signal {
-                        let candidate_results: Vec<_> = candidates.iter().map(|(_, result)| result.clone()).collect();
+                        let candidate_results: Vec<_> = candidates
+                            .iter()
+                            .map(|(_, result)| result.clone())
+                            .collect();
                         match multi_signal.rerank(query, &candidate_results).await {
                             Ok(scores) => {
                                 component_scores.insert("multi_signal".to_string(), scores);
@@ -334,7 +340,10 @@ impl AdvancedReranker {
                 }
                 RerankingStrategyType::LearningToRank => {
                     if let Some(ref ltr) = self.ltr_model {
-                        let candidate_results: Vec<_> = candidates.iter().map(|(_, result)| result.clone()).collect();
+                        let candidate_results: Vec<_> = candidates
+                            .iter()
+                            .map(|(_, result)| result.clone())
+                            .collect();
                         match ltr.rerank(query, &candidate_results).await {
                             Ok(scores) => {
                                 component_scores.insert("ltr".to_string(), scores);
@@ -348,7 +357,10 @@ impl AdvancedReranker {
                 }
                 RerankingStrategyType::Neural => {
                     if let Some(ref neural) = self.neural_reranker {
-                        let candidate_results: Vec<_> = candidates.iter().map(|(_, result)| result.clone()).collect();
+                        let candidate_results: Vec<_> = candidates
+                            .iter()
+                            .map(|(_, result)| result.clone())
+                            .collect();
                         match neural.rerank(query, &candidate_results).await {
                             Ok(scores) => {
                                 component_scores.insert("neural".to_string(), scores);
@@ -362,10 +374,10 @@ impl AdvancedReranker {
                 }
             }
         }
-        
+
         // Combine scores
         let final_scores = self.combine_scores(&component_scores, candidates.len());
-        
+
         // Create reranked results
         let mut reranked_results: Vec<_> = candidates
             .into_iter()
@@ -390,21 +402,25 @@ impl AdvancedReranker {
                 },
             })
             .collect();
-        
+
         // Sort by final score
-        reranked_results.sort_by(|a, b| b.final_score.partial_cmp(&a.final_score).unwrap_or(std::cmp::Ordering::Equal));
-        
+        reranked_results.sort_by(|a, b| {
+            b.final_score
+                .partial_cmp(&a.final_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
         // Update new ranks
         for (idx, result) in reranked_results.iter_mut().enumerate() {
             result.new_rank = idx;
         }
-        
+
         // Filter by score threshold
         reranked_results.retain(|result| result.final_score >= self.config.score_threshold);
-        
+
         Ok(reranked_results)
     }
-    
+
     /// Combine scores from different rerankers
     fn combine_scores(
         &self,
@@ -412,40 +428,44 @@ impl AdvancedReranker {
         num_candidates: usize,
     ) -> std::collections::HashMap<usize, f32> {
         let mut final_scores = std::collections::HashMap::new();
-        
+
         for idx in 0..num_candidates {
             let scores: Vec<f32> = component_scores
                 .values()
                 .map(|scores| scores.get(&idx).copied().unwrap_or(0.0))
                 .collect();
-            
+
             let final_score = match &self.config.score_combination {
                 ScoreCombination::Average => {
-                    if scores.is_empty() { 0.0 } else { scores.iter().sum::<f32>() / scores.len() as f32 }
+                    if scores.is_empty() {
+                        0.0
+                    } else {
+                        scores.iter().sum::<f32>() / scores.len() as f32
+                    }
                 }
-                ScoreCombination::Weighted(weights) => {
-                    scores.iter().zip(weights.iter())
-                        .map(|(score, weight)| score * weight)
-                        .sum::<f32>()
-                }
-                ScoreCombination::Max => {
-                    scores.iter().fold(0.0f32, |a, &b| a.max(b))
-                }
-                ScoreCombination::Min => {
-                    scores.iter().fold(1.0f32, |a, &b| a.min(b))
-                }
+                ScoreCombination::Weighted(weights) => scores
+                    .iter()
+                    .zip(weights.iter())
+                    .map(|(score, weight)| score * weight)
+                    .sum::<f32>(),
+                ScoreCombination::Max => scores.iter().fold(0.0f32, |a, &b| a.max(b)),
+                ScoreCombination::Min => scores.iter().fold(1.0f32, |a, &b| a.min(b)),
                 ScoreCombination::Learned => {
                     // Would use a learned combination model
-                    if scores.is_empty() { 0.0 } else { scores.iter().sum::<f32>() / scores.len() as f32 }
+                    if scores.is_empty() {
+                        0.0
+                    } else {
+                        scores.iter().sum::<f32>() / scores.len() as f32
+                    }
                 }
             };
-            
+
             final_scores.insert(idx, final_score);
         }
-        
+
         final_scores
     }
-    
+
     /// Calculate confidence in the reranking decision
     fn calculate_confidence(
         &self,
@@ -457,22 +477,24 @@ impl AdvancedReranker {
             .values()
             .map(|scores| scores.get(&idx).copied().unwrap_or(0.0))
             .collect();
-        
+
         if scores.len() < 2 {
             return 0.5; // Low confidence with only one scorer
         }
-        
+
         // Calculate standard deviation as inverse confidence
         let mean = scores.iter().sum::<f32>() / scores.len() as f32;
-        let variance = scores.iter()
+        let variance = scores
+            .iter()
             .map(|score| (score - mean).powi(2))
-            .sum::<f32>() / scores.len() as f32;
+            .sum::<f32>()
+            / scores.len() as f32;
         let std_dev = variance.sqrt();
-        
+
         // Convert to confidence (lower std_dev = higher confidence)
         (1.0 - std_dev.min(1.0)).max(0.0)
     }
-    
+
     /// Generate explanation for reranking decision
     fn generate_explanation(
         &self,
@@ -483,13 +505,13 @@ impl AdvancedReranker {
             .iter()
             .map(|(name, scores)| (name.clone(), scores.get(&idx).copied().unwrap_or(0.0)))
             .collect();
-        
+
         if scores.is_empty() {
             return None;
         }
-        
+
         let mut explanations = Vec::new();
-        
+
         for (reranker, score) in &scores {
             match reranker.as_str() {
                 "cross_encoder" => {
@@ -509,15 +531,15 @@ impl AdvancedReranker {
                 }
             }
         }
-        
+
         Some(explanations.join("; "))
     }
-    
+
     /// Update configuration
     pub fn update_config(&mut self, config: AdvancedRerankingConfig) {
         self.config = config;
     }
-    
+
     /// Get current configuration
     pub fn get_config(&self) -> &AdvancedRerankingConfig {
         &self.config

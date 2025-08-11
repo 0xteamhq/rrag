@@ -1,19 +1,19 @@
 //! # RRAG Document Types
-//! 
+//!
 //! Core document handling with zero-copy optimizations and efficient processing.
 //! Designed for Rust's ownership system and memory efficiency.
 
 use crate::{RragError, RragResult};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 /// Document metadata using Cow for zero-copy string handling
 pub type Metadata = HashMap<String, serde_json::Value>;
 
 /// Core document type optimized for Rust patterns
-/// 
+///
 /// Uses `Cow<str>` for flexible string handling:
 /// - Borrowed strings when possible (zero-copy)
 /// - Owned strings when necessary (after processing)
@@ -21,17 +21,17 @@ pub type Metadata = HashMap<String, serde_json::Value>;
 pub struct Document {
     /// Unique document identifier
     pub id: String,
-    
+
     /// Document content - uses Cow for efficient string handling
     #[serde(with = "cow_str_serde")]
     pub content: Cow<'static, str>,
-    
+
     /// Document metadata
     pub metadata: Metadata,
-    
+
     /// Content hash for deduplication
     pub content_hash: Option<String>,
-    
+
     /// Document creation timestamp
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
@@ -99,7 +99,7 @@ impl Document {
         // Simple hash implementation - in production, use a proper hash function
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let mut hasher = DefaultHasher::new();
         content.hash(&mut hasher);
         format!("{:x}", hasher.finish())
@@ -107,32 +107,32 @@ impl Document {
 }
 
 /// Document chunk for processing pipelines
-/// 
+///
 /// Represents a portion of a document with positional information
 /// and overlap handling for better context preservation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentChunk {
     /// Reference to parent document ID
     pub document_id: String,
-    
+
     /// Chunk content
     pub content: String,
-    
+
     /// Chunk index within the document
     pub chunk_index: usize,
-    
+
     /// Character start position in original document
     pub start_position: usize,
-    
+
     /// Character end position in original document
     pub end_position: usize,
-    
+
     /// Overlap with previous chunk (characters)
     pub overlap_previous: usize,
-    
+
     /// Overlap with next chunk (characters)
     pub overlap_next: usize,
-    
+
     /// Chunk metadata (inherited from document + chunk-specific)
     pub metadata: Metadata,
 }
@@ -186,21 +186,40 @@ impl DocumentChunk {
 #[derive(Debug, Clone)]
 pub enum ChunkingStrategy {
     /// Fixed size chunking with overlap
-    FixedSize { size: usize, overlap: usize },
-    
+    FixedSize { 
+        /// Size of each chunk in characters
+        size: usize, 
+        /// Number of characters to overlap between chunks
+        overlap: usize 
+    },
+
     /// Sentence-based chunking
-    Sentence { max_sentences: usize, overlap_sentences: usize },
-    
+    Sentence {
+        /// Maximum number of sentences per chunk
+        max_sentences: usize,
+        /// Number of sentences to overlap between chunks
+        overlap_sentences: usize,
+    },
+
     /// Paragraph-based chunking
-    Paragraph { max_paragraphs: usize },
-    
+    Paragraph { 
+        /// Maximum number of paragraphs per chunk
+        max_paragraphs: usize 
+    },
+
     /// Semantic chunking (requires embeddings)
-    Semantic { similarity_threshold: f32 },
+    Semantic { 
+        /// Similarity threshold for semantic boundaries
+        similarity_threshold: f32 
+    },
 }
 
 impl Default for ChunkingStrategy {
     fn default() -> Self {
-        Self::FixedSize { size: 512, overlap: 64 }
+        Self::FixedSize {
+            size: 512,
+            overlap: 64,
+        }
     }
 }
 
@@ -225,20 +244,23 @@ impl DocumentChunker {
     /// Chunk a document into smaller pieces
     pub fn chunk_document(&self, document: &Document) -> RragResult<Vec<DocumentChunk>> {
         let content = document.content_str();
-        
+
         let chunks = match &self.strategy {
             ChunkingStrategy::FixedSize { size, overlap } => {
                 self.chunk_fixed_size(content, *size, *overlap)
             }
-            ChunkingStrategy::Sentence { max_sentences, overlap_sentences } => {
-                self.chunk_by_sentences(content, *max_sentences, *overlap_sentences)
-            }
+            ChunkingStrategy::Sentence {
+                max_sentences,
+                overlap_sentences,
+            } => self.chunk_by_sentences(content, *max_sentences, *overlap_sentences),
             ChunkingStrategy::Paragraph { max_paragraphs } => {
                 self.chunk_by_paragraphs(content, *max_paragraphs)
             }
             ChunkingStrategy::Semantic { .. } => {
                 // Placeholder for semantic chunking
-                return Err(RragError::document_processing("Semantic chunking not yet implemented"));
+                return Err(RragError::document_processing(
+                    "Semantic chunking not yet implemented",
+                ));
             }
         };
 
@@ -249,29 +271,30 @@ impl DocumentChunker {
         for (i, chunk_content) in chunks.iter().enumerate() {
             let start_pos = current_position;
             let end_pos = start_pos + chunk_content.len();
-            
-            let mut chunk = DocumentChunk::new(
-                &document.id,
-                chunk_content,
-                i,
-                start_pos,
-                end_pos,
-            );
+
+            let mut chunk = DocumentChunk::new(&document.id, chunk_content, i, start_pos, end_pos);
 
             // Inherit document metadata
             chunk.metadata = document.metadata.clone();
-            
+
             // Add chunk-specific metadata
             chunk = chunk
-                .with_metadata("chunk_total", serde_json::Value::Number(chunks.len().into()))
-                .with_metadata("chunk_strategy", serde_json::Value::String(
-                    match &self.strategy {
-                        ChunkingStrategy::FixedSize { .. } => "fixed_size",
-                        ChunkingStrategy::Sentence { .. } => "sentence",
-                        ChunkingStrategy::Paragraph { .. } => "paragraph",
-                        ChunkingStrategy::Semantic { .. } => "semantic",
-                    }.to_string()
-                ));
+                .with_metadata(
+                    "chunk_total",
+                    serde_json::Value::Number(chunks.len().into()),
+                )
+                .with_metadata(
+                    "chunk_strategy",
+                    serde_json::Value::String(
+                        match &self.strategy {
+                            ChunkingStrategy::FixedSize { .. } => "fixed_size",
+                            ChunkingStrategy::Sentence { .. } => "sentence",
+                            ChunkingStrategy::Paragraph { .. } => "paragraph",
+                            ChunkingStrategy::Semantic { .. } => "semantic",
+                        }
+                        .to_string(),
+                    ),
+                );
 
             document_chunks.push(chunk);
             current_position = end_pos;
@@ -298,18 +321,19 @@ impl DocumentChunker {
                 break;
             }
 
-            start = if overlap >= end {
-                0
-            } else {
-                end - overlap
-            };
+            start = if overlap >= end { 0 } else { end - overlap };
         }
 
         chunks
     }
 
     /// Sentence-based chunking implementation
-    fn chunk_by_sentences(&self, content: &str, max_sentences: usize, overlap_sentences: usize) -> Vec<String> {
+    fn chunk_by_sentences(
+        &self,
+        content: &str,
+        max_sentences: usize,
+        overlap_sentences: usize,
+    ) -> Vec<String> {
         // Simple sentence splitting - in production, use a proper NLP library
         let sentences: Vec<&str> = content
             .split(|c| c == '.' || c == '!' || c == '?')
@@ -361,7 +385,7 @@ impl DocumentChunker {
 
         for paragraph in paragraphs {
             current_chunk.push(paragraph);
-            
+
             if current_chunk.len() >= max_paragraphs {
                 chunks.push(current_chunk.join("\n\n"));
                 current_chunk.clear();
@@ -412,10 +436,13 @@ mod tests {
     fn test_document_creation() {
         let doc = Document::new("Test content")
             .with_metadata("source", serde_json::Value::String("test".to_string()));
-        
+
         assert_eq!(doc.content_str(), "Test content");
         assert!(!doc.id.is_empty());
-        assert_eq!(doc.metadata.get("source").unwrap().as_str().unwrap(), "test");
+        assert_eq!(
+            doc.metadata.get("source").unwrap().as_str().unwrap(),
+            "test"
+        );
     }
 
     #[test]
@@ -423,7 +450,7 @@ mod tests {
         let chunk = DocumentChunk::new("doc1", "chunk content", 0, 0, 13)
             .with_overlap(0, 5)
             .with_metadata("test", serde_json::Value::String("value".to_string()));
-        
+
         assert_eq!(chunk.document_id, "doc1");
         assert_eq!(chunk.content, "chunk content");
         assert_eq!(chunk.length(), 13);
@@ -432,26 +459,29 @@ mod tests {
 
     #[test]
     fn test_fixed_size_chunking() {
-        let chunker = DocumentChunker::with_strategy(
-            ChunkingStrategy::FixedSize { size: 10, overlap: 3 }
-        );
-        
+        let chunker = DocumentChunker::with_strategy(ChunkingStrategy::FixedSize {
+            size: 10,
+            overlap: 3,
+        });
+
         let doc = Document::new("This is a test document for chunking");
         let chunks = chunker.chunk_document(&doc).unwrap();
-        
+
         assert!(!chunks.is_empty());
         assert!(chunks[0].content.len() <= 10);
     }
 
     #[test]
     fn test_sentence_chunking() {
-        let chunker = DocumentChunker::with_strategy(
-            ChunkingStrategy::Sentence { max_sentences: 2, overlap_sentences: 1 }
-        );
-        
-        let doc = Document::new("First sentence. Second sentence. Third sentence. Fourth sentence.");
+        let chunker = DocumentChunker::with_strategy(ChunkingStrategy::Sentence {
+            max_sentences: 2,
+            overlap_sentences: 1,
+        });
+
+        let doc =
+            Document::new("First sentence. Second sentence. Third sentence. Fourth sentence.");
         let chunks = chunker.chunk_document(&doc).unwrap();
-        
+
         assert!(!chunks.is_empty());
     }
 
@@ -460,7 +490,7 @@ mod tests {
         let doc1 = Document::new("Same content").with_content_hash();
         let doc2 = Document::new("Same content").with_content_hash();
         let doc3 = Document::new("Different content").with_content_hash();
-        
+
         assert_eq!(doc1.content_hash, doc2.content_hash);
         assert_ne!(doc1.content_hash, doc3.content_hash);
     }
@@ -469,7 +499,7 @@ mod tests {
     fn test_empty_document() {
         let doc = Document::new("   ");
         assert!(doc.is_empty());
-        
+
         let doc2 = Document::new("content");
         assert!(!doc2.is_empty());
     }

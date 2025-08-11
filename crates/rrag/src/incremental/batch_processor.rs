@@ -1,14 +1,14 @@
 //! # Batch Processing System
-//! 
+//!
 //! Optimized batch processing for large-scale incremental updates.
 //! Handles queue management, error handling, and performance optimization.
 
-use crate::{RragError, RragResult};
 use crate::incremental::index_manager::{IndexUpdate, UpdateResult};
+use crate::{RragError, RragResult};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
-use tokio::sync::{RwLock, Mutex, Semaphore};
+use tokio::sync::{Mutex, RwLock, Semaphore};
 use uuid::Uuid;
 
 /// Batch processing configuration
@@ -16,28 +16,28 @@ use uuid::Uuid;
 pub struct BatchConfig {
     /// Maximum batch size
     pub max_batch_size: usize,
-    
+
     /// Minimum batch size before processing
     pub min_batch_size: usize,
-    
+
     /// Batch timeout in milliseconds
     pub batch_timeout_ms: u64,
-    
+
     /// Maximum concurrent batches
     pub max_concurrent_batches: usize,
-    
+
     /// Enable priority-based batching
     pub enable_priority_batching: bool,
-    
+
     /// Enable adaptive batch sizing
     pub enable_adaptive_sizing: bool,
-    
+
     /// Error handling strategy
     pub error_handling: ErrorHandlingStrategy,
-    
+
     /// Retry configuration
     pub retry_config: RetryConfig,
-    
+
     /// Performance optimization settings
     pub optimization: BatchOptimizationConfig,
 }
@@ -60,16 +60,16 @@ pub enum ErrorHandlingStrategy {
 pub struct RetryConfig {
     /// Maximum retry attempts
     pub max_retries: u32,
-    
+
     /// Base delay between retries in milliseconds
     pub base_delay_ms: u64,
-    
+
     /// Exponential backoff multiplier
     pub backoff_multiplier: f64,
-    
+
     /// Maximum delay between retries
     pub max_delay_ms: u64,
-    
+
     /// Jitter factor (0.0 to 1.0)
     pub jitter_factor: f64,
 }
@@ -79,19 +79,19 @@ pub struct RetryConfig {
 pub struct BatchOptimizationConfig {
     /// Enable batch deduplication
     pub enable_deduplication: bool,
-    
+
     /// Enable operation reordering
     pub enable_reordering: bool,
-    
+
     /// Enable batch compression
     pub enable_compression: bool,
-    
+
     /// Memory pool size for batching
     pub memory_pool_size: usize,
-    
+
     /// Enable parallel processing within batches
     pub enable_parallel_processing: bool,
-    
+
     /// Target processing time per batch in milliseconds
     pub target_processing_time_ms: u64,
 }
@@ -142,19 +142,19 @@ impl Default for BatchOptimizationConfig {
 pub struct BatchOperation {
     /// Batch ID
     pub batch_id: String,
-    
+
     /// Operations in this batch
     pub operations: Vec<IndexUpdate>,
-    
+
     /// Batch priority (derived from operations)
     pub priority: u8,
-    
+
     /// Batch creation timestamp
     pub created_at: chrono::DateTime<chrono::Utc>,
-    
+
     /// Expected processing time estimate
     pub estimated_processing_time_ms: u64,
-    
+
     /// Batch metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -164,28 +164,28 @@ pub struct BatchOperation {
 pub struct BatchResult {
     /// Batch ID
     pub batch_id: String,
-    
+
     /// Overall success status
     pub success: bool,
-    
+
     /// Individual operation results
     pub operation_results: Vec<UpdateResult>,
-    
+
     /// Total processing time
     pub processing_time_ms: u64,
-    
+
     /// Number of successful operations
     pub successful_operations: usize,
-    
+
     /// Number of failed operations
     pub failed_operations: usize,
-    
+
     /// Batch-level errors
     pub batch_errors: Vec<String>,
-    
+
     /// Performance statistics
     pub stats: BatchProcessingStats,
-    
+
     /// Retry information
     pub retry_info: Option<RetryInfo>,
 }
@@ -195,19 +195,19 @@ pub struct BatchResult {
 pub struct BatchProcessingStats {
     /// Queue wait time
     pub queue_wait_time_ms: u64,
-    
+
     /// Actual processing time
     pub processing_time_ms: u64,
-    
+
     /// Memory usage during processing
     pub peak_memory_usage_mb: f64,
-    
+
     /// CPU utilization during processing
     pub cpu_utilization_percent: f64,
-    
+
     /// Throughput (operations per second)
     pub throughput_ops_per_second: f64,
-    
+
     /// Optimization metrics
     pub optimizations_applied: Vec<String>,
 }
@@ -217,16 +217,16 @@ pub struct BatchProcessingStats {
 pub struct RetryInfo {
     /// Current retry attempt
     pub attempt: u32,
-    
+
     /// Maximum retries allowed
     pub max_retries: u32,
-    
+
     /// Next retry time
     pub next_retry_at: chrono::DateTime<chrono::Utc>,
-    
+
     /// Retry reason
     pub retry_reason: String,
-    
+
     /// Failed operations to retry
     pub failed_operations: Vec<String>,
 }
@@ -235,16 +235,16 @@ pub struct RetryInfo {
 pub struct QueueManager {
     /// High priority queue
     high_priority_queue: Arc<Mutex<VecDeque<BatchOperation>>>,
-    
+
     /// Normal priority queue
     normal_priority_queue: Arc<Mutex<VecDeque<BatchOperation>>>,
-    
+
     /// Low priority queue
     low_priority_queue: Arc<Mutex<VecDeque<BatchOperation>>>,
-    
+
     /// Retry queue
     retry_queue: Arc<Mutex<VecDeque<(BatchOperation, RetryInfo)>>>,
-    
+
     /// Queue statistics
     stats: Arc<RwLock<QueueStats>>,
 }
@@ -254,16 +254,16 @@ pub struct QueueManager {
 pub struct QueueStats {
     /// Queue sizes by priority
     pub queue_sizes: HashMap<String, usize>,
-    
+
     /// Average wait times
     pub average_wait_times_ms: HashMap<String, f64>,
-    
+
     /// Total items processed
     pub total_processed: u64,
-    
+
     /// Current throughput
     pub current_throughput: f64,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -272,10 +272,10 @@ pub struct QueueStats {
 pub struct BatchExecutor {
     /// Configuration
     config: BatchOptimizationConfig,
-    
+
     /// Concurrency control
     semaphore: Arc<Semaphore>,
-    
+
     /// Processing statistics
     stats: Arc<RwLock<ExecutorStats>>,
 }
@@ -285,19 +285,19 @@ pub struct BatchExecutor {
 pub struct ExecutorStats {
     /// Total batches processed
     pub batches_processed: u64,
-    
+
     /// Average processing time
     pub avg_processing_time_ms: f64,
-    
+
     /// Success rate
     pub success_rate: f64,
-    
+
     /// Current active batches
     pub active_batches: usize,
-    
+
     /// Peak concurrent batches
     pub peak_concurrent_batches: usize,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -306,22 +306,22 @@ pub struct ExecutorStats {
 pub struct BatchProcessor {
     /// Configuration
     config: BatchConfig,
-    
+
     /// Queue manager
     queue_manager: Arc<QueueManager>,
-    
+
     /// Batch executor
     executor: Arc<BatchExecutor>,
-    
+
     /// Current batches being assembled
     current_batches: Arc<RwLock<HashMap<String, Vec<IndexUpdate>>>>,
-    
+
     /// Batch timers
     batch_timers: Arc<RwLock<HashMap<String, tokio::time::Instant>>>,
-    
+
     /// Background task handles
     task_handles: Arc<Mutex<Vec<tokio::task::JoinHandle<()>>>>,
-    
+
     /// Performance metrics
     metrics: Arc<RwLock<ProcessingMetrics>>,
 }
@@ -331,25 +331,25 @@ pub struct BatchProcessor {
 pub struct ProcessingMetrics {
     /// Total operations processed
     pub total_operations: u64,
-    
+
     /// Total batches processed
     pub total_batches: u64,
-    
+
     /// Average batch size
     pub avg_batch_size: f64,
-    
+
     /// Overall throughput
     pub throughput_ops_per_second: f64,
-    
+
     /// Error rates
     pub error_rate: f64,
-    
+
     /// Retry statistics
     pub retry_stats: RetryStats,
-    
+
     /// Performance trends
     pub performance_trends: Vec<PerformanceDataPoint>,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -359,13 +359,13 @@ pub struct ProcessingMetrics {
 pub struct RetryStats {
     /// Total retries attempted
     pub total_retries: u64,
-    
+
     /// Successful retries
     pub successful_retries: u64,
-    
+
     /// Failed retries (exhausted)
     pub failed_retries: u64,
-    
+
     /// Average retry attempts per operation
     pub avg_retry_attempts: f64,
 }
@@ -375,16 +375,16 @@ pub struct RetryStats {
 pub struct PerformanceDataPoint {
     /// Timestamp
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    
+
     /// Throughput at this point
     pub throughput: f64,
-    
+
     /// Queue depth at this point
     pub queue_depth: usize,
-    
+
     /// Error rate at this point
     pub error_rate: f64,
-    
+
     /// Average processing time
     pub avg_processing_time_ms: f64,
 }
@@ -450,11 +450,13 @@ impl BatchProcessor {
     /// Add operation to batch processing queue
     pub async fn add_operation(&self, operation: IndexUpdate) -> RragResult<String> {
         let batch_key = self.determine_batch_key(&operation).await?;
-        
+
         // Add to current batch
         {
             let mut current_batches = self.current_batches.write().await;
-            let batch = current_batches.entry(batch_key.clone()).or_insert_with(Vec::new);
+            let batch = current_batches
+                .entry(batch_key.clone())
+                .or_insert_with(Vec::new);
             batch.push(operation);
 
             // Start timer if this is the first operation in the batch
@@ -467,12 +469,12 @@ impl BatchProcessor {
             if batch.len() >= self.config.max_batch_size {
                 let operations = std::mem::take(batch);
                 drop(current_batches);
-                
+
                 // Remove timer
                 let mut timers = self.batch_timers.write().await;
                 timers.remove(&batch_key);
                 drop(timers);
-                
+
                 // Create and queue batch
                 self.create_and_queue_batch(operations).await?;
             }
@@ -483,7 +485,11 @@ impl BatchProcessor {
 
     /// Process a batch of operations
     pub async fn process_batch(&self, batch: BatchOperation) -> RragResult<BatchResult> {
-        let _permit = self.executor.semaphore.acquire().await
+        let _permit = self
+            .executor
+            .semaphore
+            .acquire()
+            .await
             .map_err(|_e| RragError::timeout("acquire_semaphore", 30000))?;
 
         let start_time = std::time::Instant::now();
@@ -493,13 +499,13 @@ impl BatchProcessor {
         {
             let mut stats = self.executor.stats.write().await;
             stats.active_batches += 1;
-            stats.peak_concurrent_batches = 
+            stats.peak_concurrent_batches =
                 std::cmp::max(stats.peak_concurrent_batches, stats.active_batches);
         }
 
         // Apply optimizations
         let optimized_operations = self.optimize_batch(&batch.operations).await?;
-        
+
         // Process operations
         let mut operation_results = Vec::new();
         let mut successful_operations = 0;
@@ -519,7 +525,7 @@ impl BatchProcessor {
                 Err(e) => {
                     failed_operations += 1;
                     batch_errors.push(e.to_string());
-                    
+
                     // Create error result
                     operation_results.push(UpdateResult {
                         operation_id: operation.operation_id.clone(),
@@ -548,7 +554,7 @@ impl BatchProcessor {
             let mut stats = self.executor.stats.write().await;
             stats.active_batches -= 1;
             stats.batches_processed += 1;
-            stats.avg_processing_time_ms = 
+            stats.avg_processing_time_ms =
                 (stats.avg_processing_time_ms + processing_time.as_millis() as f64) / 2.0;
             stats.success_rate = if stats.batches_processed > 0 {
                 // Simplified success rate calculation
@@ -573,7 +579,8 @@ impl BatchProcessor {
                 processing_time_ms: processing_time.as_millis() as u64,
                 peak_memory_usage_mb: 0.0, // Would be measured in production
                 cpu_utilization_percent: 0.0, // Would be measured in production
-                throughput_ops_per_second: successful_operations as f64 / processing_time.as_secs_f64(),
+                throughput_ops_per_second: successful_operations as f64
+                    / processing_time.as_secs_f64(),
                 optimizations_applied: vec!["deduplication".to_string()], // Track applied optimizations
             },
             retry_info: None,
@@ -600,31 +607,31 @@ impl BatchProcessor {
         // Check if background tasks are running
         let handles = self.task_handles.lock().await;
         let all_running = handles.iter().all(|handle| !handle.is_finished());
-        
+
         // Check queue health
         let queue_stats = self.get_queue_stats().await;
         let total_queue_size: usize = queue_stats.queue_sizes.values().sum();
         let queue_healthy = total_queue_size < self.config.max_batch_size * 10; // Arbitrary health threshold
-        
+
         Ok(all_running && queue_healthy)
     }
 
     /// Start background processing tasks
     async fn start_background_tasks(&self) -> RragResult<()> {
         let mut handles = self.task_handles.lock().await;
-        
+
         // Batch formation task
         handles.push(self.start_batch_formation_task().await);
-        
+
         // Batch processing task
         handles.push(self.start_batch_processing_task().await);
-        
+
         // Timeout monitoring task
         handles.push(self.start_timeout_monitoring_task().await);
-        
+
         // Metrics collection task
         handles.push(self.start_metrics_collection_task().await);
-        
+
         Ok(())
     }
 
@@ -635,20 +642,20 @@ impl BatchProcessor {
         let config = self.config.clone();
 
         tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_millis(config.batch_timeout_ms / 4)
-            );
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(
+                config.batch_timeout_ms / 4,
+            ));
 
             loop {
                 interval.tick().await;
-                
+
                 // Check for batches that should be processed due to timeout
                 let mut batches_to_process = Vec::new();
-                
+
                 {
                     let current_batches_read = current_batches.read().await;
                     let timers = batch_timers.read().await;
-                    
+
                     for (batch_key, timer) in timers.iter() {
                         if timer.elapsed().as_millis() as u64 >= config.batch_timeout_ms {
                             if let Some(operations) = current_batches_read.get(batch_key) {
@@ -659,19 +666,19 @@ impl BatchProcessor {
                         }
                     }
                 }
-                
+
                 // Process timeout batches
                 for batch_key in batches_to_process {
                     let operations = {
                         let mut current_batches_write = current_batches.write().await;
                         current_batches_write.remove(&batch_key).unwrap_or_default()
                     };
-                    
+
                     {
                         let mut timers = batch_timers.write().await;
                         timers.remove(&batch_key);
                     }
-                    
+
                     if !operations.is_empty() {
                         // Create and queue batch (would need access to self here)
                         // In a real implementation, this would be handled differently
@@ -696,14 +703,14 @@ impl BatchProcessor {
                         Some(batch)
                     } else {
                         drop(high_queue);
-                        
+
                         // Normal priority next
                         let mut normal_queue = queue_manager.normal_priority_queue.lock().await;
                         if let Some(batch) = normal_queue.pop_front() {
                             Some(batch)
                         } else {
                             drop(normal_queue);
-                            
+
                             // Low priority last
                             let mut low_queue = queue_manager.low_priority_queue.lock().await;
                             low_queue.pop_front()
@@ -726,7 +733,7 @@ impl BatchProcessor {
     async fn start_timeout_monitoring_task(&self) -> tokio::task::JoinHandle<()> {
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60));
-            
+
             loop {
                 interval.tick().await;
                 // Monitor for stuck operations, cleanup expired data, etc.
@@ -738,13 +745,13 @@ impl BatchProcessor {
     /// Start metrics collection task
     async fn start_metrics_collection_task(&self) -> tokio::task::JoinHandle<()> {
         let metrics = Arc::clone(&self.metrics);
-        
+
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
-            
+
             loop {
                 interval.tick().await;
-                
+
                 // Collect performance data point
                 let mut metrics_guard = metrics.write().await;
                 let data_point = PerformanceDataPoint {
@@ -754,14 +761,14 @@ impl BatchProcessor {
                     error_rate: metrics_guard.error_rate,
                     avg_processing_time_ms: 0.0, // Would calculate from recent batches
                 };
-                
+
                 metrics_guard.performance_trends.push(data_point);
-                
+
                 // Limit trend history
                 if metrics_guard.performance_trends.len() > 1000 {
                     metrics_guard.performance_trends.remove(0);
                 }
-                
+
                 metrics_guard.last_updated = chrono::Utc::now();
             }
         })
@@ -780,7 +787,7 @@ impl BatchProcessor {
     async fn create_and_queue_batch(&self, operations: Vec<IndexUpdate>) -> RragResult<()> {
         let batch_id = Uuid::new_v4().to_string();
         let priority = operations.iter().map(|op| op.priority).max().unwrap_or(5);
-        
+
         let batch = BatchOperation {
             batch_id,
             operations,
@@ -827,16 +834,25 @@ impl BatchProcessor {
     }
 
     /// Remove duplicate operations
-    async fn deduplicate_operations(&self, operations: Vec<IndexUpdate>) -> RragResult<Vec<IndexUpdate>> {
+    async fn deduplicate_operations(
+        &self,
+        operations: Vec<IndexUpdate>,
+    ) -> RragResult<Vec<IndexUpdate>> {
         let mut seen_documents = std::collections::HashSet::new();
         let mut deduplicated = Vec::new();
 
         for operation in operations {
             // Simple deduplication based on document ID
             let document_id = match &operation.operation {
-                crate::incremental::index_manager::IndexOperation::Add { document, .. } => Some(&document.id),
-                crate::incremental::index_manager::IndexOperation::Update { document_id, .. } => Some(document_id),
-                crate::incremental::index_manager::IndexOperation::Delete { document_id } => Some(document_id),
+                crate::incremental::index_manager::IndexOperation::Add { document, .. } => {
+                    Some(&document.id)
+                }
+                crate::incremental::index_manager::IndexOperation::Update {
+                    document_id, ..
+                } => Some(document_id),
+                crate::incremental::index_manager::IndexOperation::Delete { document_id } => {
+                    Some(document_id)
+                }
                 _ => None,
             };
 
@@ -856,10 +872,14 @@ impl BatchProcessor {
     }
 
     /// Reorder operations for optimal processing
-    async fn reorder_operations(&self, mut operations: Vec<IndexUpdate>) -> RragResult<Vec<IndexUpdate>> {
+    async fn reorder_operations(
+        &self,
+        mut operations: Vec<IndexUpdate>,
+    ) -> RragResult<Vec<IndexUpdate>> {
         // Sort by priority (descending) and then by timestamp (ascending)
         operations.sort_by(|a, b| {
-            b.priority.cmp(&a.priority)
+            b.priority
+                .cmp(&a.priority)
                 .then_with(|| a.timestamp.cmp(&b.timestamp))
         });
 
@@ -886,24 +906,24 @@ impl BatchProcessor {
     /// Update overall metrics
     async fn update_metrics(&self, result: &BatchResult) -> RragResult<()> {
         let mut metrics = self.metrics.write().await;
-        
+
         metrics.total_batches += 1;
         metrics.total_operations += result.operation_results.len() as u64;
-        
+
         if metrics.total_batches > 0 {
             metrics.avg_batch_size = metrics.total_operations as f64 / metrics.total_batches as f64;
         }
-        
+
         // Update throughput
         metrics.throughput_ops_per_second = result.stats.throughput_ops_per_second;
-        
+
         // Update error rate
         if metrics.total_operations > 0 {
             metrics.error_rate = result.failed_operations as f64 / metrics.total_operations as f64;
         }
-        
+
         metrics.last_updated = chrono::Utc::now();
-        
+
         Ok(())
     }
 }
@@ -924,14 +944,14 @@ mod tests {
     #[tokio::test]
     async fn test_add_operation_to_batch() {
         let processor = BatchProcessor::new(BatchConfig::default()).await.unwrap();
-        
+
         let doc = Document::new("Test content");
         let operation = IndexOperation::Add {
             document: doc,
             chunks: Vec::new(),
             embeddings: Vec::new(),
         };
-        
+
         let update = IndexUpdate {
             operation_id: Uuid::new_v4().to_string(),
             operation,
@@ -943,7 +963,7 @@ mod tests {
             max_retries: 3,
             retry_count: 0,
         };
-        
+
         let batch_key = processor.add_operation(update).await.unwrap();
         assert!(!batch_key.is_empty());
     }
@@ -951,7 +971,7 @@ mod tests {
     #[tokio::test]
     async fn test_batch_optimization() {
         let processor = BatchProcessor::new(BatchConfig::default()).await.unwrap();
-        
+
         // Create operations with same document ID (should be deduplicated)
         let mut operations = Vec::new();
         for i in 0..3 {
@@ -991,7 +1011,7 @@ mod tests {
                     confidence: 1.0,
                 },
             };
-            
+
             let update = IndexUpdate {
                 operation_id: Uuid::new_v4().to_string(),
                 operation,
@@ -1003,12 +1023,12 @@ mod tests {
                 max_retries: 3,
                 retry_count: 0,
             };
-            
+
             operations.push(update);
         }
-        
+
         let optimized = processor.optimize_batch(&operations).await.unwrap();
-        
+
         // Should have only one operation after deduplication
         assert_eq!(optimized.len(), 1);
     }
@@ -1021,7 +1041,7 @@ mod tests {
             ErrorHandlingStrategy::IsolateAndRetry,
             ErrorHandlingStrategy::CircuitBreaker,
         ];
-        
+
         // Ensure all strategies are different
         for (i, strategy1) in strategies.iter().enumerate() {
             for (j, strategy2) in strategies.iter().enumerate() {

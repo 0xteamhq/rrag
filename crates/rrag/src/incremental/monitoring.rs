@@ -1,5 +1,5 @@
 //! # Incremental Indexing Monitoring
-//! 
+//!
 //! Comprehensive monitoring and alerting system for incremental indexing operations.
 //! Provides performance tracking, health monitoring, and automated alerting.
 
@@ -15,25 +15,25 @@ use uuid::Uuid;
 pub struct MonitoringConfig {
     /// Enable performance metrics collection
     pub enable_performance_metrics: bool,
-    
+
     /// Enable health monitoring
     pub enable_health_monitoring: bool,
-    
+
     /// Enable alerting system
     pub enable_alerting: bool,
-    
+
     /// Metrics collection interval in seconds
     pub metrics_interval_secs: u64,
-    
+
     /// Health check interval in seconds
     pub health_check_interval_secs: u64,
-    
+
     /// Metrics retention period in days
     pub metrics_retention_days: u32,
-    
+
     /// Alert configuration
     pub alert_config: AlertConfig,
-    
+
     /// Export configuration
     pub export_config: ExportConfig,
 }
@@ -43,19 +43,19 @@ pub struct MonitoringConfig {
 pub struct AlertConfig {
     /// Enable email alerts
     pub enable_email_alerts: bool,
-    
+
     /// Enable webhook alerts
     pub enable_webhook_alerts: bool,
-    
+
     /// Enable log alerts
     pub enable_log_alerts: bool,
-    
+
     /// Alert thresholds
     pub thresholds: AlertThresholds,
-    
+
     /// Alert cooldown period in seconds
     pub cooldown_period_secs: u64,
-    
+
     /// Maximum alerts per hour
     pub max_alerts_per_hour: u32,
 }
@@ -65,19 +65,19 @@ pub struct AlertConfig {
 pub struct AlertThresholds {
     /// Error rate threshold (0.0 to 1.0)
     pub error_rate_threshold: f64,
-    
+
     /// Response time threshold in milliseconds
     pub response_time_threshold_ms: u64,
-    
+
     /// Queue depth threshold
     pub queue_depth_threshold: usize,
-    
+
     /// Memory usage threshold (0.0 to 1.0)
     pub memory_usage_threshold: f64,
-    
+
     /// Storage usage threshold (0.0 to 1.0)
     pub storage_usage_threshold: f64,
-    
+
     /// Throughput threshold (operations per second)
     pub throughput_threshold_ops: f64,
 }
@@ -87,16 +87,16 @@ pub struct AlertThresholds {
 pub struct ExportConfig {
     /// Enable Prometheus export
     pub enable_prometheus: bool,
-    
+
     /// Enable JSON export
     pub enable_json_export: bool,
-    
+
     /// Export endpoint
     pub export_endpoint: Option<String>,
-    
+
     /// Export interval in seconds
     pub export_interval_secs: u64,
-    
+
     /// Export format
     pub export_format: ExportFormat,
 }
@@ -142,11 +142,11 @@ impl Default for AlertConfig {
 impl Default for AlertThresholds {
     fn default() -> Self {
         Self {
-            error_rate_threshold: 0.05, // 5%
+            error_rate_threshold: 0.05,        // 5%
             response_time_threshold_ms: 10000, // 10 seconds
             queue_depth_threshold: 1000,
-            memory_usage_threshold: 0.8, // 80%
-            storage_usage_threshold: 0.9, // 90%
+            memory_usage_threshold: 0.8,    // 80%
+            storage_usage_threshold: 0.9,   // 90%
             throughput_threshold_ops: 10.0, // 10 ops/sec minimum
         }
     }
@@ -169,25 +169,25 @@ impl Default for ExportConfig {
 pub struct IncrementalMetrics {
     /// System identification
     pub system_id: String,
-    
+
     /// Metrics timestamp
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    
+
     /// Indexing performance metrics
     pub indexing_metrics: IndexingMetrics,
-    
+
     /// System performance metrics
     pub system_metrics: SystemMetrics,
-    
+
     /// Operation metrics
     pub operation_metrics: OperationMetrics,
-    
+
     /// Health metrics
     pub health_metrics: HealthMetrics,
-    
+
     /// Error metrics
     pub error_metrics: ErrorMetrics,
-    
+
     /// Custom metrics
     pub custom_metrics: HashMap<String, f64>,
 }
@@ -197,25 +197,25 @@ pub struct IncrementalMetrics {
 pub struct IndexingMetrics {
     /// Documents processed per second
     pub documents_per_second: f64,
-    
+
     /// Chunks processed per second
     pub chunks_per_second: f64,
-    
+
     /// Embeddings processed per second
     pub embeddings_per_second: f64,
-    
+
     /// Average indexing time per document
     pub avg_indexing_time_ms: f64,
-    
+
     /// Index size growth rate (bytes per second)
     pub index_growth_rate_bps: f64,
-    
+
     /// Batch processing efficiency
     pub batch_efficiency: f64,
-    
+
     /// Change detection accuracy
     pub change_detection_accuracy: f64,
-    
+
     /// Vector update efficiency
     pub vector_update_efficiency: f64,
 }
@@ -225,25 +225,25 @@ pub struct IndexingMetrics {
 pub struct SystemMetrics {
     /// CPU usage percentage
     pub cpu_usage_percent: f64,
-    
+
     /// Memory usage in bytes
     pub memory_usage_bytes: u64,
-    
+
     /// Available memory in bytes
     pub available_memory_bytes: u64,
-    
+
     /// Storage usage in bytes
     pub storage_usage_bytes: u64,
-    
+
     /// Available storage in bytes
     pub available_storage_bytes: u64,
-    
+
     /// Network I/O bytes per second
     pub network_io_bps: f64,
-    
+
     /// Disk I/O operations per second
     pub disk_io_ops: f64,
-    
+
     /// Active connections
     pub active_connections: usize,
 }
@@ -253,25 +253,25 @@ pub struct SystemMetrics {
 pub struct OperationMetrics {
     /// Total operations performed
     pub total_operations: u64,
-    
+
     /// Operations by type
     pub operations_by_type: HashMap<String, u64>,
-    
+
     /// Success rate (0.0 to 1.0)
     pub success_rate: f64,
-    
+
     /// Average operation time in milliseconds
     pub avg_operation_time_ms: f64,
-    
+
     /// 95th percentile operation time
     pub p95_operation_time_ms: f64,
-    
+
     /// 99th percentile operation time
     pub p99_operation_time_ms: f64,
-    
+
     /// Queue depths by type
     pub queue_depths: HashMap<String, usize>,
-    
+
     /// Retry statistics
     pub retry_stats: RetryMetrics,
 }
@@ -281,13 +281,13 @@ pub struct OperationMetrics {
 pub struct RetryMetrics {
     /// Total retry attempts
     pub total_retries: u64,
-    
+
     /// Successful retries
     pub successful_retries: u64,
-    
+
     /// Failed retries (exhausted)
     pub exhausted_retries: u64,
-    
+
     /// Average retries per operation
     pub avg_retries_per_operation: f64,
 }
@@ -297,19 +297,19 @@ pub struct RetryMetrics {
 pub struct HealthMetrics {
     /// Overall system health score (0.0 to 1.0)
     pub overall_health_score: f64,
-    
+
     /// Component health scores
     pub component_health: HashMap<String, f64>,
-    
+
     /// Service availability (0.0 to 1.0)
     pub service_availability: f64,
-    
+
     /// Data consistency score (0.0 to 1.0)
     pub data_consistency_score: f64,
-    
+
     /// Performance score (0.0 to 1.0)
     pub performance_score: f64,
-    
+
     /// Last health check timestamp
     pub last_health_check: chrono::DateTime<chrono::Utc>,
 }
@@ -319,22 +319,22 @@ pub struct HealthMetrics {
 pub struct ErrorMetrics {
     /// Total errors encountered
     pub total_errors: u64,
-    
+
     /// Errors by type
     pub errors_by_type: HashMap<String, u64>,
-    
+
     /// Errors by component
     pub errors_by_component: HashMap<String, u64>,
-    
+
     /// Error rate (errors per operation)
     pub error_rate: f64,
-    
+
     /// Critical errors
     pub critical_errors: u64,
-    
+
     /// Recoverable errors
     pub recoverable_errors: u64,
-    
+
     /// Error resolution time average
     pub avg_resolution_time_ms: f64,
 }
@@ -343,13 +343,13 @@ pub struct ErrorMetrics {
 pub struct PerformanceTracker {
     /// Data points storage
     data_points: Arc<RwLock<VecDeque<PerformanceDataPoint>>>,
-    
+
     /// Aggregated statistics
     statistics: Arc<RwLock<PerformanceStatistics>>,
-    
+
     /// Configuration
     config: MonitoringConfig,
-    
+
     /// Max data points to retain
     max_data_points: usize,
 }
@@ -359,19 +359,19 @@ pub struct PerformanceTracker {
 pub struct PerformanceDataPoint {
     /// Timestamp
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    
+
     /// Operation type
     pub operation_type: String,
-    
+
     /// Duration in milliseconds
     pub duration_ms: u64,
-    
+
     /// Memory usage at time of operation
     pub memory_usage_mb: f64,
-    
+
     /// Success indicator
     pub success: bool,
-    
+
     /// Additional metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -381,13 +381,13 @@ pub struct PerformanceDataPoint {
 pub struct PerformanceStatistics {
     /// Statistics by operation type
     pub by_operation_type: HashMap<String, OperationStatistics>,
-    
+
     /// Overall statistics
     pub overall: OperationStatistics,
-    
+
     /// Time-based trends
     pub trends: TrendAnalysis,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -397,25 +397,25 @@ pub struct PerformanceStatistics {
 pub struct OperationStatistics {
     /// Total operations
     pub total_count: u64,
-    
+
     /// Successful operations
     pub success_count: u64,
-    
+
     /// Average duration
     pub avg_duration_ms: f64,
-    
+
     /// Median duration
     pub median_duration_ms: f64,
-    
+
     /// 95th percentile duration
     pub p95_duration_ms: f64,
-    
+
     /// 99th percentile duration
     pub p99_duration_ms: f64,
-    
+
     /// Standard deviation
     pub std_deviation_ms: f64,
-    
+
     /// Operations per second
     pub operations_per_second: f64,
 }
@@ -425,16 +425,16 @@ pub struct OperationStatistics {
 pub struct TrendAnalysis {
     /// Performance trend over time
     pub performance_trend: TrendDirection,
-    
+
     /// Error rate trend
     pub error_rate_trend: TrendDirection,
-    
+
     /// Throughput trend
     pub throughput_trend: TrendDirection,
-    
+
     /// Memory usage trend
     pub memory_trend: TrendDirection,
-    
+
     /// Trend analysis period
     pub analysis_period_hours: u32,
 }
@@ -453,25 +453,25 @@ pub enum TrendDirection {
 pub struct IndexingStats {
     /// Documents indexed
     pub documents_indexed: u64,
-    
+
     /// Chunks processed
     pub chunks_processed: u64,
-    
+
     /// Embeddings generated
     pub embeddings_generated: u64,
-    
+
     /// Index updates performed
     pub index_updates: u64,
-    
+
     /// Average processing time per document
     pub avg_document_processing_ms: f64,
-    
+
     /// Indexing throughput
     pub indexing_throughput_dps: f64, // documents per second
-    
+
     /// Storage efficiency
     pub storage_efficiency: f64,
-    
+
     /// Index quality score
     pub index_quality_score: f64,
 }
@@ -480,19 +480,19 @@ pub struct IndexingStats {
 pub struct MetricsCollector {
     /// Current metrics
     current_metrics: Arc<RwLock<IncrementalMetrics>>,
-    
+
     /// Metrics history
     metrics_history: Arc<RwLock<VecDeque<IncrementalMetrics>>>,
-    
+
     /// Performance tracker
     performance_tracker: Arc<PerformanceTracker>,
-    
+
     /// Configuration
     config: MonitoringConfig,
-    
+
     /// Collection statistics
     collection_stats: Arc<RwLock<CollectionStatistics>>,
-    
+
     /// Background task handles
     task_handles: Arc<tokio::sync::Mutex<Vec<tokio::task::JoinHandle<()>>>>,
 }
@@ -502,16 +502,16 @@ pub struct MetricsCollector {
 pub struct CollectionStatistics {
     /// Total collection cycles
     pub total_collections: u64,
-    
+
     /// Failed collections
     pub failed_collections: u64,
-    
+
     /// Average collection time
     pub avg_collection_time_ms: f64,
-    
+
     /// Last collection timestamp
     pub last_collection: chrono::DateTime<chrono::Utc>,
-    
+
     /// Collection success rate
     pub collection_success_rate: f64,
 }
@@ -581,32 +581,32 @@ impl IncrementalMetrics {
     /// Update metrics with new data
     pub fn update(&mut self, update_data: MetricsUpdate) {
         self.timestamp = chrono::Utc::now();
-        
+
         // Update indexing metrics
         if let Some(indexing) = update_data.indexing_metrics {
             self.indexing_metrics = indexing;
         }
-        
+
         // Update system metrics
         if let Some(system) = update_data.system_metrics {
             self.system_metrics = system;
         }
-        
+
         // Update operation metrics
         if let Some(operations) = update_data.operation_metrics {
             self.operation_metrics = operations;
         }
-        
+
         // Update health metrics
         if let Some(health) = update_data.health_metrics {
             self.health_metrics = health;
         }
-        
+
         // Update error metrics
         if let Some(errors) = update_data.error_metrics {
             self.error_metrics = errors;
         }
-        
+
         // Merge custom metrics
         for (key, value) in update_data.custom_metrics {
             self.custom_metrics.insert(key, value);
@@ -618,14 +618,14 @@ impl IncrementalMetrics {
         let health_weight = 0.4;
         let performance_weight = 0.3;
         let reliability_weight = 0.3;
-        
+
         let health_score = self.health_metrics.overall_health_score;
         let performance_score = self.health_metrics.performance_score;
         let reliability_score = 1.0 - self.error_metrics.error_rate.min(1.0);
-        
-        (health_score * health_weight) + 
-        (performance_score * performance_weight) + 
-        (reliability_score * reliability_weight)
+
+        (health_score * health_weight)
+            + (performance_score * performance_weight)
+            + (reliability_score * reliability_weight)
     }
 }
 
@@ -675,12 +675,12 @@ impl PerformanceTracker {
     pub async fn record_data_point(&self, data_point: PerformanceDataPoint) {
         let mut data_points = self.data_points.write().await;
         data_points.push_back(data_point);
-        
+
         // Limit data points
         while data_points.len() > self.max_data_points {
             data_points.pop_front();
         }
-        
+
         // Update statistics
         self.update_statistics().await;
     }
@@ -693,7 +693,7 @@ impl PerformanceTracker {
     /// Update aggregated statistics
     async fn update_statistics(&self) {
         let data_points = self.data_points.read().await;
-        
+
         if data_points.is_empty() {
             return;
         }
@@ -724,7 +724,10 @@ impl PerformanceTracker {
     }
 
     /// Calculate statistics for a set of data points
-    fn calculate_operation_statistics(&self, points: &[&PerformanceDataPoint]) -> OperationStatistics {
+    fn calculate_operation_statistics(
+        &self,
+        points: &[&PerformanceDataPoint],
+    ) -> OperationStatistics {
         if points.is_empty() {
             return OperationStatistics {
                 total_count: 0,
@@ -740,7 +743,7 @@ impl PerformanceTracker {
 
         let total_count = points.len() as u64;
         let success_count = points.iter().filter(|p| p.success).count() as u64;
-        
+
         let mut durations: Vec<u64> = points.iter().map(|p| p.duration_ms).collect();
         durations.sort();
 
@@ -753,14 +756,20 @@ impl PerformanceTracker {
 
         let p95_index = ((durations.len() as f64) * 0.95) as usize;
         let p99_index = ((durations.len() as f64) * 0.99) as usize;
-        
-        let p95_duration_ms = durations.get(p95_index.min(durations.len() - 1)).unwrap_or(&0) as &u64;
-        let p99_duration_ms = durations.get(p99_index.min(durations.len() - 1)).unwrap_or(&0) as &u64;
+
+        let p95_duration_ms = durations
+            .get(p95_index.min(durations.len() - 1))
+            .unwrap_or(&0) as &u64;
+        let p99_duration_ms = durations
+            .get(p99_index.min(durations.len() - 1))
+            .unwrap_or(&0) as &u64;
 
         // Calculate standard deviation
-        let variance = durations.iter()
+        let variance = durations
+            .iter()
             .map(|d| (*d as f64 - avg_duration_ms).powi(2))
-            .sum::<f64>() / durations.len() as f64;
+            .sum::<f64>()
+            / durations.len() as f64;
         let std_deviation_ms = variance.sqrt();
 
         // Calculate operations per second (simplified)
@@ -827,18 +836,18 @@ impl MetricsCollector {
     pub async fn update_metrics(&self, update: MetricsUpdate) -> RragResult<()> {
         let mut current = self.current_metrics.write().await;
         current.update(update);
-        
+
         // Add to history
         let mut history = self.metrics_history.write().await;
         history.push_back(current.clone());
-        
+
         // Limit history size based on retention
-        let max_history_size = (self.config.metrics_retention_days as usize) * 24 * 60 * 60 / 
-                               (self.config.metrics_interval_secs as usize);
+        let max_history_size = (self.config.metrics_retention_days as usize) * 24 * 60 * 60
+            / (self.config.metrics_interval_secs as usize);
         while history.len() > max_history_size {
             history.pop_front();
         }
-        
+
         Ok(())
     }
 
@@ -857,30 +866,32 @@ impl MetricsCollector {
     pub async fn health_check(&self) -> RragResult<bool> {
         let handles = self.task_handles.lock().await;
         let all_running = handles.iter().all(|handle| !handle.is_finished());
-        
+
         let stats = self.collection_stats.read().await;
         let healthy_collection = stats.collection_success_rate > 0.8;
-        
+
         Ok(all_running && healthy_collection)
     }
 
     /// Start background collection tasks
     async fn start_collection_tasks(&self) -> RragResult<()> {
         let mut handles = self.task_handles.lock().await;
-        
+
         // Metrics collection task
         handles.push(self.start_metrics_collection_task().await);
-        
+
         // Health monitoring task
         if self.config.enable_health_monitoring {
             handles.push(self.start_health_monitoring_task().await);
         }
-        
+
         // Export task
-        if self.config.export_config.enable_json_export || self.config.export_config.enable_prometheus {
+        if self.config.export_config.enable_json_export
+            || self.config.export_config.enable_prometheus
+        {
             handles.push(self.start_export_task().await);
         }
-        
+
         Ok(())
     }
 
@@ -889,13 +900,13 @@ impl MetricsCollector {
         let current_metrics = Arc::clone(&self.current_metrics);
         let collection_stats = Arc::clone(&self.collection_stats);
         let interval = self.config.metrics_interval_secs;
-        
+
         tokio::spawn(async move {
             let mut timer = tokio::time::interval(tokio::time::Duration::from_secs(interval));
-            
+
             loop {
                 timer.tick().await;
-                
+
                 let start_time = std::time::Instant::now();
                 let collection_successful = {
                     // Collect system metrics (simplified)
@@ -911,12 +922,12 @@ impl MetricsCollector {
                             vector_update_efficiency: 0.92,
                         }),
                         system_metrics: Some(SystemMetrics {
-                            cpu_usage_percent: 45.0, // Would be actual measurement
-                            memory_usage_bytes: 512 * 1024 * 1024, // 512MB
-                            available_memory_bytes: 1024 * 1024 * 1024, // 1GB
+                            cpu_usage_percent: 45.0,                      // Would be actual measurement
+                            memory_usage_bytes: 512 * 1024 * 1024,        // 512MB
+                            available_memory_bytes: 1024 * 1024 * 1024,   // 1GB
                             storage_usage_bytes: 10 * 1024 * 1024 * 1024, // 10GB
                             available_storage_bytes: 90 * 1024 * 1024 * 1024, // 90GB
-                            network_io_bps: 1024.0 * 100.0, // 100KB/s
+                            network_io_bps: 1024.0 * 100.0,               // 100KB/s
                             disk_io_ops: 50.0,
                             active_connections: 10,
                         }),
@@ -925,26 +936,27 @@ impl MetricsCollector {
                         error_metrics: None,
                         custom_metrics: HashMap::new(),
                     };
-                    
+
                     // Update metrics
                     let mut metrics = current_metrics.write().await;
                     metrics.update(update);
                     true
                 };
-                
+
                 let collection_time = start_time.elapsed().as_millis() as f64;
-                
+
                 // Update collection statistics
                 let mut stats = collection_stats.write().await;
                 stats.total_collections += 1;
                 if !collection_successful {
                     stats.failed_collections += 1;
                 }
-                stats.avg_collection_time_ms = 
+                stats.avg_collection_time_ms =
                     (stats.avg_collection_time_ms + collection_time) / 2.0;
                 stats.last_collection = chrono::Utc::now();
-                stats.collection_success_rate = 
-                    (stats.total_collections - stats.failed_collections) as f64 / stats.total_collections as f64;
+                stats.collection_success_rate = (stats.total_collections - stats.failed_collections)
+                    as f64
+                    / stats.total_collections as f64;
             }
         })
     }
@@ -953,23 +965,23 @@ impl MetricsCollector {
     async fn start_health_monitoring_task(&self) -> tokio::task::JoinHandle<()> {
         let current_metrics = Arc::clone(&self.current_metrics);
         let interval = self.config.health_check_interval_secs;
-        
+
         tokio::spawn(async move {
             let mut timer = tokio::time::interval(tokio::time::Duration::from_secs(interval));
-            
+
             loop {
                 timer.tick().await;
-                
+
                 // Perform health checks and update health metrics
                 let health_update = HealthMetrics {
-                    overall_health_score: 0.95, // Would be calculated
+                    overall_health_score: 0.95,       // Would be calculated
                     component_health: HashMap::new(), // Would include component scores
                     service_availability: 0.99,
                     data_consistency_score: 0.98,
                     performance_score: 0.92,
                     last_health_check: chrono::Utc::now(),
                 };
-                
+
                 let mut metrics = current_metrics.write().await;
                 metrics.health_metrics = health_update;
             }
@@ -980,15 +992,15 @@ impl MetricsCollector {
     async fn start_export_task(&self) -> tokio::task::JoinHandle<()> {
         let current_metrics = Arc::clone(&self.current_metrics);
         let export_config = self.config.export_config.clone();
-        
+
         tokio::spawn(async move {
-            let mut timer = tokio::time::interval(
-                tokio::time::Duration::from_secs(export_config.export_interval_secs)
-            );
-            
+            let mut timer = tokio::time::interval(tokio::time::Duration::from_secs(
+                export_config.export_interval_secs,
+            ));
+
             loop {
                 timer.tick().await;
-                
+
                 if export_config.enable_json_export {
                     let metrics = current_metrics.read().await;
                     // Export metrics as JSON (simplified)
@@ -1022,7 +1034,7 @@ mod tests {
     async fn test_performance_tracker() {
         let config = MonitoringConfig::default();
         let tracker = PerformanceTracker::new(config, 100);
-        
+
         let data_point = PerformanceDataPoint {
             timestamp: chrono::Utc::now(),
             operation_type: "indexing".to_string(),
@@ -1031,9 +1043,9 @@ mod tests {
             success: true,
             metadata: HashMap::new(),
         };
-        
+
         tracker.record_data_point(data_point).await;
-        
+
         let stats = tracker.get_statistics().await;
         assert_eq!(stats.overall.total_count, 1);
         assert_eq!(stats.overall.success_count, 1);
@@ -1045,10 +1057,10 @@ mod tests {
             enable_performance_metrics: false, // Disable for test
             ..MonitoringConfig::default()
         };
-        
+
         let collector = MetricsCollector::new(config).await.unwrap();
         assert!(collector.health_check().await.unwrap());
-        
+
         let metrics = collector.get_current_metrics().await;
         assert!(!metrics.system_id.is_empty());
     }
@@ -1059,9 +1071,9 @@ mod tests {
             enable_performance_metrics: false,
             ..MonitoringConfig::default()
         };
-        
+
         let collector = MetricsCollector::new(config).await.unwrap();
-        
+
         let update = MetricsUpdate {
             indexing_metrics: Some(IndexingMetrics {
                 documents_per_second: 20.0,
@@ -1079,9 +1091,9 @@ mod tests {
             error_metrics: None,
             custom_metrics: HashMap::new(),
         };
-        
+
         collector.update_metrics(update).await.unwrap();
-        
+
         let metrics = collector.get_current_metrics().await;
         assert_eq!(metrics.indexing_metrics.documents_per_second, 20.0);
     }
@@ -1094,7 +1106,7 @@ mod tests {
             TrendDirection::Degrading,
             TrendDirection::Unknown,
         ];
-        
+
         // Ensure all directions are different
         for (i, dir1) in directions.iter().enumerate() {
             for (j, dir2) in directions.iter().enumerate() {
@@ -1114,7 +1126,7 @@ mod tests {
             ExportFormat::StatsD,
             ExportFormat::Custom("custom".to_string()),
         ];
-        
+
         // Ensure all formats are different
         for (i, fmt1) in formats.iter().enumerate() {
             for (j, fmt2) in formats.iter().enumerate() {

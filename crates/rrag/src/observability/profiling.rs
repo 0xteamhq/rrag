@@ -1,14 +1,14 @@
 //! # Performance Profiling System
-//! 
+//!
 //! Advanced profiling capabilities for identifying bottlenecks,
 //! performance trends, and optimization opportunities in RRAG systems.
 
 use crate::{RragError, RragResult};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Profiling configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -348,7 +348,7 @@ impl PerformanceProfiler {
 
         let operation_id = operation_id.into();
         let mut active = self.active_profiles.write().await;
-        
+
         if let Some(start_time) = active.remove(&operation_id) {
             let duration_ms = start_time.elapsed().as_millis() as f64;
             drop(active);
@@ -403,7 +403,7 @@ impl PerformanceProfiler {
     pub async fn analyze_bottlenecks(&self, analysis_period_minutes: u32) -> BottleneckAnalysis {
         let profiles = self.profiles.read().await;
         let cutoff_time = Utc::now() - Duration::minutes(analysis_period_minutes as i64);
-        
+
         let recent_profiles: Vec<_> = profiles
             .iter()
             .filter(|p| p.timestamp >= cutoff_time)
@@ -438,8 +438,11 @@ impl PerformanceProfiler {
 
         for profile in profiles {
             let key = format!("{}:{}", profile.component, profile.operation);
-            component_operations.entry(key.clone()).or_default().push(profile.duration_ms);
-            
+            component_operations
+                .entry(key.clone())
+                .or_default()
+                .push(profile.duration_ms);
+
             if let Some(ref user_id) = profile.user_id {
                 user_impact.entry(key).or_default().insert(user_id.clone());
             }
@@ -450,13 +453,14 @@ impl PerformanceProfiler {
         for (key, durations) in component_operations {
             let avg_duration = durations.iter().sum::<f64>() / durations.len() as f64;
             let max_duration = durations.iter().fold(0.0f64, |a, &b| a.max(b));
-            
+
             if avg_duration > self.config.bottleneck_threshold_ms {
                 let parts: Vec<&str> = key.split(':').collect();
                 let component = parts[0].to_string();
                 let operation = parts[1].to_string();
-                
-                let impact_score = self.calculate_impact_score(avg_duration, durations.len(), max_duration);
+
+                let impact_score =
+                    self.calculate_impact_score(avg_duration, durations.len(), max_duration);
                 let bottleneck_type = self.determine_bottleneck_type(&component, avg_duration);
                 let affected_users = user_impact.get(&key).map(|set| set.len()).unwrap_or(0);
 
@@ -474,16 +478,25 @@ impl PerformanceProfiler {
         }
 
         // Sort by impact score
-        bottlenecks.sort_by(|a, b| b.impact_score.partial_cmp(&a.impact_score).unwrap_or(std::cmp::Ordering::Equal));
+        bottlenecks.sort_by(|a, b| {
+            b.impact_score
+                .partial_cmp(&a.impact_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         bottlenecks
     }
 
-    fn calculate_impact_score(&self, avg_duration: f64, frequency: usize, max_duration: f64) -> f64 {
+    fn calculate_impact_score(
+        &self,
+        avg_duration: f64,
+        frequency: usize,
+        max_duration: f64,
+    ) -> f64 {
         // Impact score considers duration, frequency, and peak impact
         let duration_weight = avg_duration / 1000.0; // Convert to seconds
         let frequency_weight = (frequency as f64).log10();
         let peak_weight = max_duration / avg_duration;
-        
+
         duration_weight * frequency_weight * peak_weight
     }
 
@@ -508,21 +521,23 @@ impl PerformanceProfiler {
     fn analyze_performance_trends(&self, _profiles: &[&ProfileData]) -> Vec<PerformanceTrend> {
         // This would implement sophisticated trend analysis
         // For now, return a simple mock trend
-        vec![
-            PerformanceTrend {
-                metric_name: "response_time".to_string(),
-                component: "search".to_string(),
-                trend_direction: TrendDirection::Stable,
-                change_rate_percent: -2.5,
-                significance: TrendSignificance::Low,
-            }
-        ]
+        vec![PerformanceTrend {
+            metric_name: "response_time".to_string(),
+            component: "search".to_string(),
+            trend_direction: TrendDirection::Stable,
+            change_rate_percent: -2.5,
+            significance: TrendSignificance::Low,
+        }]
     }
 
-    fn generate_recommendations(&self, bottlenecks: &[Bottleneck]) -> Vec<OptimizationRecommendation> {
+    fn generate_recommendations(
+        &self,
+        bottlenecks: &[Bottleneck],
+    ) -> Vec<OptimizationRecommendation> {
         let mut recommendations = Vec::new();
 
-        for bottleneck in bottlenecks.iter().take(5) { // Top 5 bottlenecks
+        for bottleneck in bottlenecks.iter().take(5) {
+            // Top 5 bottlenecks
             let recommendation = match bottleneck.bottleneck_type {
                 BottleneckType::Database => OptimizationRecommendation {
                     component: bottleneck.component.clone(),
@@ -568,7 +583,7 @@ impl PerformanceProfiler {
     pub async fn generate_performance_report(&self, period: Duration) -> PerformanceReport {
         let profiles = self.profiles.read().await;
         let cutoff_time = Utc::now() - period;
-        
+
         let recent_profiles: Vec<_> = profiles
             .iter()
             .filter(|p| p.timestamp >= cutoff_time)
@@ -625,7 +640,7 @@ impl PerformanceProfiler {
     fn calculate_performance_summary(&self, profiles: &[&ProfileData]) -> PerformanceSummary {
         let durations: Vec<f64> = profiles.iter().map(|p| p.duration_ms).collect();
         let total_operations = durations.len();
-        
+
         if durations.is_empty() {
             return PerformanceSummary {
                 total_operations: 0,
@@ -639,21 +654,22 @@ impl PerformanceProfiler {
         }
 
         let average_response_time_ms = durations.iter().sum::<f64>() / durations.len() as f64;
-        
+
         let mut sorted_durations = durations.clone();
         sorted_durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        
+
         let p95_index = (durations.len() as f64 * 0.95) as usize;
         let p99_index = (durations.len() as f64 * 0.99) as usize;
-        
+
         let p95_response_time_ms = sorted_durations.get(p95_index).copied().unwrap_or(0.0);
         let p99_response_time_ms = sorted_durations.get(p99_index).copied().unwrap_or(0.0);
-        
+
         // Mock error rate and throughput calculations
         let error_rate_percent = 2.0; // Would be calculated from actual error data
         let throughput_ops_per_second = total_operations as f64 / 60.0; // Assuming 1-minute window
-        
-        let bottlenecks_detected = durations.iter()
+
+        let bottlenecks_detected = durations
+            .iter()
             .filter(|&&d| d > self.config.bottleneck_threshold_ms)
             .count();
 
@@ -668,12 +684,16 @@ impl PerformanceProfiler {
         }
     }
 
-    fn calculate_component_performance(&self, profiles: &[&ProfileData]) -> HashMap<String, ComponentPerformanceMetrics> {
+    fn calculate_component_performance(
+        &self,
+        profiles: &[&ProfileData],
+    ) -> HashMap<String, ComponentPerformanceMetrics> {
         let mut component_data: HashMap<String, Vec<f64>> = HashMap::new();
         let error_counts: HashMap<String, usize> = HashMap::new();
 
         for profile in profiles {
-            component_data.entry(profile.component.clone())
+            component_data
+                .entry(profile.component.clone())
                 .or_default()
                 .push(profile.duration_ms);
         }
@@ -685,35 +705,44 @@ impl PerformanceProfiler {
             let average_duration_ms = durations.iter().sum::<f64>() / durations.len() as f64;
             let max_duration_ms = durations.iter().fold(0.0f64, |a, &b| a.max(b));
             let min_duration_ms = durations.iter().fold(f64::INFINITY, |a, &b| a.min(b));
-            
-            let variance = durations.iter()
+
+            let variance = durations
+                .iter()
                 .map(|&d| (d - average_duration_ms).powi(2))
-                .sum::<f64>() / durations.len() as f64;
+                .sum::<f64>()
+                / durations.len() as f64;
             let standard_deviation_ms = variance.sqrt();
 
             let error_count = error_counts.get(&component_name).copied().unwrap_or(0);
 
-            result.insert(component_name.clone(), ComponentPerformanceMetrics {
-                component_name,
-                operation_count,
-                average_duration_ms,
-                max_duration_ms,
-                min_duration_ms,
-                standard_deviation_ms,
-                error_count,
-                cpu_usage_percent: Some(rand::random::<f64>() * 100.0), // Mock data
-                memory_usage_mb: Some(rand::random::<f64>() * 1024.0), // Mock data
-            });
+            result.insert(
+                component_name.clone(),
+                ComponentPerformanceMetrics {
+                    component_name,
+                    operation_count,
+                    average_duration_ms,
+                    max_duration_ms,
+                    min_duration_ms,
+                    standard_deviation_ms,
+                    error_count,
+                    cpu_usage_percent: Some(rand::random::<f64>() * 100.0), // Mock data
+                    memory_usage_mb: Some(rand::random::<f64>() * 1024.0),  // Mock data
+                },
+            );
         }
 
         result
     }
 
-    fn calculate_operation_performance(&self, profiles: &[&ProfileData]) -> HashMap<String, OperationPerformanceMetrics> {
+    fn calculate_operation_performance(
+        &self,
+        profiles: &[&ProfileData],
+    ) -> HashMap<String, OperationPerformanceMetrics> {
         let mut operation_data: HashMap<String, Vec<f64>> = HashMap::new();
 
         for profile in profiles {
-            operation_data.entry(profile.operation.clone())
+            operation_data
+                .entry(profile.operation.clone())
                 .or_default()
                 .push(profile.duration_ms);
         }
@@ -723,29 +752,44 @@ impl PerformanceProfiler {
         for (operation_name, durations) in operation_data {
             let invocation_count = durations.len();
             let average_duration_ms = durations.iter().sum::<f64>() / durations.len() as f64;
-            
+
             let mut sorted_durations = durations.clone();
             sorted_durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-            
-            let mut percentiles = HashMap::new();
-            percentiles.insert(50, sorted_durations[(durations.len() * 50 / 100).min(durations.len() - 1)]);
-            percentiles.insert(95, sorted_durations[(durations.len() * 95 / 100).min(durations.len() - 1)]);
-            percentiles.insert(99, sorted_durations[(durations.len() * 99 / 100).min(durations.len() - 1)]);
 
-            result.insert(operation_name.clone(), OperationPerformanceMetrics {
-                operation_name,
-                invocation_count,
-                average_duration_ms,
-                percentiles,
-                concurrent_executions_max: 10, // Mock data
-                success_rate_percent: 98.5, // Mock data
-            });
+            let mut percentiles = HashMap::new();
+            percentiles.insert(
+                50,
+                sorted_durations[(durations.len() * 50 / 100).min(durations.len() - 1)],
+            );
+            percentiles.insert(
+                95,
+                sorted_durations[(durations.len() * 95 / 100).min(durations.len() - 1)],
+            );
+            percentiles.insert(
+                99,
+                sorted_durations[(durations.len() * 99 / 100).min(durations.len() - 1)],
+            );
+
+            result.insert(
+                operation_name.clone(),
+                OperationPerformanceMetrics {
+                    operation_name,
+                    invocation_count,
+                    average_duration_ms,
+                    percentiles,
+                    concurrent_executions_max: 10, // Mock data
+                    success_rate_percent: 98.5,    // Mock data
+                },
+            );
         }
 
         result
     }
 
-    fn calculate_user_experience_metrics(&self, _profiles: &[&ProfileData]) -> UserExperienceMetrics {
+    fn calculate_user_experience_metrics(
+        &self,
+        _profiles: &[&ProfileData],
+    ) -> UserExperienceMetrics {
         UserExperienceMetrics {
             average_session_duration_minutes: 15.5,
             bounce_rate_percent: 12.3,
@@ -754,13 +798,15 @@ impl PerformanceProfiler {
         }
     }
 
-    fn calculate_resource_utilization(&self, profiles: &[&ProfileData]) -> ResourceUtilizationMetrics {
-        let cpu_values: Vec<f64> = profiles.iter()
+    fn calculate_resource_utilization(
+        &self,
+        profiles: &[&ProfileData],
+    ) -> ResourceUtilizationMetrics {
+        let cpu_values: Vec<f64> = profiles
+            .iter()
             .filter_map(|p| p.cpu_usage_percent)
             .collect();
-        let memory_values: Vec<f64> = profiles.iter()
-            .filter_map(|p| p.memory_usage_mb)
-            .collect();
+        let memory_values: Vec<f64> = profiles.iter().filter_map(|p| p.memory_usage_mb).collect();
 
         let cpu_utilization = if !cpu_values.is_empty() {
             cpu_values.iter().sum::<f64>() / cpu_values.len() as f64
@@ -769,7 +815,8 @@ impl PerformanceProfiler {
         };
 
         let memory_utilization = if !memory_values.is_empty() {
-            (memory_values.iter().sum::<f64>() / memory_values.len() as f64) / 1024.0 * 100.0 // Convert to percentage
+            (memory_values.iter().sum::<f64>() / memory_values.len() as f64) / 1024.0 * 100.0
+        // Convert to percentage
         } else {
             62.0 // Mock data
         };
@@ -777,8 +824,8 @@ impl PerformanceProfiler {
         ResourceUtilizationMetrics {
             cpu_utilization_percent: cpu_utilization,
             memory_utilization_percent: memory_utilization,
-            disk_utilization_percent: 23.0, // Mock data
-            network_utilization_percent: 15.0, // Mock data
+            disk_utilization_percent: 23.0,            // Mock data
+            network_utilization_percent: 15.0,         // Mock data
             connection_pool_utilization_percent: 78.0, // Mock data
         }
     }
@@ -798,7 +845,12 @@ impl PerformanceProfiler {
 #[async_trait::async_trait]
 pub trait Profiler: Send + Sync {
     async fn start_profile(&self, operation_id: &str) -> RragResult<()>;
-    async fn end_profile(&self, operation_id: &str, operation: &str, component: &str) -> RragResult<Option<ProfileData>>;
+    async fn end_profile(
+        &self,
+        operation_id: &str,
+        operation: &str,
+        component: &str,
+    ) -> RragResult<Option<ProfileData>>;
     async fn record_profile(&self, profile: ProfileData) -> RragResult<()>;
     async fn analyze_bottlenecks(&self, period_minutes: u32) -> BottleneckAnalysis;
     async fn generate_report(&self, period: Duration) -> PerformanceReport;
@@ -810,7 +862,12 @@ impl Profiler for PerformanceProfiler {
         self.start_profile(operation_id).await
     }
 
-    async fn end_profile(&self, operation_id: &str, operation: &str, component: &str) -> RragResult<Option<ProfileData>> {
+    async fn end_profile(
+        &self,
+        operation_id: &str,
+        operation: &str,
+        component: &str,
+    ) -> RragResult<Option<ProfileData>> {
         self.end_profile(operation_id, operation, component).await
     }
 
@@ -861,19 +918,22 @@ mod tests {
             max_profiles: 100,
             ..Default::default()
         };
-        
+
         let profiler = PerformanceProfiler::new(config).await.unwrap();
-        
+
         assert!(!profiler.is_healthy().await);
-        
+
         profiler.start().await.unwrap();
         assert!(profiler.is_healthy().await);
 
         // Test operation profiling
         profiler.start_profile("op1").await.unwrap();
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-        let profile = profiler.end_profile("op1", "test_operation", "test_component").await.unwrap();
-        
+        let profile = profiler
+            .end_profile("op1", "test_operation", "test_component")
+            .await
+            .unwrap();
+
         assert!(profile.is_some());
         let profile = profile.unwrap();
         assert_eq!(profile.operation, "test_operation");
@@ -893,15 +953,19 @@ mod tests {
             bottleneck_threshold_ms: 50.0,
             ..Default::default()
         };
-        
+
         let profiler = PerformanceProfiler::new(config).await.unwrap();
         profiler.start().await.unwrap();
 
         // Add some profiles with different performance characteristics
         let profiles = vec![
             ProfileData::new("fast_operation", "component1").with_duration(25.0),
-            ProfileData::new("slow_operation", "component1").with_duration(150.0).with_user("user1"),
-            ProfileData::new("slow_operation", "component1").with_duration(200.0).with_user("user2"),
+            ProfileData::new("slow_operation", "component1")
+                .with_duration(150.0)
+                .with_user("user1"),
+            ProfileData::new("slow_operation", "component1")
+                .with_duration(200.0)
+                .with_user("user2"),
             ProfileData::new("moderate_operation", "component2").with_duration(75.0),
         ];
 
@@ -910,13 +974,13 @@ mod tests {
         }
 
         let analysis = profiler.analyze_bottlenecks(60).await;
-        
+
         assert!(!analysis.bottlenecks.is_empty());
         let bottleneck = &analysis.bottlenecks[0];
         assert_eq!(bottleneck.operation, "slow_operation");
         assert!(bottleneck.average_duration_ms > 50.0);
         assert_eq!(bottleneck.affected_users, 2);
-        
+
         assert!(!analysis.recommendations.is_empty());
 
         profiler.stop().await.unwrap();
@@ -940,8 +1004,10 @@ mod tests {
             profiler.record_profile(profile).await.unwrap();
         }
 
-        let report = profiler.generate_performance_report(Duration::hours(1)).await;
-        
+        let report = profiler
+            .generate_performance_report(Duration::hours(1))
+            .await;
+
         assert_eq!(report.summary.total_operations, 4);
         assert!(report.summary.average_response_time_ms > 0.0);
         assert!(!report.component_performance.is_empty());
@@ -959,14 +1025,17 @@ mod tests {
             sample_rate: 0.0, // No sampling
             ..Default::default()
         };
-        
+
         let profiler = PerformanceProfiler::new(config).await.unwrap();
         profiler.start().await.unwrap();
 
         // These operations should be ignored due to 0% sampling rate
         for i in 0..10 {
             profiler.start_profile(&format!("op{}", i)).await.unwrap();
-            let profile = profiler.end_profile(&format!("op{}", i), "test", "component").await.unwrap();
+            let profile = profiler
+                .end_profile(&format!("op{}", i), "test", "component")
+                .await
+                .unwrap();
             // Due to 0% sampling, profiles should not be recorded
             assert!(profile.is_none());
         }

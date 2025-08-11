@@ -1,14 +1,14 @@
 //! # RRAG Observability System
-//! 
+//!
 //! Enterprise-grade observability and monitoring for production RAG deployments.
-//! 
+//!
 //! This module provides comprehensive monitoring, metrics collection, alerting,
 //! and visualization capabilities to ensure your RAG system operates reliably
 //! at scale. It includes real-time dashboards, intelligent alerting, performance
 //! profiling, and data export capabilities.
-//! 
+//!
 //! ## Features
-//! 
+//!
 //! - **Metrics Collection**: Prometheus-compatible metrics with custom dashboards
 //! - **Real-time Monitoring**: Live system health and performance tracking
 //! - **Intelligent Alerting**: Smart alerts with multiple notification channels
@@ -17,13 +17,13 @@
 //! - **Log Aggregation**: Structured logging with search and analysis
 //! - **Data Export**: Export metrics and logs for external analysis
 //! - **Data Retention**: Configurable retention policies for long-term storage
-//! 
+//!
 //! ## Quick Start
-//! 
+//!
 //! ### Basic Observability Setup
 //! ```rust
 //! use rrag::observability::{ObservabilitySystem, ObservabilityConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let observability = ObservabilitySystem::new(
 //!     ObservabilityConfig::default()
@@ -32,10 +32,10 @@
 //!         .with_alerting(true)
 //!         .with_dashboard(true)
 //! ).await?;
-//! 
+//!
 //! // Start the observability system
 //! observability.start().await?;
-//! 
+//!
 //! // Access components
 //! let metrics = observability.metrics();
 //! let monitoring = observability.monitoring();
@@ -43,25 +43,25 @@
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Custom Metrics Collection
 //! ```rust
 //! use rrag::observability::{MetricsCollector, MetricType};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let metrics = MetricsCollector::new();
-//! 
+//!
 //! // Counter metrics
 //! metrics.inc_counter("requests_total").await?;
 //! metrics.inc_counter_by("documents_processed", 10).await?;
-//! 
+//!
 //! // Gauge metrics
 //! metrics.set_gauge("active_users", 150.0).await?;
 //! metrics.set_gauge("memory_usage_mb", 512.0).await?;
-//! 
+//!
 //! // Histogram metrics for latency
 //! metrics.observe_histogram("request_duration_ms", 45.2).await?;
-//! 
+//!
 //! // Timer metrics
 //! let timer = metrics.start_timer("query_processing_time");
 //! // ... do work ...
@@ -69,14 +69,14 @@
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Alert Configuration
 //! ```rust
 //! use rrag::observability::{AlertManager, AlertRule, AlertSeverity};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let alert_manager = AlertManager::new();
-//! 
+//!
 //! // High latency alert
 //! let latency_alert = AlertRule::new("high_latency")
 //!     .condition("avg(request_duration_ms) > 1000")
@@ -84,37 +84,37 @@
 //!     .description("Query latency is too high")
 //!     .notification_channels(vec!["slack", "email"])
 //!     .cooldown_minutes(5);
-//! 
+//!
 //! alert_manager.add_rule(latency_alert).await?;
-//! 
+//!
 //! // Error rate alert
 //! let error_alert = AlertRule::new("high_error_rate")
 //!     .condition("rate(error_count) > 0.05")
 //!     .severity(AlertSeverity::Critical)
 //!     .description("Error rate exceeded 5%")
 //!     .notification_channels(vec!["pagerduty", "slack"]);
-//! 
+//!
 //! alert_manager.add_rule(error_alert).await?;
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Health Monitoring
 //! ```rust
 //! use rrag::observability::{HealthMonitor, HealthCheck};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let health_monitor = HealthMonitor::new();
-//! 
+//!
 //! // Add custom health checks
 //! health_monitor.add_check(
-//!     "database", 
-//!     Box::new(|_| async { 
+//!     "database",
+//!     Box::new(|_| async {
 //!         // Check database connectivity
-//!         Ok(true) 
+//!         Ok(true)
 //!     })
 //! ).await?;
-//! 
+//!
 //! health_monitor.add_check(
 //!     "embedding_service",
 //!     Box::new(|_| async {
@@ -122,43 +122,43 @@
 //!         Ok(true)
 //!     })
 //! ).await?;
-//! 
+//!
 //! // Get overall health status
 //! let status = health_monitor.check_all().await?;
 //! println!("System health: {:?}", status.overall_status);
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Performance Profiling
 //! ```rust
 //! use rrag::observability::{PerformanceProfiler, ProfileConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let profiler = PerformanceProfiler::new(ProfileConfig::default());
-//! 
+//!
 //! // Start profiling a specific operation
 //! let profile_id = profiler.start_profile("document_processing").await?;
-//! 
+//!
 //! // ... perform work ...
-//! 
+//!
 //! let profile = profiler.stop_profile(profile_id).await?;
-//! 
+//!
 //! // Analyze bottlenecks
 //! let bottlenecks = profiler.analyze_bottlenecks(5).await?;
 //! for bottleneck in bottlenecks.bottlenecks {
-//!     println!("Bottleneck: {} took {:.2}ms", 
-//!              bottleneck.operation, 
+//!     println!("Bottleneck: {} took {:.2}ms",
+//!              bottleneck.operation,
 //!              bottleneck.average_duration_ms);
 //! }
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Dashboard and Visualization
 //! ```rust
 //! use rrag::observability::{DashboardServer, DashboardConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let dashboard = DashboardServer::new(
 //!     DashboardConfig::default()
@@ -170,20 +170,20 @@
 //!             "error_rate_by_component"
 //!         ])
 //! );
-//! 
+//!
 //! // Start dashboard server
 //! dashboard.start().await?;
 //! println!("Dashboard available at: http://localhost:3000");
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ## Integration Examples
-//! 
+//!
 //! ### With RAG System
 //! ```rust
 //! use rrag::{RragSystemBuilder, observability::ObservabilityConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let rag = RragSystemBuilder::new()
 //!     .with_observability(
@@ -194,7 +194,7 @@
 //!     )
 //!     .build()
 //!     .await?;
-//! 
+//!
 //! // System automatically reports metrics
 //! let results = rag.search("query", Some(10)).await?;
 //! // Metrics like query_count, search_latency, results_returned are automatic
@@ -202,60 +202,56 @@
 //! # }
 //! ```
 
-pub mod metrics;
-pub mod monitoring;
 pub mod alerting;
 pub mod dashboard;
-pub mod logging;
-pub mod health;
-pub mod profiling;
 pub mod export;
+pub mod health;
+pub mod logging;
+pub mod metrics;
+pub mod monitoring;
+pub mod profiling;
 pub mod retention;
 
 // Core observability system
-pub use metrics::{
-    MetricsCollector, MetricsRegistry, Metric, MetricType, MetricValue, 
-    CounterMetric, GaugeMetric, HistogramMetric, TimerMetric
-};
-pub use monitoring::{
-    SystemMonitor, PerformanceMonitor, SearchAnalyzer, UserActivityTracker,
-    MonitoringConfig, MonitoringService
-};
 pub use alerting::{
-    AlertManager, AlertRule, AlertSeverity, AlertCondition, AlertNotification,
-    AlertConfig, NotificationChannel
+    AlertCondition, AlertConfig, AlertManager, AlertNotification, AlertRule, AlertSeverity,
+    NotificationChannel,
 };
 pub use dashboard::{
-    DashboardServer, DashboardConfig, WebSocketManager, RealtimeMetrics,
-    DashboardHandler, ChartData, DashboardMetrics
-};
-pub use logging::{
-    LogAggregator, LogLevel, LogEntry, LogQuery, LogFilter,
-    LogConfig, StructuredLogger
-};
-pub use health::{
-    HealthChecker, HealthReport, ComponentStatus, HealthMonitor,
-    HealthConfig, ServiceHealth
-};
-pub use profiling::{
-    Profiler, ProfileData, BottleneckAnalysis, PerformanceReport,
-    ProfilingConfig, PerformanceProfiler
+    ChartData, DashboardConfig, DashboardHandler, DashboardMetrics, DashboardServer,
+    RealtimeMetrics, WebSocketManager,
 };
 pub use export::{
-    ExportManager, ExportFormat, ReportGenerator, MetricsExporter,
-    ExportConfig, ReportConfig
+    ExportConfig, ExportFormat, ExportManager, MetricsExporter, ReportConfig, ReportGenerator,
+};
+pub use health::{
+    ComponentStatus, HealthChecker, HealthConfig, HealthMonitor, HealthReport, ServiceHealth,
+};
+pub use logging::{
+    LogAggregator, LogConfig, LogEntry, LogFilter, LogLevel, LogQuery, StructuredLogger,
+};
+pub use metrics::{
+    CounterMetric, GaugeMetric, HistogramMetric, Metric, MetricType, MetricValue, MetricsCollector,
+    MetricsRegistry, TimerMetric,
+};
+pub use monitoring::{
+    MonitoringConfig, MonitoringService, PerformanceMonitor, SearchAnalyzer, SystemMonitor,
+    UserActivityTracker,
+};
+pub use profiling::{
+    BottleneckAnalysis, PerformanceProfiler, PerformanceReport, ProfileData, Profiler,
+    ProfilingConfig,
 };
 pub use retention::{
-    DataRetention, RetentionPolicy, HistoricalAnalyzer,
-    RetentionConfig, ArchiveManager
+    ArchiveManager, DataRetention, HistoricalAnalyzer, RetentionConfig, RetentionPolicy,
 };
 
 use crate::{RragError, RragResult};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc};
 
 /// Main observability system configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -263,7 +259,7 @@ pub struct ObservabilityConfig {
     /// System identification
     pub system_id: String,
     pub environment: String,
-    
+
     /// Component configurations
     pub metrics: metrics::MetricsConfig,
     pub monitoring: monitoring::MonitoringConfig,
@@ -274,7 +270,7 @@ pub struct ObservabilityConfig {
     pub profiling: profiling::ProfilingConfig,
     pub export: export::ExportConfig,
     pub retention: retention::RetentionConfig,
-    
+
     /// Global settings
     pub enabled: bool,
     pub sample_rate: f64,
@@ -316,7 +312,7 @@ pub struct ObservabilitySystem {
     profiling: Arc<PerformanceProfiler>,
     export: Arc<ExportManager>,
     retention: Arc<DataRetention>,
-    
+
     // Internal state
     start_time: DateTime<Utc>,
     is_running: Arc<RwLock<bool>>,
@@ -326,30 +322,24 @@ impl ObservabilitySystem {
     /// Create new observability system
     pub async fn new(config: ObservabilityConfig) -> RragResult<Self> {
         if !config.enabled {
-            return Err(RragError::config(
-                "observability.enabled", 
-                "true", 
-                "false"
-            ));
+            return Err(RragError::config("observability.enabled", "true", "false"));
         }
 
         let metrics = Arc::new(MetricsCollector::new(config.metrics.clone()).await?);
-        let monitoring = Arc::new(SystemMonitor::new(
-            config.monitoring.clone(),
-            metrics.clone()
-        ).await?);
-        
-        let alerting = Arc::new(AlertManager::new(
-            config.alerting.clone(),
-            metrics.clone()
-        ).await?);
-        
-        let dashboard = Arc::new(DashboardServer::new(
-            config.dashboard.clone(),
-            metrics.clone(),
-            monitoring.clone()
-        ).await?);
-        
+        let monitoring =
+            Arc::new(SystemMonitor::new(config.monitoring.clone(), metrics.clone()).await?);
+
+        let alerting = Arc::new(AlertManager::new(config.alerting.clone(), metrics.clone()).await?);
+
+        let dashboard = Arc::new(
+            DashboardServer::new(
+                config.dashboard.clone(),
+                metrics.clone(),
+                monitoring.clone(),
+            )
+            .await?,
+        );
+
         let logging = Arc::new(LogAggregator::new(config.logging.clone()).await?);
         let health = Arc::new(HealthMonitor::new(config.health.clone()).await?);
         let profiling = Arc::new(PerformanceProfiler::new(config.profiling.clone()).await?);
@@ -376,7 +366,11 @@ impl ObservabilitySystem {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("observability", "stopped", "already running"));
+            return Err(RragError::config(
+                "observability",
+                "stopped",
+                "already running",
+            ));
         }
 
         // Start all components
@@ -392,7 +386,7 @@ impl ObservabilitySystem {
 
         *running = true;
         tracing::info!("Observability system started successfully");
-        
+
         Ok(())
     }
 
@@ -416,7 +410,7 @@ impl ObservabilitySystem {
 
         *running = false;
         tracing::info!("Observability system stopped successfully");
-        
+
         Ok(())
     }
 
@@ -591,7 +585,7 @@ mod tests {
     async fn test_observability_system_creation() {
         let config = ObservabilityConfig::default();
         let system = ObservabilitySystem::new(config).await.unwrap();
-        
+
         assert!(!system.is_running().await);
         assert_eq!(system.config.system_id, "rrag-system");
     }
@@ -605,7 +599,7 @@ mod tests {
             .build()
             .await
             .unwrap();
-        
+
         assert_eq!(system.config.system_id, "test-system");
         assert_eq!(system.config.environment, "test");
         assert_eq!(system.config.sample_rate, 0.5);
@@ -618,12 +612,12 @@ mod tests {
             .build()
             .await
             .unwrap();
-        
+
         assert!(!system.is_running().await);
-        
+
         system.start().await.unwrap();
         assert!(system.is_running().await);
-        
+
         system.stop().await.unwrap();
         assert!(!system.is_running().await);
     }
@@ -632,7 +626,7 @@ mod tests {
     async fn test_system_status() {
         let system = ObservabilityBuilder::new().build().await.unwrap();
         let status = system.status().await;
-        
+
         assert!(!status.running);
         assert!(status.uptime_seconds >= 0);
         assert_eq!(status.components.len(), 9); // All components

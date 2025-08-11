@@ -1,9 +1,9 @@
 //! # RSLLM Provider Abstraction
-//! 
+//!
 //! Multi-provider support for different LLM APIs with unified interface.
 //! Supports OpenAI, Claude (Anthropic), Ollama, and custom providers.
 
-use crate::{RsllmError, RsllmResult, ChatMessage, ChatResponse, StreamChunk};
+use crate::{ChatMessage, ChatResponse, RsllmError, RsllmResult, StreamChunk};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -36,7 +36,7 @@ impl Provider {
         match self {
             Provider::OpenAI => vec![
                 "gpt-4o",
-                "gpt-4o-mini", 
+                "gpt-4o-mini",
                 "gpt-4-turbo",
                 "gpt-4",
                 "gpt-3.5-turbo",
@@ -106,7 +106,10 @@ impl FromStr for Provider {
             "openai" | "gpt" => Ok(Provider::OpenAI),
             "claude" | "anthropic" => Ok(Provider::Claude),
             "ollama" => Ok(Provider::Ollama),
-            _ => Err(RsllmError::configuration(format!("Unknown provider: {}", s))),
+            _ => Err(RsllmError::configuration(format!(
+                "Unknown provider: {}",
+                s
+            ))),
         }
     }
 }
@@ -116,13 +119,13 @@ impl FromStr for Provider {
 pub struct ProviderConfig {
     /// Provider type
     pub provider: Provider,
-    
+
     /// API key (if required)
     pub api_key: Option<String>,
-    
+
     /// Base URL (if custom)
     pub base_url: Option<Url>,
-    
+
     /// Organization ID (for providers that support it)
     pub organization_id: Option<String>,
 }
@@ -143,16 +146,16 @@ impl Default for ProviderConfig {
 pub trait LLMProvider: Send + Sync {
     /// Provider name/identifier
     fn name(&self) -> &str;
-    
+
     /// Provider type
     fn provider_type(&self) -> Provider;
-    
+
     /// Supported models
     fn supported_models(&self) -> Vec<String>;
-    
+
     /// Health check
     async fn health_check(&self) -> RsllmResult<bool>;
-    
+
     /// Chat completion (non-streaming)
     async fn chat_completion(
         &self,
@@ -161,7 +164,7 @@ pub trait LLMProvider: Send + Sync {
         temperature: Option<f32>,
         max_tokens: Option<u32>,
     ) -> RsllmResult<ChatResponse>;
-    
+
     /// Chat completion (streaming)
     async fn chat_completion_stream(
         &self,
@@ -192,7 +195,9 @@ impl OpenAIProvider {
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .build()
-            .map_err(|e| RsllmError::configuration_with_source("Failed to create HTTP client", e))?;
+            .map_err(|e| {
+                RsllmError::configuration_with_source("Failed to create HTTP client", e)
+            })?;
 
         Ok(Self {
             client,
@@ -205,22 +210,19 @@ impl OpenAIProvider {
     /// Build request headers
     fn build_headers(&self) -> reqwest::header::HeaderMap {
         let mut headers = reqwest::header::HeaderMap::new();
-        
+
         headers.insert(
             reqwest::header::AUTHORIZATION,
             format!("Bearer {}", self.api_key).parse().unwrap(),
         );
-        
+
         headers.insert(
             reqwest::header::CONTENT_TYPE,
             "application/json".parse().unwrap(),
         );
 
         if let Some(org_id) = &self.organization_id {
-            headers.insert(
-                "OpenAI-Organization",
-                org_id.parse().unwrap(),
-            );
+            headers.insert("OpenAI-Organization", org_id.parse().unwrap());
         }
 
         headers
@@ -239,12 +241,17 @@ impl LLMProvider for OpenAIProvider {
     }
 
     fn supported_models(&self) -> Vec<String> {
-        Provider::OpenAI.default_models().iter().map(|s| s.to_string()).collect()
+        Provider::OpenAI
+            .default_models()
+            .iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     async fn health_check(&self) -> RsllmResult<bool> {
         let url = self.base_url.join("/models")?;
-        let response = self.client
+        let response = self
+            .client
             .get(url)
             .headers(self.build_headers())
             .send()
@@ -261,7 +268,7 @@ impl LLMProvider for OpenAIProvider {
         max_tokens: Option<u32>,
     ) -> RsllmResult<ChatResponse> {
         let url = self.base_url.join("/chat/completions")?;
-        
+
         let mut request_body = serde_json::json!({
             "model": model.unwrap_or(Provider::OpenAI.default_model()),
             "messages": messages,
@@ -275,7 +282,8 @@ impl LLMProvider for OpenAIProvider {
             request_body["max_tokens"] = max_tokens.into();
         }
 
-        let response = self.client
+        let response = self
+            .client
             .post(url)
             .headers(self.build_headers())
             .json(&request_body)
@@ -284,7 +292,10 @@ impl LLMProvider for OpenAIProvider {
 
         if !response.status().is_success() {
             let status = response.status();
-            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
             return Err(RsllmError::api(
                 "OpenAI",
                 format!("API request failed: {}", error_text),
@@ -293,15 +304,17 @@ impl LLMProvider for OpenAIProvider {
         }
 
         let response_data: serde_json::Value = response.json().await?;
-        
+
         // Extract the response content
         let content = response_data["choices"][0]["message"]["content"]
             .as_str()
             .unwrap_or("")
             .to_string();
 
-        Ok(ChatResponse::new(content, model.unwrap_or(Provider::OpenAI.default_model()))
-            .with_finish_reason("stop"))
+        Ok(
+            ChatResponse::new(content, model.unwrap_or(Provider::OpenAI.default_model()))
+                .with_finish_reason("stop"),
+        )
     }
 
     async fn chat_completion_stream(
@@ -310,13 +323,14 @@ impl LLMProvider for OpenAIProvider {
         model: Option<String>,
         temperature: Option<f32>,
         max_tokens: Option<u32>,
-    ) -> RsllmResult<Box<dyn futures_util::Stream<Item = RsllmResult<StreamChunk>> + Send + Unpin>> {
+    ) -> RsllmResult<Box<dyn futures_util::Stream<Item = RsllmResult<StreamChunk>> + Send + Unpin>>
+    {
         use futures_util::stream;
-        
+
         // For now, implement a simple mock stream
         // In production, this would handle Server-Sent Events (SSE) from OpenAI
         let _url = self.base_url.join("/chat/completions")?;
-        
+
         let model_name = model.unwrap_or_else(|| Provider::OpenAI.default_model().to_string());
         let mut _request_body = serde_json::json!({
             "model": &model_name,
@@ -347,10 +361,10 @@ impl LLMProvider for OpenAIProvider {
 
         let stream = stream::iter(chunks.into_iter().enumerate().map(move |(i, chunk)| {
             let _ = tokio::time::sleep(std::time::Duration::from_millis(100));
-            
-            if i == 8 { // Last chunk
-                Ok(StreamChunk::done(&model_name)
-                    .with_finish_reason("stop"))
+
+            if i == 8 {
+                // Last chunk
+                Ok(StreamChunk::done(&model_name).with_finish_reason("stop"))
             } else {
                 Ok(StreamChunk::delta(chunk, &model_name))
             }
@@ -374,7 +388,9 @@ impl OllamaProvider {
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(60)) // Ollama can be slower
             .build()
-            .map_err(|e| RsllmError::configuration_with_source("Failed to create HTTP client", e))?;
+            .map_err(|e| {
+                RsllmError::configuration_with_source("Failed to create HTTP client", e)
+            })?;
 
         Ok(Self {
             client,
@@ -395,7 +411,11 @@ impl LLMProvider for OllamaProvider {
     }
 
     fn supported_models(&self) -> Vec<String> {
-        Provider::Ollama.default_models().iter().map(|s| s.to_string()).collect()
+        Provider::Ollama
+            .default_models()
+            .iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 
     async fn health_check(&self) -> RsllmResult<bool> {
@@ -412,7 +432,7 @@ impl LLMProvider for OllamaProvider {
         _max_tokens: Option<u32>,
     ) -> RsllmResult<ChatResponse> {
         let url = self.base_url.join("/chat")?;
-        
+
         let mut request_body = serde_json::json!({
             "model": model.unwrap_or(Provider::Ollama.default_model()),
             "messages": messages,
@@ -425,15 +445,14 @@ impl LLMProvider for OllamaProvider {
             });
         }
 
-        let response = self.client
-            .post(url)
-            .json(&request_body)
-            .send()
-            .await?;
+        let response = self.client.post(url).json(&request_body).send().await?;
 
         if !response.status().is_success() {
             let status = response.status();
-            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
             return Err(RsllmError::api(
                 "Ollama",
                 format!("API request failed: {}", error_text),
@@ -442,14 +461,16 @@ impl LLMProvider for OllamaProvider {
         }
 
         let response_data: serde_json::Value = response.json().await?;
-        
+
         let content = response_data["message"]["content"]
             .as_str()
             .unwrap_or("")
             .to_string();
 
-        Ok(ChatResponse::new(content, model.unwrap_or(Provider::Ollama.default_model()))
-            .with_finish_reason("stop"))
+        Ok(
+            ChatResponse::new(content, model.unwrap_or(Provider::Ollama.default_model()))
+                .with_finish_reason("stop"),
+        )
     }
 
     async fn chat_completion_stream(
@@ -458,12 +479,13 @@ impl LLMProvider for OllamaProvider {
         model: Option<String>,
         temperature: Option<f32>,
         _max_tokens: Option<u32>,
-    ) -> RsllmResult<Box<dyn futures_util::Stream<Item = RsllmResult<StreamChunk>> + Send + Unpin>> {
+    ) -> RsllmResult<Box<dyn futures_util::Stream<Item = RsllmResult<StreamChunk>> + Send + Unpin>>
+    {
         use futures_util::stream;
-        
+
         // Mock streaming response for Ollama
         let _url = self.base_url.join("/chat")?;
-        
+
         let model_name = model.unwrap_or_else(|| Provider::Ollama.default_model().to_string());
         let mut _request_body = serde_json::json!({
             "model": &model_name,
@@ -491,10 +513,10 @@ impl LLMProvider for OllamaProvider {
 
         let stream = stream::iter(chunks.into_iter().enumerate().map(move |(i, chunk)| {
             tokio::time::sleep(std::time::Duration::from_millis(150));
-            
-            if i == 7 { // Last chunk
-                Ok(StreamChunk::done(&model_name)
-                    .with_finish_reason("stop"))
+
+            if i == 7 {
+                // Last chunk
+                Ok(StreamChunk::done(&model_name).with_finish_reason("stop"))
             } else {
                 Ok(StreamChunk::delta(chunk, &model_name))
             }

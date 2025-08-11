@@ -1,8 +1,8 @@
 //! # Condition Node Implementation
-//! 
+//!
 //! Condition nodes make routing decisions based on state.
 
-use crate::core::{Node, NodeId, ExecutionContext, ExecutionResult};
+use crate::core::{ExecutionContext, ExecutionResult, Node, NodeId};
 use crate::state::GraphState;
 use crate::RGraphResult;
 use async_trait::async_trait;
@@ -51,28 +51,28 @@ impl Node for ConditionNode {
         // Check condition
         let state_value = state.get(&self.config.condition_key)?;
         let state_json: serde_json::Value = state_value.into();
-        
+
         let route = if state_json == self.config.condition_value {
             &self.config.true_route
         } else {
             &self.config.false_route
         };
-        
+
         Ok(ExecutionResult::Route(route.clone()))
     }
-    
+
     fn id(&self) -> &NodeId {
         &self.id
     }
-    
+
     fn name(&self) -> &str {
         &self.name
     }
-    
+
     fn input_keys(&self) -> Vec<&str> {
         vec![&self.config.condition_key]
     }
-    
+
     fn output_keys(&self) -> Vec<&str> {
         vec![]
     }

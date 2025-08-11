@@ -1,8 +1,8 @@
 //! # Transform Node Implementation
-//! 
+//!
 //! Transform nodes modify and process data in the state.
 
-use crate::core::{Node, NodeId, ExecutionContext, ExecutionResult};
+use crate::core::{ExecutionContext, ExecutionResult, Node, NodeId};
 use crate::state::{GraphState, StateValue};
 use crate::{RGraphError, RGraphResult};
 use async_trait::async_trait;
@@ -56,7 +56,7 @@ impl TransformNode {
             config,
         }
     }
-    
+
     fn apply_transform(&self, input: &StateValue) -> RGraphResult<StateValue> {
         match &self.config.transform_type {
             TransformType::ToUpperCase => {
@@ -65,7 +65,7 @@ impl TransformNode {
                 } else {
                     Err(RGraphError::node(
                         self.id.as_str(),
-                        "ToUpperCase requires string input"
+                        "ToUpperCase requires string input",
                     ))
                 }
             }
@@ -75,7 +75,7 @@ impl TransformNode {
                 } else {
                     Err(RGraphError::node(
                         self.id.as_str(),
-                        "ToLowerCase requires string input"
+                        "ToLowerCase requires string input",
                     ))
                 }
             }
@@ -87,7 +87,7 @@ impl TransformNode {
                 } else {
                     Err(RGraphError::node(
                         self.id.as_str(),
-                        "Substring requires string input"
+                        "Substring requires string input",
                     ))
                 }
             }
@@ -97,7 +97,7 @@ impl TransformNode {
                 } else {
                     Err(RGraphError::node(
                         self.id.as_str(),
-                        "Replace requires string input"
+                        "Replace requires string input",
                     ))
                 }
             }
@@ -107,13 +107,13 @@ impl TransformNode {
                         Ok(json) => Ok(StateValue::from(json)),
                         Err(e) => Err(RGraphError::node(
                             self.id.as_str(),
-                            format!("JSON parse error: {}", e)
-                        ))
+                            format!("JSON parse error: {}", e),
+                        )),
                     }
                 } else {
                     Err(RGraphError::node(
                         self.id.as_str(),
-                        "JsonParse requires string input"
+                        "JsonParse requires string input",
                     ))
                 }
             }
@@ -123,8 +123,8 @@ impl TransformNode {
                     Ok(json_str) => Ok(StateValue::String(json_str)),
                     Err(e) => Err(RGraphError::node(
                         self.id.as_str(),
-                        format!("JSON stringify error: {}", e)
-                    ))
+                        format!("JSON stringify error: {}", e),
+                    )),
                 }
             }
         }
@@ -140,32 +140,32 @@ impl Node for TransformNode {
     ) -> RGraphResult<ExecutionResult> {
         // Get input value
         let input_value = state.get(&self.config.input_key)?;
-        
+
         // Apply transformation
         let output_value = self.apply_transform(&input_value)?;
-        
+
         // Store output
         state.set_with_context(
             context.current_node.as_str(),
             &self.config.output_key,
             output_value,
         );
-        
+
         Ok(ExecutionResult::Continue)
     }
-    
+
     fn id(&self) -> &NodeId {
         &self.id
     }
-    
+
     fn name(&self) -> &str {
         &self.name
     }
-    
+
     fn input_keys(&self) -> Vec<&str> {
         vec![&self.config.input_key]
     }
-    
+
     fn output_keys(&self) -> Vec<&str> {
         vec![&self.config.output_key]
     }

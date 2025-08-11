@@ -1,8 +1,8 @@
 //! # Observability
-//! 
+//!
 //! Monitoring and observability for graph execution.
 
-use crate::core::{NodeId, ExecutionContext};
+use crate::core::{ExecutionContext, NodeId};
 // Future use for observability features
 use async_trait::async_trait;
 use std::time::Duration;
@@ -15,16 +15,16 @@ use serde::{Deserialize, Serialize};
 pub trait GraphObserver: Send + Sync {
     /// Called when graph execution starts
     async fn on_execution_start(&self, graph_id: &str, context: &ExecutionContext);
-    
+
     /// Called when graph execution ends
     async fn on_execution_end(&self, graph_id: &str, success: bool, duration: Duration);
-    
+
     /// Called when node execution starts
     async fn on_node_start(&self, node_id: &NodeId, context: &ExecutionContext);
-    
+
     /// Called when node execution ends
     async fn on_node_end(&self, node_id: &NodeId, success: bool, duration: Duration);
-    
+
     /// Called when state changes
     async fn on_state_change(&self, key: &str, old_value: Option<&str>, new_value: &str);
 }
@@ -43,12 +43,14 @@ impl GraphObserver for LoggingObserver {
             eprintln!("Graph execution started: {}", graph_id);
         }
     }
-    
+
     async fn on_execution_end(&self, graph_id: &str, success: bool, duration: Duration) {
         #[cfg(feature = "observability")]
         tracing::info!(
             "Graph execution ended: {} (success: {}, duration: {:?})",
-            graph_id, success, duration
+            graph_id,
+            success,
+            duration
         );
         #[cfg(not(feature = "observability"))]
         eprintln!(
@@ -56,7 +58,7 @@ impl GraphObserver for LoggingObserver {
             graph_id, success, duration
         );
     }
-    
+
     async fn on_node_start(&self, node_id: &NodeId, _context: &ExecutionContext) {
         #[cfg(feature = "observability")]
         tracing::debug!("Node execution started: {}", node_id.as_str());
@@ -66,25 +68,37 @@ impl GraphObserver for LoggingObserver {
             eprintln!("Node execution started: {}", node_id.as_str());
         }
     }
-    
+
     async fn on_node_end(&self, node_id: &NodeId, success: bool, duration: Duration) {
         #[cfg(feature = "observability")]
         tracing::debug!(
             "Node execution ended: {} (success: {}, duration: {:?})",
-            node_id.as_str(), success, duration
+            node_id.as_str(),
+            success,
+            duration
         );
         #[cfg(not(feature = "observability"))]
         eprintln!(
             "Node execution ended: {} (success: {}, duration: {:?})",
-            node_id.as_str(), success, duration
+            node_id.as_str(),
+            success,
+            duration
         );
     }
-    
+
     async fn on_state_change(&self, key: &str, old_value: Option<&str>, new_value: &str) {
         #[cfg(feature = "observability")]
-        tracing::trace!("State change: {} = {} (was: {:?})", key, new_value, old_value);
+        tracing::trace!(
+            "State change: {} = {} (was: {:?})",
+            key,
+            new_value,
+            old_value
+        );
         #[cfg(not(feature = "observability"))]
-        eprintln!("State change: {} = {} (was: {:?})", key, new_value, old_value);
+        eprintln!(
+            "State change: {} = {} (was: {:?})",
+            key, new_value, old_value
+        );
     }
 }
 

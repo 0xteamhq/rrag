@@ -1,15 +1,15 @@
 //! # Log Aggregation and Search System
-//! 
+//!
 //! Centralized logging with structured data, search capabilities,
 //! and real-time log streaming for RRAG system operations.
 
 use crate::{RragError, RragResult};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc, broadcast};
-use chrono::{DateTime, Utc, Duration};
 use std::io::Write;
+use std::sync::Arc;
+use tokio::sync::{broadcast, mpsc, RwLock};
 
 /// Logging configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -168,15 +168,14 @@ impl LogEntry {
 
     /// Format as JSON for structured logging
     pub fn to_json(&self) -> RragResult<String> {
-        serde_json::to_string(self)
-            .map_err(|e| RragError::agent("log_formatter", e.to_string()))
+        serde_json::to_string(self).map_err(|e| RragError::agent("log_formatter", e.to_string()))
     }
 
     /// Format as human-readable text
     pub fn to_text(&self) -> String {
         let timestamp = self.timestamp.format("%Y-%m-%d %H:%M:%S%.3f UTC");
         let level_str = format!("{:5}", self.level);
-        
+
         let mut parts = vec![
             format!("[{}]", timestamp),
             format!("[{}]", level_str),
@@ -194,7 +193,9 @@ impl LogEntry {
         }
 
         if !self.fields.is_empty() {
-            let fields_str = self.fields.iter()
+            let fields_str = self
+                .fields
+                .iter()
                 .map(|(k, v)| format!("{}={}", k, v))
                 .collect::<Vec<_>>()
                 .join(" ");
@@ -309,7 +310,8 @@ impl LogSearchEngine {
 
     pub async fn search(&self, query: &LogQuery) -> Vec<LogEntry> {
         let logs = self.logs.read().await;
-        let mut results: Vec<_> = logs.iter()
+        let mut results: Vec<_> = logs
+            .iter()
             .filter(|entry| self.matches_query(entry, query))
             .cloned()
             .collect();
@@ -408,34 +410,34 @@ impl LogSearchEngine {
                 } else {
                     false
                 }
-            },
+            }
             FieldFilter::GreaterThan(threshold) => {
                 if let Some(num) = value.as_f64() {
                     num > *threshold
                 } else {
                     false
                 }
-            },
+            }
             FieldFilter::LessThan(threshold) => {
                 if let Some(num) = value.as_f64() {
                     num < *threshold
                 } else {
                     false
                 }
-            },
+            }
             FieldFilter::Between(min, max) => {
                 if let Some(num) = value.as_f64() {
                     num >= *min && num <= *max
                 } else {
                     false
                 }
-            },
+            }
         }
     }
 
     pub async fn get_log_stats(&self) -> LogStats {
         let logs = self.logs.read().await;
-        
+
         let mut level_counts = HashMap::new();
         let mut component_counts = HashMap::new();
         let total_entries = logs.len();
@@ -445,7 +447,8 @@ impl LogSearchEngine {
             *component_counts.entry(entry.component.clone()).or_insert(0) += 1;
         }
 
-        let recent_errors = logs.iter()
+        let recent_errors = logs
+            .iter()
             .filter(|e| e.level >= LogLevel::Error)
             .filter(|e| e.timestamp > Utc::now() - Duration::hours(1))
             .count();
@@ -507,7 +510,12 @@ impl StructuredLogger {
         self.log(LogLevel::Fatal, message, component)
     }
 
-    fn log(&self, level: LogLevel, message: impl Into<String>, component: impl Into<String>) -> LogBuilder {
+    fn log(
+        &self,
+        level: LogLevel,
+        message: impl Into<String>,
+        component: impl Into<String>,
+    ) -> LogBuilder {
         LogBuilder::new(level, message, component, self.sender.clone())
     }
 }
@@ -625,7 +633,11 @@ impl LogAggregator {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("log_aggregator", "stopped", "already running"));
+            return Err(RragError::config(
+                "log_aggregator",
+                "stopped",
+                "already running",
+            ));
         }
 
         {
@@ -670,7 +682,10 @@ impl LogAggregator {
         *self.is_running.read().await
     }
 
-    async fn start_processing_loop(&self, mut receiver: mpsc::UnboundedReceiver<LogEntry>) -> RragResult<tokio::task::JoinHandle<()>> {
+    async fn start_processing_loop(
+        &self,
+        mut receiver: mpsc::UnboundedReceiver<LogEntry>,
+    ) -> RragResult<tokio::task::JoinHandle<()>> {
         let search_engine = self.search_engine.clone();
         let file_writer = self.file_writer.clone();
         let stream_sender = self.stream_sender.clone();
@@ -678,9 +693,9 @@ impl LogAggregator {
         let is_running = self.is_running.clone();
 
         let handle = tokio::spawn(async move {
-            let mut flush_interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.flush_interval_seconds)
-            );
+            let mut flush_interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.flush_interval_seconds,
+            ));
 
             while *is_running.read().await {
                 tokio::select! {
@@ -739,13 +754,19 @@ impl LogAggregator {
     }
 
     pub async fn add_log_entry(&self, entry: LogEntry) -> RragResult<()> {
-        self.log_sender.send(entry)
+        self.log_sender
+            .send(entry)
             .map_err(|e| RragError::agent("log_aggregator", e.to_string()))?;
         Ok(())
     }
 
     /// Convenience method for creating a log entry and adding it
-    pub async fn log(&self, level: LogLevel, message: impl Into<String>, component: impl Into<String>) -> RragResult<()> {
+    pub async fn log(
+        &self,
+        level: LogLevel,
+        message: impl Into<String>,
+        component: impl Into<String>,
+    ) -> RragResult<()> {
         let entry = LogEntry::new(level, message, component);
         self.add_log_entry(entry).await
     }
@@ -792,8 +813,7 @@ mod tests {
         let entries = vec![
             LogEntry::new(LogLevel::Info, "Info message", "component1"),
             LogEntry::new(LogLevel::Error, "Error message", "component1"),
-            LogEntry::new(LogLevel::Warn, "Warning message", "component2")
-                .with_user("user123"),
+            LogEntry::new(LogLevel::Warn, "Warning message", "component2").with_user("user123"),
             LogEntry::new(LogLevel::Debug, "Debug message", "component2"),
         ];
 
@@ -850,7 +870,7 @@ mod tests {
             log_to_file: false, // Don't write to file in tests
             ..Default::default()
         };
-        
+
         let mut aggregator = LogAggregator::new(config).await.unwrap();
         assert!(!aggregator.is_healthy().await);
 
@@ -859,13 +879,15 @@ mod tests {
 
         // Test logging through the structured logger
         let logger = aggregator.logger();
-        logger.info("Test info message", "test_component")
+        logger
+            .info("Test info message", "test_component")
             .user("user123")
             .operation("test_operation")
             .field("test_field", serde_json::json!("test_value"))
             .send();
 
-        logger.error("Test error message", "test_component")
+        logger
+            .error("Test error message", "test_component")
             .session("session456")
             .duration(200.0)
             .send();
@@ -921,25 +943,35 @@ mod tests {
 
         // Test equals filter
         let mut query = LogQuery::default();
-        query.field_filters.insert("number".to_string(), FieldFilter::Equals(serde_json::json!(42)));
+        query.field_filters.insert(
+            "number".to_string(),
+            FieldFilter::Equals(serde_json::json!(42)),
+        );
         let results = engine.search(&query).await;
         assert_eq!(results.len(), 1);
 
         // Test contains filter
         let mut query = LogQuery::default();
-        query.field_filters.insert("text".to_string(), FieldFilter::Contains("hello".to_string()));
+        query.field_filters.insert(
+            "text".to_string(),
+            FieldFilter::Contains("hello".to_string()),
+        );
         let results = engine.search(&query).await;
         assert_eq!(results.len(), 1);
 
         // Test greater than filter
         let mut query = LogQuery::default();
-        query.field_filters.insert("number".to_string(), FieldFilter::GreaterThan(40.0));
+        query
+            .field_filters
+            .insert("number".to_string(), FieldFilter::GreaterThan(40.0));
         let results = engine.search(&query).await;
         assert_eq!(results.len(), 1);
 
         // Test between filter
         let mut query = LogQuery::default();
-        query.field_filters.insert("decimal".to_string(), FieldFilter::Between(3.0, 4.0));
+        query
+            .field_filters
+            .insert("decimal".to_string(), FieldFilter::Between(3.0, 4.0));
         let results = engine.search(&query).await;
         assert_eq!(results.len(), 1);
     }
@@ -950,7 +982,7 @@ mod tests {
             log_to_file: false,
             ..Default::default()
         };
-        
+
         let mut aggregator = LogAggregator::new(config).await.unwrap();
         aggregator.start().await.unwrap();
 
@@ -961,10 +993,10 @@ mod tests {
         aggregator.add_log_entry(entry.clone()).await.unwrap();
 
         // Receive the streamed entry
-        let received = tokio::time::timeout(
-            tokio::time::Duration::from_millis(100),
-            stream.recv()
-        ).await.unwrap().unwrap();
+        let received = tokio::time::timeout(tokio::time::Duration::from_millis(100), stream.recv())
+            .await
+            .unwrap()
+            .unwrap();
 
         assert_eq!(received.message, "Stream test");
         assert_eq!(received.component, "test_component");

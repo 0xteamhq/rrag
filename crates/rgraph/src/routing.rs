@@ -1,9 +1,9 @@
 //! # Routing System
-//! 
+//!
 //! Conditional routing and decision-making for graph execution.
 
-use crate::state::GraphState;
 use crate::core::NodeId;
+use crate::state::GraphState;
 use crate::RGraphResult;
 use async_trait::async_trait;
 
@@ -74,16 +74,13 @@ pub struct ConditionalEdge {
 }
 
 impl ConditionalEdge {
-    pub fn new(
-        source: impl Into<NodeId>,
-        condition: Box<dyn RoutingCondition>,
-    ) -> Self {
+    pub fn new(source: impl Into<NodeId>, condition: Box<dyn RoutingCondition>) -> Self {
         Self {
             condition,
             source: source.into(),
         }
     }
-    
+
     pub async fn evaluate(&self, state: &GraphState) -> RGraphResult<RoutingDecision> {
         self.condition.evaluate(state).await
     }
@@ -100,12 +97,16 @@ impl Router {
             conditions: Vec::new(),
         }
     }
-    
+
     pub fn add_condition(&mut self, condition: ConditionalEdge) {
         self.conditions.push(condition);
     }
-    
-    pub async fn route(&self, current_node: &NodeId, state: &GraphState) -> RGraphResult<RoutingDecision> {
+
+    pub async fn route(
+        &self,
+        current_node: &NodeId,
+        state: &GraphState,
+    ) -> RGraphResult<RoutingDecision> {
         for condition in &self.conditions {
             if &condition.source == current_node {
                 let decision = condition.evaluate(state).await?;
@@ -115,7 +116,7 @@ impl Router {
                 }
             }
         }
-        
+
         Ok(RoutingDecision::Continue)
     }
 }

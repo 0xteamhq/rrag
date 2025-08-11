@@ -206,9 +206,8 @@
 //! - Custom steps via the [`PipelineStep`] trait
 
 use crate::{
-    RragError, RragResult, Document, DocumentChunk, Embedding,
-    EmbeddingService, RetrievalService, StorageService, DocumentChunker,
-    SearchResult
+    Document, DocumentChunk, DocumentChunker, Embedding, EmbeddingService, RetrievalService,
+    RragError, RragResult, SearchResult, StorageService,
 };
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
@@ -239,16 +238,16 @@ use std::time::Instant;
 pub struct PipelineContext {
     /// Execution ID for tracking
     pub execution_id: String,
-    
+
     /// Input data for the pipeline
     pub data: PipelineData,
-    
+
     /// Execution metadata
     pub metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Step execution history
     pub execution_history: Vec<StepExecution>,
-    
+
     /// Pipeline configuration
     pub config: PipelineConfig,
 }
@@ -283,22 +282,22 @@ pub struct PipelineContext {
 pub enum PipelineData {
     /// Raw text input
     Text(String),
-    
+
     /// Document input
     Document(Document),
-    
+
     /// Multiple documents
     Documents(Vec<Document>),
-    
+
     /// Document chunks
     Chunks(Vec<DocumentChunk>),
-    
+
     /// Embeddings
     Embeddings(Vec<Embedding>),
-    
+
     /// Search results
     SearchResults(Vec<SearchResult>),
-    
+
     /// JSON data
     Json(serde_json::Value),
 }
@@ -308,19 +307,19 @@ pub enum PipelineData {
 pub struct PipelineConfig {
     /// Maximum execution time in seconds
     pub max_execution_time: u64,
-    
+
     /// Whether to continue on step errors
     pub continue_on_error: bool,
-    
+
     /// Parallel execution where possible
     pub enable_parallelism: bool,
-    
+
     /// Maximum parallel steps
     pub max_parallel_steps: usize,
-    
+
     /// Enable step caching
     pub enable_caching: bool,
-    
+
     /// Custom configuration
     pub custom_config: HashMap<String, serde_json::Value>,
 }
@@ -343,19 +342,19 @@ impl Default for PipelineConfig {
 pub struct StepExecution {
     /// Step name/ID
     pub step_id: String,
-    
+
     /// Execution start time
     pub start_time: chrono::DateTime<chrono::Utc>,
-    
+
     /// Execution duration in milliseconds
     pub duration_ms: u64,
-    
+
     /// Whether step succeeded
     pub success: bool,
-    
+
     /// Error message if failed
     pub error_message: Option<String>,
-    
+
     /// Step metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -396,7 +395,10 @@ impl PipelineContext {
 
     /// Get total execution time
     pub fn total_execution_time(&self) -> u64 {
-        self.execution_history.iter().map(|step| step.duration_ms).sum()
+        self.execution_history
+            .iter()
+            .map(|step| step.duration_ms)
+            .sum()
     }
 
     /// Check if any step failed
@@ -476,30 +478,30 @@ impl PipelineContext {
 pub trait PipelineStep: Send + Sync {
     /// Step name/identifier
     fn name(&self) -> &str;
-    
+
     /// Step description
     fn description(&self) -> &str;
-    
+
     /// Input data types this step accepts
     fn input_types(&self) -> Vec<&'static str>;
-    
+
     /// Output data type this step produces
     fn output_type(&self) -> &'static str;
-    
+
     /// Execute the step
     async fn execute(&self, context: PipelineContext) -> RragResult<PipelineContext>;
-    
+
     /// Validate input data
     fn validate_input(&self, _data: &PipelineData) -> RragResult<()> {
         // Default implementation - override for custom validation
         Ok(())
     }
-    
+
     /// Whether this step can run in parallel with others
     fn is_parallelizable(&self) -> bool {
         true
     }
-    
+
     /// Dependencies on other steps (step names)
     fn dependencies(&self) -> Vec<&str> {
         Vec::new()
@@ -554,15 +556,18 @@ pub struct TextPreprocessingStep {
 pub enum TextOperation {
     /// Convert to lowercase
     ToLowercase,
-    
+
     /// Remove extra whitespace
     NormalizeWhitespace,
-    
+
     /// Remove special characters
     RemoveSpecialChars,
-    
+
     /// Custom regex replacement
-    RegexReplace { pattern: String, replacement: String },
+    RegexReplace {
+        pattern: String,
+        replacement: String,
+    },
 }
 
 impl TextPreprocessingStep {
@@ -572,23 +577,27 @@ impl TextPreprocessingStep {
 
     fn process_text(&self, text: &str) -> String {
         let mut result = text.to_string();
-        
+
         for operation in &self.operations {
             result = match operation {
                 TextOperation::ToLowercase => result.to_lowercase(),
                 TextOperation::NormalizeWhitespace => {
                     result.split_whitespace().collect::<Vec<_>>().join(" ")
                 }
-                TextOperation::RemoveSpecialChars => {
-                    result.chars().filter(|c| c.is_alphanumeric() || c.is_whitespace()).collect()
-                }
-                TextOperation::RegexReplace { pattern, replacement } => {
+                TextOperation::RemoveSpecialChars => result
+                    .chars()
+                    .filter(|c| c.is_alphanumeric() || c.is_whitespace())
+                    .collect(),
+                TextOperation::RegexReplace {
+                    pattern,
+                    replacement,
+                } => {
                     // Simple implementation - in production would use regex crate
                     result.replace(pattern, replacement)
                 }
             };
         }
-        
+
         result
     }
 }
@@ -614,11 +623,9 @@ impl PipelineStep for TextPreprocessingStep {
     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
         let start_time = Instant::now();
         let step_start = chrono::Utc::now();
-        
+
         let processed_data = match &context.data {
-            PipelineData::Text(text) => {
-                PipelineData::Text(self.process_text(text))
-            }
+            PipelineData::Text(text) => PipelineData::Text(self.process_text(text)),
             PipelineData::Document(doc) => {
                 // Create a new document with processed content
                 let processed_content = self.process_text(doc.content_str());
@@ -630,15 +637,18 @@ impl PipelineStep for TextPreprocessingStep {
                 PipelineData::Document(new_doc)
             }
             PipelineData::Documents(docs) => {
-                let processed_docs: Vec<Document> = docs.iter().map(|doc| {
-                    let processed_content = self.process_text(doc.content_str());
-                    let mut new_doc = Document::new(processed_content);
-                    new_doc.id = doc.id.clone();
-                    new_doc.metadata = doc.metadata.clone();
-                    new_doc.content_hash = doc.content_hash.clone();
-                    new_doc.created_at = doc.created_at;
-                    new_doc
-                }).collect();
+                let processed_docs: Vec<Document> = docs
+                    .iter()
+                    .map(|doc| {
+                        let processed_content = self.process_text(doc.content_str());
+                        let mut new_doc = Document::new(processed_content);
+                        new_doc.id = doc.id.clone();
+                        new_doc.metadata = doc.metadata.clone();
+                        new_doc.content_hash = doc.content_hash.clone();
+                        new_doc.created_at = doc.created_at;
+                        new_doc
+                    })
+                    .collect();
                 PipelineData::Documents(processed_docs)
             }
             _ => {
@@ -654,9 +664,9 @@ impl PipelineStep for TextPreprocessingStep {
                 return Err(RragError::document_processing(error));
             }
         };
-        
+
         context.data = processed_data;
-        
+
         context.record_step(StepExecution {
             step_id: self.name().to_string(),
             start_time: step_start,
@@ -665,7 +675,7 @@ impl PipelineStep for TextPreprocessingStep {
             error_message: None,
             metadata: HashMap::new(),
         });
-        
+
         Ok(context)
     }
 }
@@ -703,11 +713,9 @@ impl PipelineStep for DocumentChunkingStep {
     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
         let start_time = Instant::now();
         let step_start = chrono::Utc::now();
-        
+
         let chunks = match &context.data {
-            PipelineData::Document(doc) => {
-                self.chunker.chunk_document(doc)?
-            }
+            PipelineData::Document(doc) => self.chunker.chunk_document(doc)?,
             PipelineData::Documents(docs) => {
                 let mut all_chunks = Vec::new();
                 for doc in docs {
@@ -728,9 +736,9 @@ impl PipelineStep for DocumentChunkingStep {
                 return Err(RragError::document_processing(error));
             }
         };
-        
+
         context.data = PipelineData::Chunks(chunks);
-        
+
         context.record_step(StepExecution {
             step_id: self.name().to_string(),
             start_time: step_start,
@@ -739,7 +747,7 @@ impl PipelineStep for DocumentChunkingStep {
             error_message: None,
             metadata: HashMap::new(),
         });
-        
+
         Ok(context)
     }
 }
@@ -777,17 +785,13 @@ impl PipelineStep for EmbeddingStep {
     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
         let start_time = Instant::now();
         let step_start = chrono::Utc::now();
-        
+
         let embeddings = match &context.data {
             PipelineData::Document(doc) => {
                 vec![self.embedding_service.embed_document(doc).await?]
             }
-            PipelineData::Documents(docs) => {
-                self.embedding_service.embed_documents(docs).await?
-            }
-            PipelineData::Chunks(chunks) => {
-                self.embedding_service.embed_chunks(chunks).await?
-            }
+            PipelineData::Documents(docs) => self.embedding_service.embed_documents(docs).await?,
+            PipelineData::Chunks(chunks) => self.embedding_service.embed_chunks(chunks).await?,
             _ => {
                 let error = "Input must be Document, Documents, or Chunks";
                 context.record_step(StepExecution {
@@ -801,9 +805,9 @@ impl PipelineStep for EmbeddingStep {
                 return Err(RragError::embedding("pipeline", error));
             }
         };
-        
+
         context.data = PipelineData::Embeddings(embeddings);
-        
+
         context.record_step(StepExecution {
             step_id: self.name().to_string(),
             start_time: step_start,
@@ -812,7 +816,7 @@ impl PipelineStep for EmbeddingStep {
             error_message: None,
             metadata: HashMap::new(),
         });
-        
+
         Ok(context)
     }
 }
@@ -821,7 +825,7 @@ impl PipelineStep for EmbeddingStep {
 pub struct RetrievalStep {
     /// Retrieval service
     retrieval_service: Arc<RetrievalService>,
-    
+
     /// Search configuration
     search_config: SearchStepConfig,
 }
@@ -830,10 +834,10 @@ pub struct RetrievalStep {
 pub struct SearchStepConfig {
     /// Number of results to retrieve
     pub limit: usize,
-    
+
     /// Minimum similarity threshold
     pub min_score: f32,
-    
+
     /// Search query text (if not using embeddings)
     pub query_text: Option<String>,
 }
@@ -885,7 +889,7 @@ impl PipelineStep for RetrievalStep {
     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
         let start_time = Instant::now();
         let step_start = chrono::Utc::now();
-        
+
         let search_results = match &context.data {
             PipelineData::Embeddings(embeddings) => {
                 if embeddings.is_empty() {
@@ -911,9 +915,9 @@ impl PipelineStep for RetrievalStep {
                 return Err(RragError::retrieval(error));
             }
         };
-        
+
         context.data = PipelineData::SearchResults(search_results);
-        
+
         context.record_step(StepExecution {
             step_id: self.name().to_string(),
             start_time: step_start,
@@ -922,7 +926,7 @@ impl PipelineStep for RetrievalStep {
             error_message: None,
             metadata: HashMap::new(),
         });
-        
+
         Ok(context)
     }
 }
@@ -931,10 +935,10 @@ impl PipelineStep for RetrievalStep {
 pub struct Pipeline {
     /// Pipeline steps in execution order
     steps: Vec<Arc<dyn PipelineStep>>,
-    
+
     /// Pipeline configuration
     config: PipelineConfig,
-    
+
     /// Pipeline metadata
     metadata: HashMap<String, serde_json::Value>,
 }
@@ -973,18 +977,21 @@ impl Pipeline {
     /// Execute the pipeline
     pub async fn execute(&self, initial_data: PipelineData) -> RragResult<PipelineContext> {
         let mut context = PipelineContext::with_config(initial_data, self.config.clone());
-        
+
         // Add pipeline metadata to context
         context.metadata.extend(self.metadata.clone());
-        
+
         let start_time = Instant::now();
-        
+
         for step in &self.steps {
             // Check timeout
             if start_time.elapsed().as_secs() > self.config.max_execution_time {
-                return Err(RragError::timeout("pipeline_execution", self.config.max_execution_time * 1000));
+                return Err(RragError::timeout(
+                    "pipeline_execution",
+                    self.config.max_execution_time * 1000,
+                ));
             }
-            
+
             // Validate input
             if let Err(e) = step.validate_input(&context.data) {
                 if !self.config.continue_on_error {
@@ -1001,7 +1008,7 @@ impl Pipeline {
                 });
                 continue;
             }
-            
+
             // Execute step (clone context to satisfy borrow checker)
             let context_clone = PipelineContext {
                 execution_id: context.execution_id.clone(),
@@ -1010,7 +1017,7 @@ impl Pipeline {
                 execution_history: context.execution_history.clone(),
                 config: context.config.clone(),
             };
-            
+
             match step.execute(context_clone).await {
                 Ok(new_context) => {
                     context = new_context;
@@ -1031,7 +1038,7 @@ impl Pipeline {
                 }
             }
         }
-        
+
         Ok(context)
     }
 
@@ -1072,13 +1079,13 @@ pub struct PipelineStepInfo {
 pub struct RagPipelineBuilder {
     /// Embedding service
     embedding_service: Option<Arc<EmbeddingService>>,
-    
+
     /// Retrieval service
     retrieval_service: Option<Arc<RetrievalService>>,
-    
+
     /// Storage service
     storage_service: Option<Arc<StorageService>>,
-    
+
     /// Pipeline configuration
     config: PipelineConfig,
 }
@@ -1115,7 +1122,8 @@ impl RagPipelineBuilder {
 
     /// Build document ingestion pipeline
     pub fn build_ingestion_pipeline(&self) -> RragResult<Pipeline> {
-        let embedding_service = self.embedding_service
+        let embedding_service = self
+            .embedding_service
             .as_ref()
             .ok_or_else(|| RragError::config("embedding_service", "required", "missing"))?;
 
@@ -1132,11 +1140,13 @@ impl RagPipelineBuilder {
 
     /// Build query pipeline for search
     pub fn build_query_pipeline(&self) -> RragResult<Pipeline> {
-        let embedding_service = self.embedding_service
+        let embedding_service = self
+            .embedding_service
             .as_ref()
             .ok_or_else(|| RragError::config("embedding_service", "required", "missing"))?;
-        
-        let retrieval_service = self.retrieval_service
+
+        let retrieval_service = self
+            .retrieval_service
             .as_ref()
             .ok_or_else(|| RragError::config("retrieval_service", "required", "missing"))?;
 
@@ -1160,7 +1170,7 @@ impl Default for RagPipelineBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Document, InMemoryRetriever, LocalEmbeddingProvider, EmbeddingService};
+    use crate::{Document, EmbeddingService, InMemoryRetriever, LocalEmbeddingProvider};
 
     #[tokio::test]
     async fn test_text_preprocessing_step() {
@@ -1168,28 +1178,30 @@ mod tests {
             TextOperation::ToLowercase,
             TextOperation::NormalizeWhitespace,
         ]);
-        
+
         let context = PipelineContext::new(PipelineData::Text("  HELLO    WORLD  ".to_string()));
         let result = step.execute(context).await.unwrap();
-        
+
         if let PipelineData::Text(processed) = result.data {
             assert_eq!(processed, "hello world");
         } else {
             panic!("Expected Text output");
         }
-        
+
         assert!(result.execution_history[0].success);
     }
 
     #[tokio::test]
     async fn test_document_chunking_step() {
         let step = DocumentChunkingStep::new(DocumentChunker::new());
-        
-        let doc = Document::new("This is a test document with some content that should be chunked appropriately.");
+
+        let doc = Document::new(
+            "This is a test document with some content that should be chunked appropriately.",
+        );
         let context = PipelineContext::new(PipelineData::Document(doc));
-        
+
         let result = step.execute(context).await.unwrap();
-        
+
         if let PipelineData::Chunks(chunks) = result.data {
             assert!(!chunks.is_empty());
         } else {
@@ -1202,12 +1214,12 @@ mod tests {
         let provider = Arc::new(LocalEmbeddingProvider::new("test-model", 128));
         let embedding_service = Arc::new(EmbeddingService::new(provider));
         let step = EmbeddingStep::new(embedding_service);
-        
+
         let doc = Document::new("Test document for embedding");
         let context = PipelineContext::new(PipelineData::Document(doc));
-        
+
         let result = step.execute(context).await.unwrap();
-        
+
         if let PipelineData::Embeddings(embeddings) = result.data {
             assert_eq!(embeddings.len(), 1);
             assert_eq!(embeddings[0].dimensions, 128);
@@ -1220,20 +1232,20 @@ mod tests {
     async fn test_pipeline_execution() {
         let provider = Arc::new(LocalEmbeddingProvider::new("test-model", 128));
         let embedding_service = Arc::new(EmbeddingService::new(provider));
-        
+
         let pipeline = Pipeline::new()
             .add_step(Arc::new(TextPreprocessingStep::new(vec![
                 TextOperation::ToLowercase,
             ])))
             .add_step(Arc::new(EmbeddingStep::new(embedding_service)));
-        
+
         let doc = Document::new("TEST DOCUMENT");
         let result = pipeline.execute(PipelineData::Document(doc)).await.unwrap();
-        
+
         // Should have executed 2 steps
         assert_eq!(result.execution_history.len(), 2);
         assert!(result.execution_history.iter().all(|step| step.success));
-        
+
         // Final output should be embeddings
         if let PipelineData::Embeddings(embeddings) = result.data {
             assert_eq!(embeddings.len(), 1);
@@ -1246,13 +1258,12 @@ mod tests {
     async fn test_rag_pipeline_builder() {
         let provider = Arc::new(LocalEmbeddingProvider::new("test-model", 128));
         let embedding_service = Arc::new(EmbeddingService::new(provider));
-        
-        let builder = RagPipelineBuilder::new()
-            .with_embedding_service(embedding_service);
-        
+
+        let builder = RagPipelineBuilder::new().with_embedding_service(embedding_service);
+
         let pipeline = builder.build_ingestion_pipeline().unwrap();
         let step_info = pipeline.get_step_info();
-        
+
         assert_eq!(step_info.len(), 3); // preprocessing, chunking, embedding
         assert_eq!(step_info[0].name, "text_preprocessing");
         assert_eq!(step_info[1].name, "document_chunking");
@@ -1262,10 +1273,16 @@ mod tests {
     #[test]
     fn test_pipeline_context() {
         let mut context = PipelineContext::new(PipelineData::Text("test".to_string()))
-            .with_metadata("test_key", serde_json::Value::String("test_value".to_string()));
-        
-        assert_eq!(context.metadata.get("test_key").unwrap().as_str().unwrap(), "test_value");
-        
+            .with_metadata(
+                "test_key",
+                serde_json::Value::String("test_value".to_string()),
+            );
+
+        assert_eq!(
+            context.metadata.get("test_key").unwrap().as_str().unwrap(),
+            "test_value"
+        );
+
         let step_execution = StepExecution {
             step_id: "test_step".to_string(),
             start_time: chrono::Utc::now(),
@@ -1274,9 +1291,9 @@ mod tests {
             error_message: None,
             metadata: HashMap::new(),
         };
-        
+
         context.record_step(step_execution);
-        
+
         assert_eq!(context.execution_history.len(), 1);
         assert_eq!(context.total_execution_time(), 100);
         assert!(!context.has_failures());

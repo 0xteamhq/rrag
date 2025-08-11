@@ -167,7 +167,7 @@
 //! # }
 //! ```
 
-use crate::{RragError, RragResult, Embedding, Document, DocumentChunk};
+use crate::{Document, DocumentChunk, Embedding, RragError, RragResult};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -208,30 +208,25 @@ use std::sync::Arc;
 pub struct SearchResult {
     /// Document or chunk ID
     pub id: String,
-    
+
     /// Content that matched the query
     pub content: String,
-    
+
     /// Similarity score (0.0 to 1.0, higher is more similar)
     pub score: f32,
-    
+
     /// Ranking position in results (0-indexed)
     pub rank: usize,
-    
+
     /// Associated metadata
     pub metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Embedding used for the match (optional)
     pub embedding: Option<Embedding>,
 }
 
 impl SearchResult {
-    pub fn new(
-        id: impl Into<String>,
-        content: impl Into<String>,
-        score: f32,
-        rank: usize,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, content: impl Into<String>, score: f32, rank: usize) -> Self {
         Self {
             id: id.into(),
             content: content.into(),
@@ -299,16 +294,16 @@ impl SearchResult {
 pub struct SearchQuery {
     /// Query text or embedding
     pub query: QueryType,
-    
+
     /// Maximum number of results to return
     pub limit: usize,
-    
+
     /// Minimum similarity threshold
     pub min_score: f32,
-    
+
     /// Metadata filters
     pub filters: HashMap<String, serde_json::Value>,
-    
+
     /// Search configuration
     pub config: SearchConfig,
 }
@@ -318,7 +313,7 @@ pub struct SearchQuery {
 pub enum QueryType {
     /// Text query that needs to be embedded
     Text(String),
-    
+
     /// Pre-computed embedding vector
     Embedding(Embedding),
 }
@@ -328,13 +323,13 @@ pub enum QueryType {
 pub struct SearchConfig {
     /// Whether to include embeddings in results
     pub include_embeddings: bool,
-    
+
     /// Whether to apply re-ranking
     pub enable_reranking: bool,
-    
+
     /// Search algorithm to use
     pub algorithm: SearchAlgorithm,
-    
+
     /// Custom scoring weights
     pub scoring_weights: ScoringWeights,
 }
@@ -344,15 +339,18 @@ pub struct SearchConfig {
 pub enum SearchAlgorithm {
     /// Cosine similarity search
     Cosine,
-    
+
     /// Euclidean distance search
     Euclidean,
-    
+
     /// Dot product search
     DotProduct,
-    
+
     /// Hybrid search (combine multiple methods)
-    Hybrid { methods: Vec<SearchAlgorithm>, weights: Vec<f32> },
+    Hybrid {
+        methods: Vec<SearchAlgorithm>,
+        weights: Vec<f32>,
+    },
 }
 
 /// Scoring weights for different factors
@@ -360,13 +358,13 @@ pub enum SearchAlgorithm {
 pub struct ScoringWeights {
     /// Weight for semantic similarity
     pub semantic: f32,
-    
+
     /// Weight for metadata matches
     pub metadata: f32,
-    
+
     /// Weight for recency (if timestamps available)
     pub recency: f32,
-    
+
     /// Weight for content length/quality
     pub quality: f32,
 }
@@ -446,25 +444,25 @@ impl SearchQuery {
 pub trait Retriever: Send + Sync {
     /// Retriever name/type
     fn name(&self) -> &str;
-    
+
     /// Search for similar documents/chunks
     async fn search(&self, query: &SearchQuery) -> RragResult<Vec<SearchResult>>;
-    
+
     /// Add documents to the retrieval index
     async fn add_documents(&self, documents: &[(Document, Embedding)]) -> RragResult<()>;
-    
+
     /// Add document chunks to the retrieval index
     async fn add_chunks(&self, chunks: &[(DocumentChunk, Embedding)]) -> RragResult<()>;
-    
+
     /// Remove documents from the index
     async fn remove_documents(&self, document_ids: &[String]) -> RragResult<()>;
-    
+
     /// Clear all documents from the index
     async fn clear(&self) -> RragResult<()>;
-    
+
     /// Get index statistics
     async fn stats(&self) -> RragResult<IndexStats>;
-    
+
     /// Health check
     async fn health_check(&self) -> RragResult<bool>;
 }
@@ -474,16 +472,16 @@ pub trait Retriever: Send + Sync {
 pub struct IndexStats {
     /// Total number of documents/chunks indexed
     pub total_items: usize,
-    
+
     /// Index size in bytes (estimate)
     pub size_bytes: usize,
-    
+
     /// Number of dimensions
     pub dimensions: usize,
-    
+
     /// Index type/implementation
     pub index_type: String,
-    
+
     /// Last update timestamp
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -492,10 +490,10 @@ pub struct IndexStats {
 pub struct InMemoryRetriever {
     /// Stored documents with embeddings
     documents: Arc<tokio::sync::RwLock<HashMap<String, (Document, Embedding)>>>,
-    
+
     /// Stored chunks with embeddings
     chunks: Arc<tokio::sync::RwLock<HashMap<String, (DocumentChunk, Embedding)>>>,
-    
+
     /// Retriever configuration
     config: RetrieverConfig,
 }
@@ -505,10 +503,10 @@ pub struct InMemoryRetriever {
 pub struct RetrieverConfig {
     /// Whether to store documents, chunks, or both
     pub storage_mode: StorageMode,
-    
+
     /// Default similarity threshold
     pub default_threshold: f32,
-    
+
     /// Maximum results to return
     pub max_results: usize,
 }
@@ -550,7 +548,12 @@ impl InMemoryRetriever {
     }
 
     /// Calculate similarity between embeddings
-    fn calculate_similarity(&self, embedding1: &Embedding, embedding2: &Embedding, algorithm: &SearchAlgorithm) -> RragResult<f32> {
+    fn calculate_similarity(
+        &self,
+        embedding1: &Embedding,
+        embedding2: &Embedding,
+        algorithm: &SearchAlgorithm,
+    ) -> RragResult<f32> {
         match algorithm {
             SearchAlgorithm::Cosine => embedding1.cosine_similarity(embedding2),
             SearchAlgorithm::Euclidean => {
@@ -565,7 +568,8 @@ impl InMemoryRetriever {
                         embedding1.dimensions, embedding2.dimensions
                     )));
                 }
-                let dot_product: f32 = embedding1.vector
+                let dot_product: f32 = embedding1
+                    .vector
                     .iter()
                     .zip(embedding2.vector.iter())
                     .map(|(a, b)| a * b)
@@ -575,13 +579,13 @@ impl InMemoryRetriever {
             SearchAlgorithm::Hybrid { methods, weights } => {
                 let mut total_score = 0.0;
                 let mut total_weight = 0.0;
-                
+
                 for (method, weight) in methods.iter().zip(weights.iter()) {
                     let score = self.calculate_similarity(embedding1, embedding2, method)?;
                     total_score += score * weight;
                     total_weight += weight;
                 }
-                
+
                 if total_weight > 0.0 {
                     Ok(total_score / total_weight)
                 } else {
@@ -592,7 +596,11 @@ impl InMemoryRetriever {
     }
 
     /// Apply metadata filters to a result
-    fn apply_filters(&self, metadata: &HashMap<String, serde_json::Value>, filters: &HashMap<String, serde_json::Value>) -> bool {
+    fn apply_filters(
+        &self,
+        metadata: &HashMap<String, serde_json::Value>,
+        filters: &HashMap<String, serde_json::Value>,
+    ) -> bool {
         for (key, expected_value) in filters {
             match metadata.get(key) {
                 Some(actual_value) if actual_value == expected_value => continue,
@@ -603,44 +611,53 @@ impl InMemoryRetriever {
     }
 
     /// Apply re-ranking with custom scoring
-    fn rerank_results(&self, mut results: Vec<SearchResult>, weights: &ScoringWeights) -> Vec<SearchResult> {
+    fn rerank_results(
+        &self,
+        mut results: Vec<SearchResult>,
+        weights: &ScoringWeights,
+    ) -> Vec<SearchResult> {
         // Calculate enhanced scores
         for result in &mut results {
             let mut enhanced_score = result.score * weights.semantic;
-            
+
             // Add metadata matching bonus
             if !result.metadata.is_empty() {
                 enhanced_score += 0.1 * weights.metadata;
             }
-            
+
             // Add recency bonus if timestamp is available
             if let Some(timestamp_value) = result.metadata.get("created_at") {
                 if let Some(timestamp_str) = timestamp_value.as_str() {
                     if let Ok(timestamp) = chrono::DateTime::parse_from_rfc3339(timestamp_str) {
-                        let age_days = (chrono::Utc::now() - timestamp.with_timezone(&chrono::Utc)).num_days();
+                        let age_days =
+                            (chrono::Utc::now() - timestamp.with_timezone(&chrono::Utc)).num_days();
                         let recency_bonus = (-age_days as f32 / 30.0).exp() * weights.recency;
                         enhanced_score += recency_bonus;
                     }
                 }
             }
-            
+
             // Add quality bonus based on content length
             let content_length = result.content.len();
             if content_length > 100 && content_length < 2000 {
                 enhanced_score += 0.05 * weights.quality;
             }
-            
+
             result.score = enhanced_score.min(1.0);
         }
-        
+
         // Re-sort by enhanced scores
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
-        
+        results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
         // Update ranks
         for (i, result) in results.iter_mut().enumerate() {
             result.rank = i;
         }
-        
+
         results
     }
 }
@@ -661,7 +678,8 @@ impl Retriever for InMemoryRetriever {
         let query_embedding = match &query.query {
             QueryType::Text(_) => {
                 return Err(RragError::retrieval(
-                    "Text queries require pre-computed embeddings for in-memory retriever".to_string()
+                    "Text queries require pre-computed embeddings for in-memory retriever"
+                        .to_string(),
                 ));
             }
             QueryType::Embedding(emb) => emb,
@@ -670,7 +688,10 @@ impl Retriever for InMemoryRetriever {
         let mut results = Vec::new();
 
         // Search documents if enabled
-        if matches!(self.config.storage_mode, StorageMode::DocumentsOnly | StorageMode::Both) {
+        if matches!(
+            self.config.storage_mode,
+            StorageMode::DocumentsOnly | StorageMode::Both
+        ) {
             let documents = self.documents.read().await;
             for (doc_id, (document, embedding)) in documents.iter() {
                 // Apply metadata filters
@@ -678,8 +699,9 @@ impl Retriever for InMemoryRetriever {
                     continue;
                 }
 
-                let similarity = self.calculate_similarity(query_embedding, embedding, &query.config.algorithm)?;
-                
+                let similarity =
+                    self.calculate_similarity(query_embedding, embedding, &query.config.algorithm)?;
+
                 if similarity >= query.min_score {
                     let mut result = SearchResult::new(
                         doc_id,
@@ -688,23 +710,26 @@ impl Retriever for InMemoryRetriever {
                         0, // Will be updated after sorting
                     )
                     .with_metadata("type", serde_json::Value::String("document".to_string()));
-                    
+
                     // Add document metadata
                     for (key, value) in &document.metadata {
                         result = result.with_metadata(key, value.clone());
                     }
-                    
+
                     if query.config.include_embeddings {
                         result = result.with_embedding(embedding.clone());
                     }
-                    
+
                     results.push(result);
                 }
             }
         }
 
         // Search chunks if enabled
-        if matches!(self.config.storage_mode, StorageMode::ChunksOnly | StorageMode::Both) {
+        if matches!(
+            self.config.storage_mode,
+            StorageMode::ChunksOnly | StorageMode::Both
+        ) {
             let chunks = self.chunks.read().await;
             for (chunk_id, (chunk, embedding)) in chunks.iter() {
                 // Apply metadata filters
@@ -712,8 +737,9 @@ impl Retriever for InMemoryRetriever {
                     continue;
                 }
 
-                let similarity = self.calculate_similarity(query_embedding, embedding, &query.config.algorithm)?;
-                
+                let similarity =
+                    self.calculate_similarity(query_embedding, embedding, &query.config.algorithm)?;
+
                 if similarity >= query.min_score {
                     let mut result = SearchResult::new(
                         chunk_id,
@@ -722,25 +748,35 @@ impl Retriever for InMemoryRetriever {
                         0, // Will be updated after sorting
                     )
                     .with_metadata("type", serde_json::Value::String("chunk".to_string()))
-                    .with_metadata("document_id", serde_json::Value::String(chunk.document_id.clone()))
-                    .with_metadata("chunk_index", serde_json::Value::Number(chunk.chunk_index.into()));
-                    
+                    .with_metadata(
+                        "document_id",
+                        serde_json::Value::String(chunk.document_id.clone()),
+                    )
+                    .with_metadata(
+                        "chunk_index",
+                        serde_json::Value::Number(chunk.chunk_index.into()),
+                    );
+
                     // Add chunk metadata
                     for (key, value) in &chunk.metadata {
                         result = result.with_metadata(key, value.clone());
                     }
-                    
+
                     if query.config.include_embeddings {
                         result = result.with_embedding(embedding.clone());
                     }
-                    
+
                     results.push(result);
                 }
             }
         }
 
         // Sort by similarity score (descending)
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Apply re-ranking if enabled
         if query.config.enable_reranking {
@@ -780,7 +816,7 @@ impl Retriever for InMemoryRetriever {
         for doc_id in document_ids {
             docs.remove(doc_id);
         }
-        
+
         // Also remove associated chunks
         let mut chunk_store = self.chunks.write().await;
         let chunk_ids_to_remove: Vec<String> = chunk_store
@@ -788,11 +824,11 @@ impl Retriever for InMemoryRetriever {
             .filter(|(_, (chunk, _))| document_ids.contains(&chunk.document_id))
             .map(|(id, _)| id.clone())
             .collect();
-        
+
         for chunk_id in chunk_ids_to_remove {
             chunk_store.remove(&chunk_id);
         }
-        
+
         Ok(())
     }
 
@@ -805,16 +841,28 @@ impl Retriever for InMemoryRetriever {
     async fn stats(&self) -> RragResult<IndexStats> {
         let doc_count = self.documents.read().await.len();
         let chunk_count = self.chunks.read().await.len();
-        
+
         // Get embedding dimensions from first item
         let dimensions = if doc_count > 0 {
-            self.documents.read().await.values().next().map(|(_, emb)| emb.dimensions).unwrap_or(0)
+            self.documents
+                .read()
+                .await
+                .values()
+                .next()
+                .map(|(_, emb)| emb.dimensions)
+                .unwrap_or(0)
         } else if chunk_count > 0 {
-            self.chunks.read().await.values().next().map(|(_, emb)| emb.dimensions).unwrap_or(0)
+            self.chunks
+                .read()
+                .await
+                .values()
+                .next()
+                .map(|(_, emb)| emb.dimensions)
+                .unwrap_or(0)
         } else {
             0
         };
-        
+
         Ok(IndexStats {
             total_items: doc_count + chunk_count,
             size_bytes: (doc_count + chunk_count) * dimensions * 4, // Rough estimate
@@ -833,7 +881,7 @@ impl Retriever for InMemoryRetriever {
 pub struct RetrievalService {
     /// Active retriever
     retriever: Arc<dyn Retriever>,
-    
+
     /// Service configuration
     config: RetrievalServiceConfig,
 }
@@ -843,10 +891,10 @@ pub struct RetrievalService {
 pub struct RetrievalServiceConfig {
     /// Default search configuration
     pub default_search_config: SearchConfig,
-    
+
     /// Cache query results
     pub enable_caching: bool,
-    
+
     /// Cache TTL in seconds
     pub cache_ttl_seconds: u64,
 }
@@ -876,20 +924,28 @@ impl RetrievalService {
     }
 
     /// Search with text query (requires embedding service)
-    pub async fn search_text(&self, _query: &str, _limit: Option<usize>) -> RragResult<Vec<SearchResult>> {
+    pub async fn search_text(
+        &self,
+        _query: &str,
+        _limit: Option<usize>,
+    ) -> RragResult<Vec<SearchResult>> {
         // This would typically involve embedding the query text first
         // For now, return an error indicating the limitation
         Err(RragError::retrieval(
-            "Text search requires embedding service integration".to_string()
+            "Text search requires embedding service integration".to_string(),
         ))
     }
 
     /// Search with pre-computed embedding
-    pub async fn search_embedding(&self, embedding: Embedding, limit: Option<usize>) -> RragResult<Vec<SearchResult>> {
+    pub async fn search_embedding(
+        &self,
+        embedding: Embedding,
+        limit: Option<usize>,
+    ) -> RragResult<Vec<SearchResult>> {
         let query = SearchQuery::embedding(embedding)
             .with_limit(limit.unwrap_or(10))
             .with_config(self.config.default_search_config.clone());
-        
+
         self.retriever.search(&query).await
     }
 
@@ -899,12 +955,20 @@ impl RetrievalService {
     }
 
     /// Add documents to the index
-    pub async fn index_documents(&self, documents_with_embeddings: &[(Document, Embedding)]) -> RragResult<()> {
-        self.retriever.add_documents(documents_with_embeddings).await
+    pub async fn index_documents(
+        &self,
+        documents_with_embeddings: &[(Document, Embedding)],
+    ) -> RragResult<()> {
+        self.retriever
+            .add_documents(documents_with_embeddings)
+            .await
     }
 
     /// Add chunks to the index
-    pub async fn index_chunks(&self, chunks_with_embeddings: &[(DocumentChunk, Embedding)]) -> RragResult<()> {
+    pub async fn index_chunks(
+        &self,
+        chunks_with_embeddings: &[(DocumentChunk, Embedding)],
+    ) -> RragResult<()> {
         self.retriever.add_chunks(chunks_with_embeddings).await
     }
 
@@ -927,24 +991,27 @@ mod tests {
     #[tokio::test]
     async fn test_in_memory_retriever() {
         let retriever = InMemoryRetriever::new();
-        
+
         // Create test documents with embeddings
         let doc1 = Document::new("First test document");
         let emb1 = Embedding::new(vec![1.0, 0.0, 0.0], "test-model", &doc1.id);
-        
+
         let doc2 = Document::new("Second test document");
         let emb2 = Embedding::new(vec![0.0, 1.0, 0.0], "test-model", &doc2.id);
-        
+
         // Add documents
-        retriever.add_documents(&[(doc1.clone(), emb1.clone()), (doc2, emb2)]).await.unwrap();
-        
+        retriever
+            .add_documents(&[(doc1.clone(), emb1.clone()), (doc2, emb2)])
+            .await
+            .unwrap();
+
         // Create query
         let query_embedding = Embedding::new(vec![0.8, 0.2, 0.0], "test-model", "query");
         let query = SearchQuery::embedding(query_embedding).with_limit(5);
-        
+
         // Search
         let results = retriever.search(&query).await.unwrap();
-        
+
         assert!(!results.is_empty());
         assert_eq!(results[0].id, doc1.id); // Should be most similar
     }
@@ -952,24 +1019,27 @@ mod tests {
     #[tokio::test]
     async fn test_search_filters() {
         let retriever = InMemoryRetriever::new();
-        
+
         let doc1 = Document::new("Test document")
             .with_metadata("category", serde_json::Value::String("tech".to_string()));
         let emb1 = Embedding::new(vec![1.0, 0.0], "test-model", &doc1.id);
-        
+
         let doc2 = Document::new("Another document")
             .with_metadata("category", serde_json::Value::String("science".to_string()));
         let emb2 = Embedding::new(vec![0.9, 0.1], "test-model", &doc2.id);
-        
-        retriever.add_documents(&[(doc1.clone(), emb1), (doc2, emb2)]).await.unwrap();
-        
+
+        retriever
+            .add_documents(&[(doc1.clone(), emb1), (doc2, emb2)])
+            .await
+            .unwrap();
+
         // Search with filter
         let query_embedding = Embedding::new(vec![1.0, 0.0], "test-model", "query");
         let query = SearchQuery::embedding(query_embedding)
             .with_filter("category", serde_json::Value::String("tech".to_string()));
-        
+
         let results = retriever.search(&query).await.unwrap();
-        
+
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].id, doc1.id);
     }
@@ -980,7 +1050,7 @@ mod tests {
             .with_limit(20)
             .with_min_score(0.5)
             .with_filter("type", serde_json::Value::String("article".to_string()));
-        
+
         assert_eq!(query.limit, 20);
         assert_eq!(query.min_score, 0.5);
         assert_eq!(query.filters.len(), 1);
@@ -990,10 +1060,10 @@ mod tests {
     async fn test_retrieval_service() {
         let retriever = Arc::new(InMemoryRetriever::new());
         let service = RetrievalService::new(retriever);
-        
+
         let stats = service.get_stats().await.unwrap();
         assert_eq!(stats.total_items, 0);
-        
+
         assert!(service.health_check().await.unwrap());
     }
 }

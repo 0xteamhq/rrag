@@ -1,39 +1,35 @@
 //! # RGraph Prelude
-//! 
+//!
 //! This module provides a convenient way to import the most commonly used RGraph types and traits.
-//! 
+//!
 //! ```rust
 //! use rgraph::prelude::*;
 //! ```
 
 // Core types
 pub use crate::core::{
-    WorkflowGraph, GraphBuilder, Node, NodeId, Edge, EdgeId,
-    ExecutionContext, ExecutionResult
+    Edge, EdgeId, ExecutionContext, ExecutionResult, GraphBuilder, Node, NodeId, WorkflowGraph,
 };
 
 // State management
-pub use crate::state::{GraphState, StateValue, StatePath};
+pub use crate::state::{GraphState, StatePath, StateValue};
 
 // Execution engine
-pub use crate::execution::{ExecutionEngine, ExecutionConfig, ExecutionMode};
+pub use crate::execution::{ExecutionConfig, ExecutionEngine, ExecutionMode};
 
 // Node types
 pub use crate::nodes::{
-    AgentNode, ToolNode, ConditionNode, TransformNode,
-    NodeConfig, NodeMetadata
+    AgentNode, ConditionNode, NodeConfig, NodeMetadata, ToolNode, TransformNode,
 };
 
 // Agent system
-pub use crate::agents::{Agent, AgentConfig, AgentBuilder};
+pub use crate::agents::{Agent, AgentBuilder, AgentConfig};
 
 // Tool system
-pub use crate::tools::{Tool, ToolConfig, ToolResult, ToolError};
+pub use crate::tools::{Tool, ToolConfig, ToolError, ToolResult};
 
 // Routing
-pub use crate::routing::{
-    RoutingCondition, ConditionalEdge, Router, RoutingDecision
-};
+pub use crate::routing::{ConditionalEdge, Router, RoutingCondition, RoutingDecision};
 
 // Error handling
 pub use crate::{RGraphError, RGraphResult};
@@ -45,23 +41,19 @@ pub use async_trait::async_trait;
 pub use uuid::Uuid;
 
 // Re-export commonly used future types
-pub use futures::{Future, Stream, StreamExt, FutureExt};
+pub use futures::{Future, FutureExt, Stream, StreamExt};
 
 // RRAG integration (when feature is enabled)
 #[cfg(feature = "rrag-integration")]
 pub use crate::rrag_integration::{
-    RagRetrievalNode, RagGenerationNode, ContextEvaluationNode,
-    RagWorkflowBuilder, RagRetrievalConfig, RagGenerationConfig, ContextEvaluationConfig
+    ContextEvaluationConfig, ContextEvaluationNode, RagGenerationConfig, RagGenerationNode,
+    RagRetrievalConfig, RagRetrievalNode, RagWorkflowBuilder,
 };
 
 // Observability (when feature is enabled)
 #[cfg(feature = "observability")]
-pub use crate::observability::{
-    GraphObserver, ExecutionMetrics, NodeMetrics, ObservabilityConfig
-};
+pub use crate::observability::{ExecutionMetrics, GraphObserver, NodeMetrics, ObservabilityConfig};
 
 // Persistence (when feature is enabled)
 #[cfg(feature = "persistence")]
-pub use crate::persistence::{
-    PersistentState, StateStore, SqliteStateStore, PostgresStateStore
-};
+pub use crate::persistence::{PersistentState, PostgresStateStore, SqliteStateStore, StateStore};

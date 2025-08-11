@@ -1,13 +1,13 @@
 //! # Change Detection System
-//! 
+//!
 //! Efficient change detection and delta processing for incremental indexing.
 //! Uses content hashing, timestamps, and metadata comparison to detect changes.
 
-use crate::{RragError, RragResult, Document, DocumentChunk, Metadata};
+use crate::{Document, DocumentChunk, Metadata, RragError, RragResult};
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hasher;
-use std::collections::hash_map::DefaultHasher;
 use tokio::sync::RwLock;
 
 /// Change detection configuration
@@ -15,22 +15,22 @@ use tokio::sync::RwLock;
 pub struct ChangeDetectionConfig {
     /// Enable content hash comparison
     pub enable_content_hash: bool,
-    
+
     /// Enable metadata change detection
     pub enable_metadata_detection: bool,
-    
+
     /// Enable timestamp-based change detection
     pub enable_timestamp_detection: bool,
-    
+
     /// Chunk-level change detection
     pub enable_chunk_detection: bool,
-    
+
     /// Hash algorithm to use
     pub hash_algorithm: HashAlgorithm,
-    
+
     /// Change detection sensitivity
     pub sensitivity: ChangeSensitivity,
-    
+
     /// Maximum change history to keep
     pub max_change_history: usize,
 }
@@ -95,28 +95,28 @@ pub enum ChangeType {
 pub struct ChangeResult {
     /// Type of change detected
     pub change_type: ChangeType,
-    
+
     /// Document ID
     pub document_id: String,
-    
+
     /// Previous content hash
     pub previous_hash: Option<String>,
-    
+
     /// Current content hash
     pub current_hash: String,
-    
+
     /// Delta information
     pub delta: ContentDelta,
-    
+
     /// Metadata changes
     pub metadata_changes: MetadataChanges,
-    
+
     /// Timestamp information
     pub timestamps: ChangeTimestamps,
-    
+
     /// Chunk-level changes
     pub chunk_changes: Vec<ChunkChange>,
-    
+
     /// Change confidence score (0.0 to 1.0)
     pub confidence: f64,
 }
@@ -126,19 +126,19 @@ pub struct ChangeResult {
 pub struct ContentDelta {
     /// Added content (approximate)
     pub added_chars: usize,
-    
+
     /// Removed content (approximate)
     pub removed_chars: usize,
-    
+
     /// Modified content (approximate)
     pub modified_chars: usize,
-    
+
     /// Total content size before change
     pub previous_size: usize,
-    
+
     /// Total content size after change
     pub current_size: usize,
-    
+
     /// Change percentage (0.0 to 1.0)
     pub change_percentage: f64,
 }
@@ -148,16 +148,16 @@ pub struct ContentDelta {
 pub struct MetadataChanges {
     /// Added metadata keys
     pub added_keys: Vec<String>,
-    
+
     /// Removed metadata keys
     pub removed_keys: Vec<String>,
-    
+
     /// Modified metadata keys
     pub modified_keys: Vec<String>,
-    
+
     /// Previous metadata (subset for comparison)
     pub previous_metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Current metadata (subset for comparison)
     pub current_metadata: HashMap<String, serde_json::Value>,
 }
@@ -167,13 +167,13 @@ pub struct MetadataChanges {
 pub struct ChangeTimestamps {
     /// When the change was detected
     pub detected_at: chrono::DateTime<chrono::Utc>,
-    
+
     /// Last known modification time
     pub last_modified: Option<chrono::DateTime<chrono::Utc>>,
-    
+
     /// Previous check timestamp
     pub previous_check: Option<chrono::DateTime<chrono::Utc>>,
-    
+
     /// Time since last change
     pub time_since_change: Option<chrono::Duration>,
 }
@@ -183,16 +183,16 @@ pub struct ChangeTimestamps {
 pub struct ChunkChange {
     /// Chunk index
     pub chunk_index: usize,
-    
+
     /// Type of change for this chunk
     pub change_type: ChangeType,
-    
+
     /// Chunk hash before change
     pub previous_hash: Option<String>,
-    
+
     /// Chunk hash after change
     pub current_hash: String,
-    
+
     /// Content delta for this chunk
     pub delta: ContentDelta,
 }
@@ -202,16 +202,16 @@ pub struct ChunkChange {
 pub struct DocumentChange {
     /// Document ID
     pub document_id: String,
-    
+
     /// Change result
     pub change_result: ChangeResult,
-    
+
     /// Version information
     pub version: u64,
-    
+
     /// Change source/trigger
     pub source: String,
-    
+
     /// Additional context
     pub context: HashMap<String, serde_json::Value>,
 }
@@ -220,13 +220,13 @@ pub struct DocumentChange {
 pub struct ChangeDetector {
     /// Configuration
     config: ChangeDetectionConfig,
-    
+
     /// Document state cache
     document_cache: RwLock<HashMap<String, DocumentState>>,
-    
+
     /// Change history
     change_history: RwLock<Vec<DocumentChange>>,
-    
+
     /// Statistics
     stats: RwLock<ChangeDetectionStats>,
 }
@@ -236,22 +236,22 @@ pub struct ChangeDetector {
 struct DocumentState {
     /// Content hash
     content_hash: String,
-    
+
     /// Metadata hash
     metadata_hash: String,
-    
+
     /// Chunk hashes
     chunk_hashes: Vec<String>,
-    
+
     /// Last check timestamp
     last_checked: chrono::DateTime<chrono::Utc>,
-    
+
     /// Document metadata subset
     metadata_snapshot: Metadata,
-    
+
     /// Content size
     content_size: usize,
-    
+
     /// Version
     version: u64,
 }
@@ -261,19 +261,19 @@ struct DocumentState {
 pub struct ChangeDetectionStats {
     /// Total documents processed
     pub total_processed: u64,
-    
+
     /// Changes detected by type
     pub changes_by_type: HashMap<String, u64>,
-    
+
     /// Average processing time
     pub avg_processing_time_ms: f64,
-    
+
     /// Cache hit rate
     pub cache_hit_rate: f64,
-    
+
     /// False positive rate (estimated)
     pub false_positive_rate: f64,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -299,7 +299,7 @@ impl ChangeDetector {
     /// Detect changes in a document
     pub async fn detect_changes(&self, document: &Document) -> RragResult<ChangeResult> {
         let start_time = std::time::Instant::now();
-        
+
         // Update statistics
         {
             let mut stats = self.stats.write().await;
@@ -308,14 +308,15 @@ impl ChangeDetector {
 
         // Get current document state
         let current_state = self.compute_document_state(document, None).await?;
-        
+
         // Get previous state from cache
         let cache = self.document_cache.read().await;
         let previous_state = cache.get(&document.id);
-        
+
         let change_result = match previous_state {
             Some(prev_state) => {
-                self.compare_states(&document.id, prev_state, &current_state).await?
+                self.compare_states(&document.id, prev_state, &current_state)
+                    .await?
             }
             None => {
                 // New document
@@ -363,10 +364,9 @@ impl ChangeDetector {
             let mut stats = self.stats.write().await;
             let change_type_str = format!("{:?}", change_result.change_type);
             *stats.changes_by_type.entry(change_type_str).or_insert(0) += 1;
-            
+
             let processing_time = start_time.elapsed().as_millis() as f64;
-            stats.avg_processing_time_ms = 
-                (stats.avg_processing_time_ms + processing_time) / 2.0;
+            stats.avg_processing_time_ms = (stats.avg_processing_time_ms + processing_time) / 2.0;
             stats.last_updated = chrono::Utc::now();
         }
 
@@ -382,7 +382,7 @@ impl ChangeDetector {
 
             let mut history = self.change_history.write().await;
             history.push(document_change);
-            
+
             // Limit history size
             if history.len() > self.config.max_change_history {
                 history.remove(0);
@@ -394,27 +394,30 @@ impl ChangeDetector {
 
     /// Detect changes with chunked document
     pub async fn detect_changes_with_chunks(
-        &self, 
-        document: &Document, 
-        chunks: &[DocumentChunk]
+        &self,
+        document: &Document,
+        chunks: &[DocumentChunk],
     ) -> RragResult<ChangeResult> {
         let _start_time = std::time::Instant::now();
-        
+
         // Compute current state with chunks
         let current_state = self.compute_document_state(document, Some(chunks)).await?;
-        
+
         // Get previous state
         let cache = self.document_cache.read().await;
         let previous_state = cache.get(&document.id);
-        
+
         let mut change_result = match previous_state {
             Some(prev_state) => {
-                self.compare_states(&document.id, prev_state, &current_state).await?
+                self.compare_states(&document.id, prev_state, &current_state)
+                    .await?
             }
             None => {
                 // New document with chunks
-                let chunk_changes: Vec<ChunkChange> = chunks.iter().enumerate().map(|(i, chunk)| {
-                    ChunkChange {
+                let chunk_changes: Vec<ChunkChange> = chunks
+                    .iter()
+                    .enumerate()
+                    .map(|(i, chunk)| ChunkChange {
                         chunk_index: i,
                         change_type: ChangeType::Added,
                         previous_hash: None,
@@ -427,8 +430,8 @@ impl ChangeDetector {
                             current_size: chunk.content.len(),
                             change_percentage: 1.0,
                         },
-                    }
-                }).collect();
+                    })
+                    .collect();
 
                 ChangeResult {
                     change_type: ChangeType::Added,
@@ -465,11 +468,13 @@ impl ChangeDetector {
         // Add chunk-level analysis if enabled
         if self.config.enable_chunk_detection && change_result.chunk_changes.is_empty() {
             if let Some(prev_state) = previous_state {
-                change_result.chunk_changes = self.analyze_chunk_changes(
-                    &prev_state.chunk_hashes,
-                    &current_state.chunk_hashes,
-                    chunks
-                ).await?;
+                change_result.chunk_changes = self
+                    .analyze_chunk_changes(
+                        &prev_state.chunk_hashes,
+                        &current_state.chunk_hashes,
+                        chunks,
+                    )
+                    .await?;
             }
         }
 
@@ -486,7 +491,8 @@ impl ChangeDetector {
     /// Get change history for a document
     pub async fn get_change_history(&self, document_id: &str) -> RragResult<Vec<DocumentChange>> {
         let history = self.change_history.read().await;
-        Ok(history.iter()
+        Ok(history
+            .iter()
             .filter(|change| change.document_id == document_id)
             .cloned()
             .collect())
@@ -515,18 +521,19 @@ impl ChangeDetector {
 
     /// Compute document state for comparison
     async fn compute_document_state(
-        &self, 
-        document: &Document, 
-        chunks: Option<&[DocumentChunk]>
+        &self,
+        document: &Document,
+        chunks: Option<&[DocumentChunk]>,
     ) -> RragResult<DocumentState> {
         // Compute content hash
         let content_hash = self.compute_hash(document.content_str()).await?;
-        
+
         // Compute metadata hash
-        let metadata_json = serde_json::to_string(&document.metadata)
-            .map_err(|e| RragError::serialization_with_message("document_metadata", e.to_string()))?;
+        let metadata_json = serde_json::to_string(&document.metadata).map_err(|e| {
+            RragError::serialization_with_message("document_metadata", e.to_string())
+        })?;
         let metadata_hash = self.compute_hash(&metadata_json).await?;
-        
+
         // Compute chunk hashes if provided
         let chunk_hashes = if let Some(chunks) = chunks {
             let mut hashes = Vec::with_capacity(chunks.len());
@@ -555,15 +562,15 @@ impl ChangeDetector {
         &self,
         document_id: &str,
         previous: &DocumentState,
-        current: &DocumentState
+        current: &DocumentState,
     ) -> RragResult<ChangeResult> {
         let mut change_types = Vec::new();
-        
+
         // Check content changes
         if previous.content_hash != current.content_hash {
             change_types.push(ChangeType::ContentChanged);
         }
-        
+
         // Check metadata changes
         if previous.metadata_hash != current.metadata_hash {
             change_types.push(ChangeType::MetadataChanged);
@@ -577,12 +584,11 @@ impl ChangeDetector {
 
         // Compute content delta
         let delta = self.compute_content_delta(previous, current).await?;
-        
+
         // Compute metadata changes
-        let metadata_changes = self.compute_metadata_changes(
-            &previous.metadata_snapshot,
-            &current.metadata_snapshot
-        ).await?;
+        let metadata_changes = self
+            .compute_metadata_changes(&previous.metadata_snapshot, &current.metadata_snapshot)
+            .await?;
 
         // Compute confidence score
         let confidence = self.compute_confidence(&change_type, &delta).await?;
@@ -610,17 +616,17 @@ impl ChangeDetector {
         &self,
         previous_hashes: &[String],
         current_hashes: &[String],
-        current_chunks: &[DocumentChunk]
+        current_chunks: &[DocumentChunk],
     ) -> RragResult<Vec<ChunkChange>> {
         let mut chunk_changes = Vec::new();
-        
+
         let max_len = std::cmp::max(previous_hashes.len(), current_hashes.len());
-        
+
         for i in 0..max_len {
             let prev_hash = previous_hashes.get(i);
             let curr_hash = current_hashes.get(i);
             let chunk = current_chunks.get(i);
-            
+
             let (change_type, current_hash, delta) = match (prev_hash, curr_hash, chunk) {
                 (Some(prev), Some(curr), Some(chunk)) => {
                     if prev != curr {
@@ -661,7 +667,7 @@ impl ChangeDetector {
                 }
                 _ => continue,
             };
-            
+
             chunk_changes.push(ChunkChange {
                 chunk_index: i,
                 change_type,
@@ -670,7 +676,7 @@ impl ChangeDetector {
                 delta,
             });
         }
-        
+
         Ok(chunk_changes)
     }
 
@@ -679,14 +685,19 @@ impl ChangeDetector {
         let normalized_content = match self.config.sensitivity {
             ChangeSensitivity::Low => {
                 // Only hash significant content, ignore formatting
-                content.chars()
+                content
+                    .chars()
                     .filter(|c| !c.is_whitespace())
                     .collect::<String>()
                     .to_lowercase()
             }
             ChangeSensitivity::Medium => {
                 // Normalize whitespace but preserve structure
-                content.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+                content
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .to_lowercase()
             }
             ChangeSensitivity::High => {
                 // Preserve most formatting, normalize case
@@ -729,10 +740,10 @@ impl ChangeDetector {
     async fn compute_content_delta(
         &self,
         previous: &DocumentState,
-        current: &DocumentState
+        current: &DocumentState,
     ) -> RragResult<ContentDelta> {
         let size_diff = current.content_size as i64 - previous.content_size as i64;
-        
+
         let (added_chars, removed_chars) = if size_diff > 0 {
             (size_diff as usize, 0)
         } else {
@@ -759,14 +770,14 @@ impl ChangeDetector {
     async fn compute_metadata_changes(
         &self,
         previous: &Metadata,
-        current: &Metadata
+        current: &Metadata,
     ) -> RragResult<MetadataChanges> {
         let prev_keys: HashSet<String> = previous.keys().cloned().collect();
         let curr_keys: HashSet<String> = current.keys().cloned().collect();
 
         let added_keys: Vec<String> = curr_keys.difference(&prev_keys).cloned().collect();
         let removed_keys: Vec<String> = prev_keys.difference(&curr_keys).cloned().collect();
-        
+
         let mut modified_keys = Vec::new();
         for key in prev_keys.intersection(&curr_keys) {
             if previous.get(key) != current.get(key) {
@@ -784,7 +795,11 @@ impl ChangeDetector {
     }
 
     /// Compute change confidence score
-    async fn compute_confidence(&self, change_type: &ChangeType, delta: &ContentDelta) -> RragResult<f64> {
+    async fn compute_confidence(
+        &self,
+        change_type: &ChangeType,
+        delta: &ContentDelta,
+    ) -> RragResult<f64> {
         let base_confidence = match change_type {
             ChangeType::Added | ChangeType::Deleted => 1.0,
             ChangeType::NoChange => 1.0,
@@ -814,9 +829,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_new_document_detection() {
-        let detector = ChangeDetector::new(ChangeDetectionConfig::default()).await.unwrap();
+        let detector = ChangeDetector::new(ChangeDetectionConfig::default())
+            .await
+            .unwrap();
         let doc = Document::new("Test content");
-        
+
         let result = detector.detect_changes(&doc).await.unwrap();
         assert_eq!(result.change_type, ChangeType::Added);
         assert_eq!(result.document_id, doc.id);
@@ -825,13 +842,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_no_change_detection() {
-        let detector = ChangeDetector::new(ChangeDetectionConfig::default()).await.unwrap();
+        let detector = ChangeDetector::new(ChangeDetectionConfig::default())
+            .await
+            .unwrap();
         let doc = Document::new("Test content");
-        
+
         // First detection should show as added
         let result1 = detector.detect_changes(&doc).await.unwrap();
         assert_eq!(result1.change_type, ChangeType::Added);
-        
+
         // Second detection should show no change
         let result2 = detector.detect_changes(&doc).await.unwrap();
         assert_eq!(result2.change_type, ChangeType::NoChange);
@@ -839,13 +858,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_content_change_detection() {
-        let detector = ChangeDetector::new(ChangeDetectionConfig::default()).await.unwrap();
+        let detector = ChangeDetector::new(ChangeDetectionConfig::default())
+            .await
+            .unwrap();
         let doc1 = Document::with_id("test", "Original content");
         let doc2 = Document::with_id("test", "Modified content");
-        
+
         // First detection
         detector.detect_changes(&doc1).await.unwrap();
-        
+
         // Second detection with modified content
         let result = detector.detect_changes(&doc2).await.unwrap();
         assert_eq!(result.change_type, ChangeType::ContentChanged);
@@ -854,15 +875,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_metadata_change_detection() {
-        let detector = ChangeDetector::new(ChangeDetectionConfig::default()).await.unwrap();
+        let detector = ChangeDetector::new(ChangeDetectionConfig::default())
+            .await
+            .unwrap();
         let doc1 = Document::with_id("test", "Same content")
             .with_metadata("key1", serde_json::Value::String("value1".to_string()));
         let doc2 = Document::with_id("test", "Same content")
             .with_metadata("key1", serde_json::Value::String("value2".to_string()));
-        
+
         // First detection
         detector.detect_changes(&doc1).await.unwrap();
-        
+
         // Second detection with modified metadata
         let result = detector.detect_changes(&doc2).await.unwrap();
         assert_eq!(result.change_type, ChangeType::MetadataChanged);
@@ -880,7 +903,7 @@ mod tests {
             hash_algorithm: HashAlgorithm::Sha256,
             ..Default::default()
         };
-        
+
         assert_ne!(
             format!("{:?}", config_default.hash_algorithm),
             format!("{:?}", config_sha256.hash_algorithm)
@@ -895,7 +918,7 @@ mod tests {
             ChangeSensitivity::High,
             ChangeSensitivity::Strict,
         ];
-        
+
         // All sensitivity levels should be different
         for (i, sens1) in sensitivities.iter().enumerate() {
             for (j, sens2) in sensitivities.iter().enumerate() {

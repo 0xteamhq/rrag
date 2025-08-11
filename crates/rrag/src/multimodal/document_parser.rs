@@ -1,36 +1,36 @@
 //! # Document Parser
-//! 
+//!
 //! Comprehensive document parsing with multi-modal content extraction.
 
 use super::{
-    MultiModalDocument, DocumentLayout, DocumentSection, DocumentMetadata, DocumentType,
-    SectionType, ColumnLayout, ProcessedImage, ExtractedTable, AnalyzedChart,
-    MultiModalEmbeddings, EmbeddingWeights, ImageProcessor, TableProcessor, ChartProcessor
+    AnalyzedChart, ChartProcessor, ColumnLayout, DocumentLayout, DocumentMetadata, DocumentSection,
+    DocumentType, EmbeddingWeights, ExtractedTable, ImageProcessor, MultiModalDocument,
+    MultiModalEmbeddings, ProcessedImage, SectionType, TableProcessor,
 };
-use crate::{RragResult, RragError};
-use std::path::Path;
+use crate::{RragError, RragResult};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 /// Document parser for multi-modal content
 pub struct DocumentParser {
     /// Configuration
     config: DocumentParserConfig,
-    
+
     /// Image processor
     image_processor: Box<dyn ImageProcessor>,
-    
+
     /// Table processor
     table_processor: Box<dyn TableProcessor>,
-    
+
     /// Chart processor
     chart_processor: Box<dyn ChartProcessor>,
-    
+
     /// Text extractor
     text_extractor: TextExtractor,
-    
+
     /// Section analyzer
     section_analyzer: SectionAnalyzer,
-    
+
     /// Layout detector
     layout_detector: LayoutDetector,
 }
@@ -40,25 +40,25 @@ pub struct DocumentParser {
 pub struct DocumentParserConfig {
     /// Supported document types
     pub supported_types: Vec<DocumentType>,
-    
+
     /// Extract text content
     pub extract_text: bool,
-    
+
     /// Extract images
     pub extract_images: bool,
-    
+
     /// Extract tables
     pub extract_tables: bool,
-    
+
     /// Extract charts
     pub extract_charts: bool,
-    
+
     /// Analyze document structure
     pub analyze_structure: bool,
-    
+
     /// Maximum file size (bytes)
     pub max_file_size: usize,
-    
+
     /// Page processing limit
     pub max_pages: Option<usize>,
 }
@@ -67,16 +67,16 @@ pub struct DocumentParserConfig {
 pub struct TextExtractor {
     /// Configuration
     config: TextExtractionConfig,
-    
+
     /// PDF extractor
     pdf_extractor: PDFTextExtractor,
-    
+
     /// Word extractor
     word_extractor: WordTextExtractor,
-    
+
     /// PowerPoint extractor
     ppt_extractor: PowerPointTextExtractor,
-    
+
     /// HTML extractor
     html_extractor: HTMLTextExtractor,
 }
@@ -86,13 +86,13 @@ pub struct TextExtractor {
 pub struct TextExtractionConfig {
     /// Preserve formatting
     pub preserve_formatting: bool,
-    
+
     /// Extract footnotes
     pub extract_footnotes: bool,
-    
+
     /// Extract headers/footers
     pub extract_headers_footers: bool,
-    
+
     /// Minimum text block size
     pub min_block_size: usize,
 }
@@ -101,7 +101,7 @@ pub struct TextExtractionConfig {
 pub struct SectionAnalyzer {
     /// Section detection patterns
     patterns: Vec<SectionPattern>,
-    
+
     /// Heading detection
     heading_detector: HeadingDetector,
 }
@@ -110,7 +110,7 @@ pub struct SectionAnalyzer {
 pub struct LayoutDetector {
     /// Column detection threshold
     column_threshold: f32,
-    
+
     /// Reading order analysis
     reading_order_analyzer: ReadingOrderAnalyzer,
 }
@@ -119,7 +119,7 @@ pub struct LayoutDetector {
 pub struct PDFTextExtractor {
     /// Extract metadata
     extract_metadata: bool,
-    
+
     /// Extract bookmarks
     extract_bookmarks: bool,
 }
@@ -128,7 +128,7 @@ pub struct PDFTextExtractor {
 pub struct WordTextExtractor {
     /// Extract styles
     extract_styles: bool,
-    
+
     /// Extract comments
     extract_comments: bool,
 }
@@ -137,7 +137,7 @@ pub struct WordTextExtractor {
 pub struct PowerPointTextExtractor {
     /// Extract slide notes
     extract_notes: bool,
-    
+
     /// Extract animations
     extract_animations: bool,
 }
@@ -146,7 +146,7 @@ pub struct PowerPointTextExtractor {
 pub struct HTMLTextExtractor {
     /// Remove scripts
     remove_scripts: bool,
-    
+
     /// Remove styles
     remove_styles: bool,
 }
@@ -156,10 +156,10 @@ pub struct HTMLTextExtractor {
 pub struct SectionPattern {
     /// Pattern regex
     pub pattern: String,
-    
+
     /// Section type
     pub section_type: SectionType,
-    
+
     /// Priority (higher = more specific)
     pub priority: u32,
 }
@@ -175,10 +175,10 @@ pub struct HeadingDetector {
 pub struct HeadingPattern {
     /// Pattern regex
     pub pattern: String,
-    
+
     /// Heading level
     pub level: usize,
-    
+
     /// Confidence score
     pub confidence: f32,
 }
@@ -204,16 +204,16 @@ pub enum ReadingOrderStrategy {
 pub struct DocumentParseResult {
     /// Parsed document
     pub document: MultiModalDocument,
-    
+
     /// Parsing confidence
     pub confidence: f32,
-    
+
     /// Processing time
     pub processing_time_ms: u64,
-    
+
     /// Warnings
     pub warnings: Vec<String>,
-    
+
     /// Parsing statistics
     pub statistics: ParseStatistics,
 }
@@ -223,19 +223,19 @@ pub struct DocumentParseResult {
 pub struct ParseStatistics {
     /// Total text length
     pub text_length: usize,
-    
+
     /// Image count
     pub image_count: usize,
-    
+
     /// Table count
     pub table_count: usize,
-    
+
     /// Chart count
     pub chart_count: usize,
-    
+
     /// Section count
     pub section_count: usize,
-    
+
     /// Page count
     pub page_count: usize,
 }
@@ -251,7 +251,7 @@ impl DocumentParser {
         let text_extractor = TextExtractor::new(TextExtractionConfig::default())?;
         let section_analyzer = SectionAnalyzer::new()?;
         let layout_detector = LayoutDetector::new();
-        
+
         Ok(Self {
             config,
             image_processor,
@@ -262,39 +262,39 @@ impl DocumentParser {
             layout_detector,
         })
     }
-    
+
     /// Parse document from file
     pub async fn parse_document(&self, file_path: &Path) -> RragResult<DocumentParseResult> {
         let start_time = std::time::Instant::now();
-        
+
         // Detect document type
         let doc_type = self.detect_document_type(file_path)?;
-        
+
         // Validate file size
         self.validate_file_size(file_path)?;
-        
+
         // Extract content based on type
         let content = self.extract_content(file_path, doc_type).await?;
-        
+
         // Parse multi-modal elements
         let images = if self.config.extract_images {
             self.extract_images(&content).await?
         } else {
             vec![]
         };
-        
+
         let tables = if self.config.extract_tables {
             self.extract_tables(&content).await?
         } else {
             vec![]
         };
-        
+
         let charts = if self.config.extract_charts {
             self.extract_charts(&content).await?
         } else {
             vec![]
         };
-        
+
         // Analyze document structure
         let layout = if self.config.analyze_structure {
             self.analyze_layout(&content).await?
@@ -307,12 +307,15 @@ impl DocumentParser {
                 document_type: doc_type,
             }
         };
-        
+
         // Extract metadata
         let metadata = self.extract_metadata(file_path, &content)?;
-        
+
         // Create document
-        let document_id = format!("doc_{}", uuid::Uuid::new_v4().to_string().split('-').next().unwrap());
+        let document_id = format!(
+            "doc_{}",
+            uuid::Uuid::new_v4().to_string().split('-').next().unwrap()
+        );
         let document = MultiModalDocument {
             id: document_id,
             text_content: content.text,
@@ -334,9 +337,9 @@ impl DocumentParser {
             },
             metadata,
         };
-        
+
         let processing_time = start_time.elapsed().as_millis() as u64;
-        
+
         Ok(DocumentParseResult {
             confidence: 0.85,
             processing_time_ms: processing_time,
@@ -352,14 +355,15 @@ impl DocumentParser {
             document,
         })
     }
-    
+
     /// Detect document type from file
     fn detect_document_type(&self, file_path: &Path) -> RragResult<DocumentType> {
-        let extension = file_path.extension()
+        let extension = file_path
+            .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("")
             .to_lowercase();
-        
+
         match extension.as_str() {
             "pdf" => Ok(DocumentType::PDF),
             "doc" | "docx" => Ok(DocumentType::Word),
@@ -370,21 +374,29 @@ impl DocumentParser {
             _ => Ok(DocumentType::Mixed),
         }
     }
-    
+
     /// Validate file size
     fn validate_file_size(&self, file_path: &Path) -> RragResult<()> {
-        let metadata = std::fs::metadata(file_path)
-            .map_err(|e| RragError::io_error(e.to_string()))?;
-        
+        let metadata =
+            std::fs::metadata(file_path).map_err(|e| RragError::io_error(e.to_string()))?;
+
         if metadata.len() as usize > self.config.max_file_size {
-            return Err(RragError::validation("file_size", format!("maximum {} bytes", self.config.max_file_size), format!("{} bytes", metadata.len())));
+            return Err(RragError::validation(
+                "file_size",
+                format!("maximum {} bytes", self.config.max_file_size),
+                format!("{} bytes", metadata.len()),
+            ));
         }
-        
+
         Ok(())
     }
-    
+
     /// Extract content from document
-    async fn extract_content(&self, file_path: &Path, doc_type: DocumentType) -> RragResult<ExtractedContent> {
+    async fn extract_content(
+        &self,
+        file_path: &Path,
+        doc_type: DocumentType,
+    ) -> RragResult<ExtractedContent> {
         match doc_type {
             DocumentType::PDF => self.text_extractor.extract_from_pdf(file_path).await,
             DocumentType::Word => self.text_extractor.extract_from_word(file_path).await,
@@ -398,52 +410,52 @@ impl DocumentParser {
             }
         }
     }
-    
+
     /// Extract images from content
     async fn extract_images(&self, content: &ExtractedContent) -> RragResult<Vec<ProcessedImage>> {
         let mut images = Vec::new();
-        
+
         for image_ref in &content.image_references {
             if let Ok(processed) = self.image_processor.process_image(&image_ref.path) {
                 images.push(processed);
             }
         }
-        
+
         Ok(images)
     }
-    
+
     /// Extract tables from content
     async fn extract_tables(&self, content: &ExtractedContent) -> RragResult<Vec<ExtractedTable>> {
         let mut tables = Vec::new();
-        
+
         for table_content in &content.table_content {
             if let Ok(extracted) = self.table_processor.extract_table(table_content) {
                 tables.extend(extracted);
             }
         }
-        
+
         Ok(tables)
     }
-    
+
     /// Extract charts from content
     async fn extract_charts(&self, content: &ExtractedContent) -> RragResult<Vec<AnalyzedChart>> {
         let mut charts = Vec::new();
-        
+
         for chart_ref in &content.chart_references {
             if let Ok(analyzed) = self.chart_processor.analyze_chart(&chart_ref.path) {
                 charts.push(analyzed);
             }
         }
-        
+
         Ok(charts)
     }
-    
+
     /// Analyze document layout
     async fn analyze_layout(&self, content: &ExtractedContent) -> RragResult<DocumentLayout> {
         let sections = self.section_analyzer.analyze_sections(&content.text)?;
         let reading_order = self.layout_detector.determine_reading_order(&sections)?;
         let columns = self.layout_detector.detect_columns(&content.text)?;
-        
+
         Ok(DocumentLayout {
             pages: content.page_count,
             sections,
@@ -452,17 +464,23 @@ impl DocumentParser {
             document_type: content.document_type,
         })
     }
-    
+
     /// Extract document metadata
-    fn extract_metadata(&self, file_path: &Path, content: &ExtractedContent) -> RragResult<DocumentMetadata> {
-        let file_metadata = std::fs::metadata(file_path)
-            .map_err(|e| RragError::io_error(e.to_string()))?;
-        
+    fn extract_metadata(
+        &self,
+        file_path: &Path,
+        content: &ExtractedContent,
+    ) -> RragResult<DocumentMetadata> {
+        let file_metadata =
+            std::fs::metadata(file_path).map_err(|e| RragError::io_error(e.to_string()))?;
+
         Ok(DocumentMetadata {
             title: content.title.clone(),
             author: content.author.clone(),
             creation_date: content.creation_date.clone(),
-            modification_date: file_metadata.modified().ok()
+            modification_date: file_metadata
+                .modified()
+                .ok()
                 .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                 .map(|d| d.as_secs().to_string()),
             page_count: content.page_count,
@@ -478,31 +496,31 @@ impl DocumentParser {
 pub struct ExtractedContent {
     /// Text content
     pub text: String,
-    
+
     /// Document type
     pub document_type: DocumentType,
-    
+
     /// Page count
     pub page_count: usize,
-    
+
     /// Image references
     pub image_references: Vec<ImageReference>,
-    
+
     /// Table content
     pub table_content: Vec<String>,
-    
+
     /// Chart references
     pub chart_references: Vec<ChartReference>,
-    
+
     /// Document title
     pub title: Option<String>,
-    
+
     /// Document author
     pub author: Option<String>,
-    
+
     /// Creation date
     pub creation_date: Option<String>,
-    
+
     /// Language
     pub language: Option<String>,
 }
@@ -534,32 +552,32 @@ impl TextExtractor {
             html_extractor: HTMLTextExtractor::new(),
         })
     }
-    
+
     /// Extract from PDF
     pub async fn extract_from_pdf(&self, file_path: &Path) -> RragResult<ExtractedContent> {
         self.pdf_extractor.extract(file_path).await
     }
-    
+
     /// Extract from Word document
     pub async fn extract_from_word(&self, file_path: &Path) -> RragResult<ExtractedContent> {
         self.word_extractor.extract(file_path).await
     }
-    
+
     /// Extract from PowerPoint
     pub async fn extract_from_ppt(&self, file_path: &Path) -> RragResult<ExtractedContent> {
         self.ppt_extractor.extract(file_path).await
     }
-    
+
     /// Extract from HTML
     pub async fn extract_from_html(&self, file_path: &Path) -> RragResult<ExtractedContent> {
         self.html_extractor.extract(file_path).await
     }
-    
+
     /// Extract from Markdown
     pub async fn extract_from_markdown(&self, file_path: &Path) -> RragResult<ExtractedContent> {
-        let content = std::fs::read_to_string(file_path)
-            .map_err(|e| RragError::io_error(e.to_string()))?;
-        
+        let content =
+            std::fs::read_to_string(file_path).map_err(|e| RragError::io_error(e.to_string()))?;
+
         Ok(ExtractedContent {
             text: content,
             document_type: DocumentType::Markdown,
@@ -573,12 +591,12 @@ impl TextExtractor {
             language: Some("en".to_string()),
         })
     }
-    
+
     /// Extract from plain text
     pub async fn extract_from_text(&self, file_path: &Path) -> RragResult<ExtractedContent> {
-        let content = std::fs::read_to_string(file_path)
-            .map_err(|e| RragError::io_error(e.to_string()))?;
-        
+        let content =
+            std::fs::read_to_string(file_path).map_err(|e| RragError::io_error(e.to_string()))?;
+
         Ok(ExtractedContent {
             text: content,
             document_type: DocumentType::PlainText,
@@ -592,7 +610,7 @@ impl TextExtractor {
             language: Some("en".to_string()),
         })
     }
-    
+
     /// Auto-detect and extract
     pub async fn extract_auto_detect(&self, file_path: &Path) -> RragResult<ExtractedContent> {
         // For simplicity, treat as plain text
@@ -625,26 +643,26 @@ impl SectionAnalyzer {
                 priority: 70,
             },
         ];
-        
+
         let heading_detector = HeadingDetector::new();
-        
+
         Ok(Self {
             patterns,
             heading_detector,
         })
     }
-    
+
     /// Analyze document sections
     pub fn analyze_sections(&self, text: &str) -> RragResult<Vec<DocumentSection>> {
         let mut sections = Vec::new();
         let lines: Vec<&str> = text.lines().collect();
-        
+
         let mut current_section: Option<DocumentSection> = None;
         let mut content_buffer = String::new();
-        
+
         for (_line_idx, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
-            
+
             // Check if this line matches a section pattern
             if let Some((section_type, level)) = self.detect_section_start(trimmed) {
                 // Save previous section
@@ -653,7 +671,7 @@ impl SectionAnalyzer {
                     sections.push(section);
                     content_buffer.clear();
                 }
-                
+
                 // Start new section
                 current_section = Some(DocumentSection {
                     id: format!("section_{}", sections.len()),
@@ -669,13 +687,13 @@ impl SectionAnalyzer {
                 content_buffer.push('\n');
             }
         }
-        
+
         // Save final section
         if let Some(mut section) = current_section {
             section.content = content_buffer.trim().to_string();
             sections.push(section);
         }
-        
+
         // If no sections detected, create a default body section
         if sections.is_empty() {
             sections.push(DocumentSection {
@@ -687,10 +705,10 @@ impl SectionAnalyzer {
                 page_range: (1, 1),
             });
         }
-        
+
         Ok(sections)
     }
-    
+
     /// Detect section start
     fn detect_section_start(&self, line: &str) -> Option<(SectionType, usize)> {
         // Check patterns first
@@ -701,12 +719,12 @@ impl SectionAnalyzer {
                 }
             }
         }
-        
+
         // Check heading patterns
         if let Some((level, _)) = self.heading_detector.detect_heading(line) {
             return Some((SectionType::Body, level));
         }
-        
+
         None
     }
 }
@@ -726,10 +744,10 @@ impl HeadingDetector {
                 confidence: 0.7,
             },
         ];
-        
+
         Self { patterns }
     }
-    
+
     /// Detect if line is a heading
     pub fn detect_heading(&self, line: &str) -> Option<(usize, f32)> {
         for pattern in &self.patterns {
@@ -741,12 +759,12 @@ impl HeadingDetector {
                     } else {
                         pattern.level
                     };
-                    
+
                     return Some((level, pattern.confidence));
                 }
             }
         }
-        
+
         None
     }
 }
@@ -759,20 +777,19 @@ impl LayoutDetector {
             reading_order_analyzer: ReadingOrderAnalyzer::new(),
         }
     }
-    
+
     /// Determine reading order
     pub fn determine_reading_order(&self, sections: &[DocumentSection]) -> RragResult<Vec<String>> {
         Ok(sections.iter().map(|s| s.id.clone()).collect())
     }
-    
+
     /// Detect column layout
     pub fn detect_columns(&self, text: &str) -> RragResult<Option<ColumnLayout>> {
         // Simplified column detection
         let lines: Vec<&str> = text.lines().collect();
-        let avg_line_length = lines.iter()
-            .map(|line| line.len())
-            .sum::<usize>() as f32 / lines.len() as f32;
-        
+        let avg_line_length =
+            lines.iter().map(|line| line.len()).sum::<usize>() as f32 / lines.len() as f32;
+
         if avg_line_length > 120.0 {
             // Likely multi-column layout
             Ok(Some(ColumnLayout {
@@ -803,7 +820,7 @@ impl PDFTextExtractor {
             extract_bookmarks: true,
         }
     }
-    
+
     pub async fn extract(&self, _file_path: &Path) -> RragResult<ExtractedContent> {
         // Simplified PDF extraction
         Ok(ExtractedContent {
@@ -828,7 +845,7 @@ impl WordTextExtractor {
             extract_comments: false,
         }
     }
-    
+
     pub async fn extract(&self, _file_path: &Path) -> RragResult<ExtractedContent> {
         // Simplified Word extraction
         Ok(ExtractedContent {
@@ -853,7 +870,7 @@ impl PowerPointTextExtractor {
             extract_animations: false,
         }
     }
-    
+
     pub async fn extract(&self, _file_path: &Path) -> RragResult<ExtractedContent> {
         // Simplified PowerPoint extraction
         Ok(ExtractedContent {
@@ -878,11 +895,11 @@ impl HTMLTextExtractor {
             remove_styles: true,
         }
     }
-    
+
     pub async fn extract(&self, file_path: &Path) -> RragResult<ExtractedContent> {
-        let html_content = std::fs::read_to_string(file_path)
-            .map_err(|e| RragError::io_error(e.to_string()))?;
-        
+        let html_content =
+            std::fs::read_to_string(file_path).map_err(|e| RragError::io_error(e.to_string()))?;
+
         // Simplified HTML text extraction (remove tags)
         let text = html_content
             .split('<')
@@ -898,7 +915,7 @@ impl HTMLTextExtractor {
             })
             .collect::<Vec<_>>()
             .join("");
-        
+
         Ok(ExtractedContent {
             text,
             document_type: DocumentType::HTML,
@@ -950,58 +967,74 @@ impl Default for TextExtractionConfig {
 mod tests {
     use super::*;
     use tempfile::NamedTempFile;
-    
+
     #[test]
     fn test_document_type_detection() {
         let parser = create_test_parser();
-        
+
         let pdf_path = std::path::Path::new("test.pdf");
-        assert_eq!(parser.detect_document_type(pdf_path).unwrap(), DocumentType::PDF);
-        
+        assert_eq!(
+            parser.detect_document_type(pdf_path).unwrap(),
+            DocumentType::PDF
+        );
+
         let word_path = std::path::Path::new("test.docx");
-        assert_eq!(parser.detect_document_type(word_path).unwrap(), DocumentType::Word);
+        assert_eq!(
+            parser.detect_document_type(word_path).unwrap(),
+            DocumentType::Word
+        );
     }
-    
+
     #[test]
     fn test_section_detection() {
         let analyzer = SectionAnalyzer::new().unwrap();
         let text = "Abstract\n\nThis is the abstract.\n\nIntroduction\n\nThis is the introduction.";
-        
+
         let sections = analyzer.analyze_sections(text).unwrap();
         assert_eq!(sections.len(), 2);
         assert_eq!(sections[0].section_type, SectionType::Abstract);
         assert_eq!(sections[1].section_type, SectionType::Introduction);
     }
-    
+
     #[test]
     fn test_heading_detection() {
         let detector = HeadingDetector::new();
-        
+
         // Markdown heading
         assert!(detector.detect_heading("# Main Heading").is_some());
         assert!(detector.detect_heading("## Sub Heading").is_some());
-        
+
         // All caps heading
         assert!(detector.detect_heading("MAIN SECTION").is_some());
-        
+
         // Regular text
         assert!(detector.detect_heading("This is regular text").is_none());
     }
-    
+
     fn create_test_parser() -> DocumentParser {
-        use super::super::{image_processor, table_processor, chart_processor};
-        
+        use super::super::{chart_processor, image_processor, table_processor};
+
         DocumentParser::new(
             DocumentParserConfig::default(),
-            Box::new(image_processor::DefaultImageProcessor::new(
-                super::super::ImageProcessingConfig::default()
-            ).unwrap()),
-            Box::new(table_processor::DefaultTableProcessor::new(
-                super::super::TableExtractionConfig::default()
-            ).unwrap()),
-            Box::new(chart_processor::DefaultChartProcessor::new(
-                super::super::ChartAnalysisConfig::default()
-            ).unwrap()),
-        ).unwrap()
+            Box::new(
+                image_processor::DefaultImageProcessor::new(
+                    super::super::ImageProcessingConfig::default(),
+                )
+                .unwrap(),
+            ),
+            Box::new(
+                table_processor::DefaultTableProcessor::new(
+                    super::super::TableExtractionConfig::default(),
+                )
+                .unwrap(),
+            ),
+            Box::new(
+                chart_processor::DefaultChartProcessor::new(
+                    super::super::ChartAnalysisConfig::default(),
+                )
+                .unwrap(),
+            ),
+        )
+        .unwrap()
     }
 }

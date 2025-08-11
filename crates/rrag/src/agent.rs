@@ -85,12 +85,12 @@
 //! let conversation_id = "user-123";
 //!
 //! let response1 = agent.process_message(
-//!     "My name is Alice", 
+//!     "My name is Alice",
 //!     Some(conversation_id.to_string())
 //! ).await?;
 //!
 //! let response2 = agent.process_message(
-//!     "What's my name?", 
+//!     "What's my name?",
 //!     Some(conversation_id.to_string())
 //! ).await?;
 //!
@@ -201,12 +201,7 @@
 //! - Use memory efficiently by setting appropriate buffer sizes
 //! - Monitor agent performance using the built-in metrics
 
-use crate::{
-    RragError, RragResult, 
-    Tool, ToolRegistry, ToolResult,
-    Memory,
-    StreamingResponse,
-};
+use crate::{Memory, RragError, RragResult, StreamingResponse, Tool, ToolRegistry, ToolResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -240,28 +235,28 @@ use uuid::Uuid;
 pub struct AgentConfig {
     /// Agent identifier
     pub id: String,
-    
+
     /// Agent name for display
     pub name: String,
-    
+
     /// Model configuration for rsllm
     pub model_config: ModelConfig,
-    
+
     /// Maximum number of tool calls per conversation turn
     pub max_tool_calls: usize,
-    
+
     /// Maximum thinking time before timeout
     pub max_thinking_time: Duration,
-    
+
     /// Whether to enable verbose logging
     pub verbose: bool,
-    
+
     /// System prompt for the agent
     pub system_prompt: Option<String>,
-    
+
     /// Temperature for generation (0.0 to 2.0)
     pub temperature: f32,
-    
+
     /// Whether to stream responses
     pub stream_responses: bool,
 }
@@ -315,19 +310,19 @@ impl Default for AgentConfig {
 pub struct ModelConfig {
     /// Model provider (openai, anthropic, etc.)
     pub provider: String,
-    
+
     /// Model name/identifier
     pub model: String,
-    
+
     /// API endpoint URL
     pub api_url: Option<String>,
-    
+
     /// API key (should be in environment variable)
     pub api_key_env: String,
-    
+
     /// Request timeout
     pub timeout: Duration,
-    
+
     /// Maximum tokens in response
     pub max_tokens: Option<usize>,
 }
@@ -381,21 +376,22 @@ impl Default for ModelConfig {
 pub struct AgentContext {
     /// Current conversation ID
     pub conversation_id: String,
-    
+
     /// Tool call history for this turn
     pub tool_calls: Vec<ToolCall>,
-    
+
     /// Memory for persistent state
     pub memory: Option<Arc<dyn Memory>>,
-    
+
     /// Execution start time
     pub start_time: Instant,
-    
+
     /// Custom context variables
     pub variables: HashMap<String, serde_json::Value>,
 }
 
 impl AgentContext {
+    /// Create a new agent context for the given conversation ID
     pub fn new(conversation_id: impl Into<String>) -> Self {
         Self {
             conversation_id: conversation_id.into(),
@@ -406,23 +402,28 @@ impl AgentContext {
         }
     }
 
+    /// Add memory support to the agent context
     pub fn with_memory(mut self, memory: Arc<dyn Memory>) -> Self {
         self.memory = Some(memory);
         self
     }
 
+    /// Get the elapsed time since context creation
     pub fn elapsed(&self) -> Duration {
         self.start_time.elapsed()
     }
 
+    /// Add a tool call to the context history
     pub fn add_tool_call(&mut self, tool_call: ToolCall) {
         self.tool_calls.push(tool_call);
     }
 
+    /// Get a context variable by key
     pub fn get_variable(&self, key: &str) -> Option<&serde_json::Value> {
         self.variables.get(key)
     }
 
+    /// Set a context variable
     pub fn set_variable(&mut self, key: impl Into<String>, value: serde_json::Value) {
         self.variables.insert(key.into(), value);
     }
@@ -458,22 +459,29 @@ impl AgentContext {
 ///         150 // 150ms execution time
 ///     );
 ///
-/// println!("Tool '{}' executed in {}ms", 
-///     tool_call.tool_name, 
+/// println!("Tool '{}' executed in {}ms",
+///     tool_call.tool_name,
 ///     tool_call.duration_ms.unwrap()
 /// );
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolCall {
+    /// Unique identifier for this tool call
     pub id: String,
+    /// Name of the tool that was executed
     pub tool_name: String,
+    /// Input parameters passed to the tool
     pub input: String,
+    /// Tool execution result (if completed)
     pub result: Option<ToolResult>,
+    /// When the tool call was initiated
     pub timestamp: chrono::DateTime<chrono::Utc>,
+    /// How long the tool took to execute (in milliseconds)
     pub duration_ms: Option<u64>,
 }
 
 impl ToolCall {
+    /// Create a new tool call record
     pub fn new(tool_name: impl Into<String>, input: impl Into<String>) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
@@ -485,6 +493,7 @@ impl ToolCall {
         }
     }
 
+    /// Add execution result and duration to the tool call
     pub fn with_result(mut self, result: ToolResult, duration_ms: u64) -> Self {
         self.result = Some(result);
         self.duration_ms = Some(duration_ms);
@@ -523,13 +532,13 @@ impl ToolCall {
 pub struct AgentResponse {
     /// Generated response text
     pub text: String,
-    
+
     /// Tool calls made during generation
     pub tool_calls: Vec<ToolCall>,
-    
+
     /// Response metadata
     pub metadata: ResponseMetadata,
-    
+
     /// Whether this is a final response or needs continuation
     pub is_final: bool,
 }
@@ -539,16 +548,16 @@ pub struct AgentResponse {
 pub struct ResponseMetadata {
     /// Total processing time
     pub duration_ms: u64,
-    
+
     /// Number of model calls made
     pub model_calls: usize,
-    
+
     /// Total tokens used (if available)
     pub total_tokens: Option<usize>,
-    
+
     /// Conversation turn ID
     pub turn_id: String,
-    
+
     /// Agent configuration snapshot
     pub agent_config: AgentConfig,
 }
@@ -610,17 +619,17 @@ pub struct ResponseMetadata {
 pub struct RragAgent {
     /// Agent configuration
     config: AgentConfig,
-    
+
     /// Tool registry for available tools
     tools: Arc<ToolRegistry>,
-    
+
     /// Memory for conversation state
     memory: Option<Arc<dyn Memory>>,
-    
+
     /// rsllm client (when feature is enabled)
     #[cfg(feature = "rsllm-client")]
     llm_client: Option<Arc<rsllm::Client>>,
-    
+
     /// Active contexts indexed by conversation ID
     contexts: Arc<RwLock<HashMap<String, AgentContext>>>,
 }
@@ -656,30 +665,34 @@ impl RragAgent {
 
         // Get or create conversation context
         let mut contexts = self.contexts.write().await;
-        let context = contexts
-            .entry(conversation_id.clone())
-            .or_insert_with(|| {
-                let mut ctx = AgentContext::new(&conversation_id);
-                if let Some(memory) = &self.memory {
-                    ctx = ctx.with_memory(memory.clone());
-                }
-                ctx
-            });
+        let context = contexts.entry(conversation_id.clone()).or_insert_with(|| {
+            let mut ctx = AgentContext::new(&conversation_id);
+            if let Some(memory) = &self.memory {
+                ctx = ctx.with_memory(memory.clone());
+            }
+            ctx
+        });
 
         // Load conversation history from memory if available
         let conversation_history = if let Some(memory) = &context.memory {
-            memory.get_conversation_history(&conversation_id).await
+            memory
+                .get_conversation_history(&conversation_id)
+                .await
                 .unwrap_or_default()
         } else {
             Vec::new()
         };
 
         // Process message with tool calling loop
-        let response = self.process_with_tools(message, context, &conversation_history).await?;
+        let response = self
+            .process_with_tools(message, context, &conversation_history)
+            .await?;
 
         // Save to memory if available
         if let Some(memory) = &context.memory {
-            memory.add_message(&conversation_id, "user", &response).await
+            memory
+                .add_message(&conversation_id, "user", &response)
+                .await
                 .map_err(|e| RragError::memory("add_message", e.to_string()))?;
         }
 
@@ -708,7 +721,7 @@ impl RragAgent {
         // For now, return a simple streaming implementation
         // In production, this would integrate with rsllm's streaming capabilities
         let response = self.process_message(message, conversation_id).await?;
-        
+
         Ok(StreamingResponse::from_text(response.text))
     }
 
@@ -721,14 +734,16 @@ impl RragAgent {
     ) -> RragResult<String> {
         // Check for timeout
         if context.elapsed() > self.config.max_thinking_time {
-            return Err(RragError::timeout("agent_processing", 
-                self.config.max_thinking_time.as_millis() as u64));
+            return Err(RragError::timeout(
+                "agent_processing",
+                self.config.max_thinking_time.as_millis() as u64,
+            ));
         }
 
         // For now, implement a simple processing logic
         // In production, this would integrate with rsllm for actual LLM calls
         let response = self.mock_llm_processing(&message, context).await?;
-        
+
         Ok(response)
     }
 
@@ -740,23 +755,29 @@ impl RragAgent {
         context: &mut AgentContext,
     ) -> RragResult<String> {
         // Simple pattern matching for demonstration
-        if message.to_lowercase().contains("calculate") || message.contains("+") || message.contains("-") {
+        if message.to_lowercase().contains("calculate")
+            || message.contains("+")
+            || message.contains("-")
+        {
             // Try to use calculator tool
             if let Some(calc_tool) = self.tools.get("calculator") {
                 let input = extract_calculation(message);
                 let start = Instant::now();
-                
+
                 match calc_tool.execute(&input).await {
                     Ok(result) => {
                         let duration = start.elapsed().as_millis() as u64;
                         let tool_call = ToolCall::new("calculator", input)
                             .with_result(result.clone(), duration);
                         context.add_tool_call(tool_call);
-                        
+
                         if result.success {
                             return Ok(format!("I calculated that for you: {}", result.output));
                         } else {
-                            return Ok(format!("I tried to calculate that but encountered an error: {}", result.output));
+                            return Ok(format!(
+                                "I tried to calculate that but encountered an error: {}",
+                                result.output
+                            ));
                         }
                     }
                     Err(e) => {
@@ -767,7 +788,10 @@ impl RragAgent {
         }
 
         // Default response
-        Ok(format!("I understand you said: '{}'. How can I help you further?", message))
+        Ok(format!(
+            "I understand you said: '{}'. How can I help you further?",
+            message
+        ))
     }
 
     /// Get agent configuration
@@ -847,6 +871,7 @@ pub struct AgentBuilder {
 }
 
 impl AgentBuilder {
+    /// Create a new agent builder with default configuration
     pub fn new() -> Self {
         Self {
             config: AgentConfig::default(),
@@ -857,70 +882,82 @@ impl AgentBuilder {
         }
     }
 
+    /// Set the agent name
     pub fn with_name(mut self, name: impl Into<String>) -> Self {
         self.config.name = name.into();
         self
     }
 
+    /// Set the model provider and name
     pub fn with_model(mut self, provider: impl Into<String>, model: impl Into<String>) -> Self {
         self.config.model_config.provider = provider.into();
         self.config.model_config.model = model.into();
         self
     }
 
+    /// Set the system prompt for the agent
     pub fn with_system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.config.system_prompt = Some(prompt.into());
         self
     }
 
+    /// Set the temperature for generation (0.0 to 2.0)
     pub fn with_temperature(mut self, temperature: f32) -> Self {
         self.config.temperature = temperature.clamp(0.0, 2.0);
         self
     }
 
+    /// Set multiple tools for the agent
     pub fn with_tools(mut self, tools: Vec<Arc<dyn Tool>>) -> Self {
         self.tools = tools;
         self
     }
 
+    /// Add a single tool to the agent
     pub fn with_tool(mut self, tool: Arc<dyn Tool>) -> Self {
         self.tools.push(tool);
         self
     }
 
+    /// Set memory for conversation history
     pub fn with_memory(mut self, memory: Arc<dyn Memory>) -> Self {
         self.memory = Some(memory);
         self
     }
 
+    /// Enable or disable verbose logging
     pub fn with_verbose(mut self, verbose: bool) -> Self {
         self.config.verbose = verbose;
         self
     }
 
+    /// Set maximum number of tool calls per turn
     pub fn with_max_tool_calls(mut self, max: usize) -> Self {
         self.config.max_tool_calls = max;
         self
     }
 
     #[cfg(feature = "rsllm-client")]
+    /// Set rsllm client for LLM integration
     pub fn with_rsllm_client(self, client: Arc<rsllm::Client>) -> Self {
         self.with_llm_client(client)
     }
 
     #[cfg(feature = "rsllm-client")]
+    /// Set LLM client directly
     pub fn with_llm_client(mut self, client: Arc<rsllm::Client>) -> Self {
         self.llm_client = Some(client);
         self
     }
 
+    /// Build the agent with current configuration
     pub fn build(self) -> RragResult<RragAgent> {
         // Validate configuration
         if self.config.temperature < 0.0 || self.config.temperature > 2.0 {
             return Err(RragError::validation(
-                "temperature", 
-                "0.0 to 2.0", 
-                self.config.temperature.to_string()
+                "temperature",
+                "0.0 to 2.0",
+                self.config.temperature.to_string(),
             ));
         }
 
@@ -951,7 +988,7 @@ impl Default for AgentBuilder {
 fn extract_calculation(message: &str) -> String {
     // Look for mathematical expressions
     let patterns = ["+", "-", "*", "/", "="];
-    
+
     for line in message.lines() {
         for pattern in &patterns {
             if line.contains(pattern) {
@@ -959,27 +996,29 @@ fn extract_calculation(message: &str) -> String {
                 let parts: Vec<&str> = line.split_whitespace().collect();
                 for window in parts.windows(3) {
                     if window.len() == 3 {
-                        if let (Ok(_), Ok(_)) = (window[0].parse::<f64>(), window[2].parse::<f64>()) {
+                        if let (Ok(_), Ok(_)) = (window[0].parse::<f64>(), window[2].parse::<f64>())
+                        {
                             if patterns.contains(&window[1]) {
                                 return format!("{}{}{}", window[0], window[1], window[2]);
                             }
                         }
                     }
                 }
-                
+
                 // Fallback: return the line that contains math
                 return line.trim().to_string();
             }
         }
     }
-    
+
     // Fallback: extract any numbers and operators
-    let math_chars: String = message.chars()
+    let math_chars: String = message
+        .chars()
         .filter(|c| c.is_ascii_digit() || "+-*/=. ".contains(*c))
         .collect::<String>()
         .trim()
         .to_string();
-        
+
     if !math_chars.is_empty() {
         math_chars
     } else {
@@ -999,7 +1038,7 @@ mod tests {
             .with_temperature(0.5)
             .build()
             .unwrap();
-        
+
         assert_eq!(agent.config().name, "Test Agent");
         assert_eq!(agent.config().temperature, 0.5);
     }
@@ -1010,7 +1049,7 @@ mod tests {
             .with_tool(Arc::new(Calculator))
             .build()
             .unwrap();
-        
+
         let response = agent.process_message("Calculate 2+2", None).await.unwrap();
         assert!(response.text.contains("calculated"));
         assert!(!response.tool_calls.is_empty());
@@ -1026,9 +1065,9 @@ mod tests {
     #[test]
     fn test_agent_config_validation() {
         let result = RragAgent::builder()
-            .with_temperature(3.0)  // Invalid temperature
+            .with_temperature(3.0) // Invalid temperature
             .build();
-        
+
         assert!(result.is_err());
         if let Err(RragError::Validation { field, .. }) = result {
             assert_eq!(field, "temperature");
@@ -1038,10 +1077,10 @@ mod tests {
     #[tokio::test]
     async fn test_agent_context() {
         let mut context = AgentContext::new("test-conversation");
-        
+
         let tool_call = ToolCall::new("test_tool", "test_input");
         context.add_tool_call(tool_call);
-        
+
         assert_eq!(context.tool_calls.len(), 1);
         assert_eq!(context.conversation_id, "test-conversation");
     }

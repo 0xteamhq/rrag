@@ -1,10 +1,10 @@
 //! # Incremental Indexing System for RRAG
-//! 
+//!
 //! This module provides a comprehensive incremental indexing system that allows
 //! efficient document updates in production RAG systems without requiring full re-indexing.
-//! 
+//!
 //! ## Key Features
-//! 
+//!
 //! - **Incremental Operations**: Add, update, delete operations without full rebuilds
 //! - **Change Detection**: Efficient delta processing and conflict resolution  
 //! - **Vector Index Updates**: Smart vector index management without full rebuilds
@@ -13,9 +13,9 @@
 //! - **Consistency Checks**: Index consistency and integrity verification
 //! - **Rollback Support**: Complete rollback capabilities for failed operations
 //! - **Performance Monitoring**: Comprehensive metrics and performance tracking
-//! 
+//!
 //! ## Architecture Overview
-//! 
+//!
 //! ```text
 //! ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
 //! │   Change Detection  │────│   Index Manager     │────│   Vector Store      │
@@ -30,54 +30,52 @@
 //! └─────────────────────┘    └─────────────────────┘    └─────────────────────┘
 //! ```
 
+pub mod batch_processor;
 pub mod change_detection;
 pub mod index_manager;
-pub mod batch_processor;
-pub mod versioning;
-pub mod rollback;
 pub mod integrity;
-pub mod vector_updates;
 pub mod monitoring;
+pub mod rollback;
+pub mod vector_updates;
+pub mod versioning;
 
 // Re-exports for convenience
 pub use change_detection::{
-    ChangeDetector, ChangeResult, ChangeType, DocumentChange, 
-    ContentDelta, ChangeDetectionConfig
+    ChangeDetectionConfig, ChangeDetector, ChangeResult, ChangeType, ContentDelta, DocumentChange,
 };
 
 pub use index_manager::{
-    IncrementalIndexManager, IndexOperation, IndexUpdate, 
-    UpdateResult, ConflictResolution, IndexManagerConfig
+    ConflictResolution, IncrementalIndexManager, IndexManagerConfig, IndexOperation, IndexUpdate,
+    UpdateResult,
 };
 
 pub use batch_processor::{
-    BatchProcessor, BatchOperation, BatchConfig, BatchResult,
-    BatchProcessingStats, BatchExecutor, QueueManager
+    BatchConfig, BatchExecutor, BatchOperation, BatchProcessingStats, BatchProcessor, BatchResult,
+    QueueManager,
 };
 
 pub use versioning::{
-    DocumentVersion, VersionManager, VersionConflict, 
-    VersionResolution, VersioningConfig, VersionHistory
+    DocumentVersion, VersionConflict, VersionHistory, VersionManager, VersionResolution,
+    VersioningConfig,
 };
 
 pub use rollback::{
-    RollbackManager, RollbackOperation, RollbackPoint, 
-    RecoveryResult, RollbackConfig, OperationLog
+    OperationLog, RecoveryResult, RollbackConfig, RollbackManager, RollbackOperation, RollbackPoint,
 };
 
 pub use integrity::{
-    IntegrityChecker, ConsistencyReport, IntegrityError,
-    ValidationResult, IntegrityConfig, HealthMetrics
+    ConsistencyReport, HealthMetrics, IntegrityChecker, IntegrityConfig, IntegrityError,
+    ValidationResult,
 };
 
 pub use vector_updates::{
-    VectorUpdateManager, VectorOperation, EmbeddingUpdate,
-    VectorBatch, VectorUpdateConfig, IndexUpdateStrategy
+    EmbeddingUpdate, IndexUpdateStrategy, VectorBatch, VectorOperation, VectorUpdateConfig,
+    VectorUpdateManager,
 };
 
 pub use monitoring::{
-    IncrementalMetrics, PerformanceTracker, IndexingStats,
-    MonitoringConfig, AlertConfig, MetricsCollector
+    AlertConfig, IncrementalMetrics, IndexingStats, MetricsCollector, MonitoringConfig,
+    PerformanceTracker,
 };
 
 use crate::RragResult;
@@ -90,28 +88,28 @@ use tokio::sync::RwLock;
 pub struct IncrementalIndexingService {
     /// Change detection system
     change_detector: Arc<ChangeDetector>,
-    
+
     /// Index management system
     index_manager: Arc<IncrementalIndexManager>,
-    
+
     /// Batch processing system
     batch_processor: Arc<BatchProcessor>,
-    
+
     /// Version management system
     version_manager: Arc<VersionManager>,
-    
+
     /// Rollback management system
     rollback_manager: Arc<RollbackManager>,
-    
+
     /// Integrity checking system
     integrity_checker: Arc<IntegrityChecker>,
-    
+
     /// Vector update system
     vector_manager: Arc<VectorUpdateManager>,
-    
+
     /// Performance monitoring
     metrics: Arc<RwLock<IncrementalMetrics>>,
-    
+
     /// Service configuration
     config: IncrementalServiceConfig,
 }
@@ -121,37 +119,37 @@ pub struct IncrementalIndexingService {
 pub struct IncrementalServiceConfig {
     /// Enable automatic change detection
     pub auto_change_detection: bool,
-    
+
     /// Enable batch processing optimization
     pub enable_batch_processing: bool,
-    
+
     /// Enable version conflict resolution
     pub enable_version_resolution: bool,
-    
+
     /// Enable automatic integrity checks
     pub auto_integrity_checks: bool,
-    
+
     /// Enable rollback capabilities
     pub enable_rollback: bool,
-    
+
     /// Enable performance monitoring
     pub enable_monitoring: bool,
-    
+
     /// Maximum batch size for operations
     pub max_batch_size: usize,
-    
+
     /// Batch timeout in milliseconds
     pub batch_timeout_ms: u64,
-    
+
     /// Maximum concurrent operations
     pub max_concurrent_ops: usize,
-    
+
     /// Integrity check interval in seconds
     pub integrity_check_interval_secs: u64,
-    
+
     /// Enable metrics collection
     pub collect_metrics: bool,
-    
+
     /// Performance optimization settings
     pub optimization: OptimizationConfig,
 }
@@ -161,19 +159,19 @@ pub struct IncrementalServiceConfig {
 pub struct OptimizationConfig {
     /// Enable vector index optimization
     pub optimize_vector_index: bool,
-    
+
     /// Enable smart conflict resolution
     pub smart_conflict_resolution: bool,
-    
+
     /// Enable predictive prefetching
     pub enable_prefetching: bool,
-    
+
     /// Enable compression for storage
     pub enable_compression: bool,
-    
+
     /// Memory pool size for operations
     pub memory_pool_size: usize,
-    
+
     /// Enable parallel processing
     pub enable_parallel_processing: bool,
 }
@@ -271,33 +269,22 @@ impl IncrementalIndexingService {
     /// Create a new incremental indexing service
     pub async fn new(config: IncrementalServiceConfig) -> RragResult<Self> {
         // Initialize all components with their respective configurations
-        let change_detector = Arc::new(ChangeDetector::new(
-            ChangeDetectionConfig::default()
-        ).await?);
+        let change_detector =
+            Arc::new(ChangeDetector::new(ChangeDetectionConfig::default()).await?);
 
-        let index_manager = Arc::new(IncrementalIndexManager::new(
-            IndexManagerConfig::default()
-        ).await?);
+        let index_manager =
+            Arc::new(IncrementalIndexManager::new(IndexManagerConfig::default()).await?);
 
-        let batch_processor = Arc::new(BatchProcessor::new(
-            BatchConfig::default()
-        ).await?);
+        let batch_processor = Arc::new(BatchProcessor::new(BatchConfig::default()).await?);
 
-        let version_manager = Arc::new(VersionManager::new(
-            VersioningConfig::default()
-        ).await?);
+        let version_manager = Arc::new(VersionManager::new(VersioningConfig::default()).await?);
 
-        let rollback_manager = Arc::new(RollbackManager::new(
-            RollbackConfig::default()
-        ).await?);
+        let rollback_manager = Arc::new(RollbackManager::new(RollbackConfig::default()).await?);
 
-        let integrity_checker = Arc::new(IntegrityChecker::new(
-            IntegrityConfig::default()
-        ).await?);
+        let integrity_checker = Arc::new(IntegrityChecker::new(IntegrityConfig::default()).await?);
 
-        let vector_manager = Arc::new(VectorUpdateManager::new(
-            VectorUpdateConfig::default()
-        ).await?);
+        let vector_manager =
+            Arc::new(VectorUpdateManager::new(VectorUpdateConfig::default()).await?);
 
         let metrics = Arc::new(RwLock::new(IncrementalMetrics::new()));
 
@@ -322,21 +309,35 @@ impl IncrementalIndexingService {
     /// Perform health check on all components
     pub async fn health_check(&self) -> RragResult<HashMap<String, bool>> {
         let mut health_status = HashMap::new();
-        
-        health_status.insert("change_detector".to_string(), 
-            self.change_detector.health_check().await?);
-        health_status.insert("index_manager".to_string(), 
-            self.index_manager.health_check().await?);
-        health_status.insert("batch_processor".to_string(), 
-            self.batch_processor.health_check().await?);
-        health_status.insert("version_manager".to_string(), 
-            self.version_manager.health_check().await?);
-        health_status.insert("rollback_manager".to_string(), 
-            self.rollback_manager.health_check().await?);
-        health_status.insert("integrity_checker".to_string(), 
-            self.integrity_checker.health_check().await?);
-        health_status.insert("vector_manager".to_string(), 
-            self.vector_manager.health_check().await?);
+
+        health_status.insert(
+            "change_detector".to_string(),
+            self.change_detector.health_check().await?,
+        );
+        health_status.insert(
+            "index_manager".to_string(),
+            self.index_manager.health_check().await?,
+        );
+        health_status.insert(
+            "batch_processor".to_string(),
+            self.batch_processor.health_check().await?,
+        );
+        health_status.insert(
+            "version_manager".to_string(),
+            self.version_manager.health_check().await?,
+        );
+        health_status.insert(
+            "rollback_manager".to_string(),
+            self.rollback_manager.health_check().await?,
+        );
+        health_status.insert(
+            "integrity_checker".to_string(),
+            self.integrity_checker.health_check().await?,
+        );
+        health_status.insert(
+            "vector_manager".to_string(),
+            self.vector_manager.health_check().await?,
+        );
 
         Ok(health_status)
     }
@@ -378,7 +379,7 @@ mod tests {
     async fn test_service_creation() {
         let config = IncrementalServiceConfig::default();
         let service = IncrementalIndexingService::new(config).await.unwrap();
-        
+
         assert!(service.config.auto_change_detection);
         assert!(service.config.enable_batch_processing);
         assert!(service.config.enable_version_resolution);
@@ -388,7 +389,7 @@ mod tests {
     async fn test_health_check() {
         let service = IncrementalServiceBuilder::new().build().await.unwrap();
         let health = service.health_check().await.unwrap();
-        
+
         assert!(health.len() >= 7); // All components should report health
         assert!(health.values().all(|&healthy| healthy)); // All should be healthy initially
     }

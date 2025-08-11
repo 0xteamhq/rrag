@@ -1,15 +1,15 @@
 //! # Alerting System
-//! 
+//!
 //! Intelligent alerting with threshold monitoring, notification channels,
 //! and automated response capabilities for RRAG system health.
 
+use super::metrics::{Metric, MetricValue, MetricsCollector};
 use crate::{RragError, RragResult};
-use super::metrics::{MetricsCollector, Metric, MetricValue};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Alerting configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,14 +31,12 @@ impl Default for AlertConfig {
             enabled: true,
             evaluation_interval_seconds: 30,
             alert_buffer_size: 1000,
-            notification_channels: vec![
-                NotificationChannelConfig {
-                    name: "console".to_string(),
-                    channel_type: NotificationChannelType::Console,
-                    enabled: true,
-                    config: HashMap::new(),
-                }
-            ],
+            notification_channels: vec![NotificationChannelConfig {
+                name: "console".to_string(),
+                channel_type: NotificationChannelType::Console,
+                enabled: true,
+                config: HashMap::new(),
+            }],
             default_severity: AlertSeverity::Medium,
             alert_grouping_enabled: true,
             alert_grouping_window_minutes: 5,
@@ -334,7 +332,9 @@ impl NotificationChannel for WebhookNotificationChannel {
                 request = request.header(key, value);
             }
 
-            request.send().await
+            request
+                .send()
+                .await
                 .map_err(|e| RragError::network("webhook_notification", Box::new(e)))?
                 .error_for_status()
                 .map_err(|e| RragError::network("webhook_notification", Box::new(e)))?;
@@ -343,7 +343,10 @@ impl NotificationChannel for WebhookNotificationChannel {
         }
         #[cfg(not(feature = "http"))]
         {
-            tracing::warn!("HTTP feature not enabled, webhook notification to {} skipped", self.url);
+            tracing::warn!(
+                "HTTP feature not enabled, webhook notification to {} skipped",
+                self.url
+            );
             Ok(())
         }
     }
@@ -387,9 +390,9 @@ impl AlertEvaluator {
     pub async fn update_metric(&self, metric_name: String, value: f64) {
         let mut history = self.metrics_history.write().await;
         let entry = history.entry(metric_name).or_insert_with(Vec::new);
-        
+
         entry.push((Utc::now(), value));
-        
+
         // Keep only recent data
         if entry.len() > self.max_history_size {
             entry.drain(0..entry.len() - self.max_history_size);
@@ -398,18 +401,40 @@ impl AlertEvaluator {
 
     pub async fn evaluate_condition(&self, condition: &AlertCondition) -> RragResult<bool> {
         match condition {
-            AlertCondition::Threshold { metric_name, operator, value, duration_minutes } => {
-                self.evaluate_threshold(metric_name, operator, *value, *duration_minutes).await
-            },
-            AlertCondition::RateOfChange { metric_name, operator, rate_per_minute, window_minutes } => {
-                self.evaluate_rate_of_change(metric_name, operator, *rate_per_minute, *window_minutes).await
-            },
-            AlertCondition::Anomaly { metric_name, sensitivity, baseline_minutes } => {
-                self.evaluate_anomaly(metric_name, *sensitivity, *baseline_minutes).await
-            },
+            AlertCondition::Threshold {
+                metric_name,
+                operator,
+                value,
+                duration_minutes,
+            } => {
+                self.evaluate_threshold(metric_name, operator, *value, *duration_minutes)
+                    .await
+            }
+            AlertCondition::RateOfChange {
+                metric_name,
+                operator,
+                rate_per_minute,
+                window_minutes,
+            } => {
+                self.evaluate_rate_of_change(
+                    metric_name,
+                    operator,
+                    *rate_per_minute,
+                    *window_minutes,
+                )
+                .await
+            }
+            AlertCondition::Anomaly {
+                metric_name,
+                sensitivity,
+                baseline_minutes,
+            } => {
+                self.evaluate_anomaly(metric_name, *sensitivity, *baseline_minutes)
+                    .await
+            }
             AlertCondition::Composite { conditions, logic } => {
                 self.evaluate_composite(conditions, logic).await
-            },
+            }
         }
     }
 
@@ -421,15 +446,20 @@ impl AlertEvaluator {
         duration_minutes: u32,
     ) -> RragResult<bool> {
         let history = self.metrics_history.read().await;
-        let values = history.get(metric_name)
-            .ok_or_else(|| RragError::agent("alert_evaluator", format!("Metric not found: {}", metric_name)))?;
+        let values = history.get(metric_name).ok_or_else(|| {
+            RragError::agent(
+                "alert_evaluator",
+                format!("Metric not found: {}", metric_name),
+            )
+        })?;
 
         if values.is_empty() {
             return Ok(false);
         }
 
         let cutoff_time = Utc::now() - Duration::minutes(duration_minutes as i64);
-        let recent_values: Vec<_> = values.iter()
+        let recent_values: Vec<_> = values
+            .iter()
             .filter(|(timestamp, _)| *timestamp >= cutoff_time)
             .map(|(_, value)| *value)
             .collect();
@@ -439,15 +469,13 @@ impl AlertEvaluator {
         }
 
         // All values in the duration must satisfy the condition
-        Ok(recent_values.iter().all(|&value| {
-            match operator {
-                ComparisonOperator::GreaterThan => value > threshold,
-                ComparisonOperator::LessThan => value < threshold,
-                ComparisonOperator::GreaterThanOrEqual => value >= threshold,
-                ComparisonOperator::LessThanOrEqual => value <= threshold,
-                ComparisonOperator::Equal => (value - threshold).abs() < f64::EPSILON,
-                ComparisonOperator::NotEqual => (value - threshold).abs() >= f64::EPSILON,
-            }
+        Ok(recent_values.iter().all(|&value| match operator {
+            ComparisonOperator::GreaterThan => value > threshold,
+            ComparisonOperator::LessThan => value < threshold,
+            ComparisonOperator::GreaterThanOrEqual => value >= threshold,
+            ComparisonOperator::LessThanOrEqual => value <= threshold,
+            ComparisonOperator::Equal => (value - threshold).abs() < f64::EPSILON,
+            ComparisonOperator::NotEqual => (value - threshold).abs() >= f64::EPSILON,
         }))
     }
 
@@ -459,15 +487,20 @@ impl AlertEvaluator {
         window_minutes: u32,
     ) -> RragResult<bool> {
         let history = self.metrics_history.read().await;
-        let values = history.get(metric_name)
-            .ok_or_else(|| RragError::agent("alert_evaluator", format!("Metric not found: {}", metric_name)))?;
+        let values = history.get(metric_name).ok_or_else(|| {
+            RragError::agent(
+                "alert_evaluator",
+                format!("Metric not found: {}", metric_name),
+            )
+        })?;
 
         if values.len() < 2 {
             return Ok(false);
         }
 
         let cutoff_time = Utc::now() - Duration::minutes(window_minutes as i64);
-        let recent_values: Vec<_> = values.iter()
+        let recent_values: Vec<_> = values
+            .iter()
             .filter(|(timestamp, _)| *timestamp >= cutoff_time)
             .collect();
 
@@ -502,15 +535,20 @@ impl AlertEvaluator {
         baseline_minutes: u32,
     ) -> RragResult<bool> {
         let history = self.metrics_history.read().await;
-        let values = history.get(metric_name)
-            .ok_or_else(|| RragError::agent("alert_evaluator", format!("Metric not found: {}", metric_name)))?;
+        let values = history.get(metric_name).ok_or_else(|| {
+            RragError::agent(
+                "alert_evaluator",
+                format!("Metric not found: {}", metric_name),
+            )
+        })?;
 
         if values.len() < 10 {
             return Ok(false); // Need sufficient data for anomaly detection
         }
 
         let cutoff_time = Utc::now() - Duration::minutes(baseline_minutes as i64);
-        let baseline_values: Vec<f64> = values.iter()
+        let baseline_values: Vec<f64> = values
+            .iter()
             .filter(|(timestamp, _)| *timestamp >= cutoff_time)
             .map(|(_, value)| *value)
             .collect();
@@ -521,9 +559,11 @@ impl AlertEvaluator {
 
         // Simple anomaly detection using standard deviation
         let mean = baseline_values.iter().sum::<f64>() / baseline_values.len() as f64;
-        let variance = baseline_values.iter()
+        let variance = baseline_values
+            .iter()
             .map(|value| (value - mean).powi(2))
-            .sum::<f64>() / baseline_values.len() as f64;
+            .sum::<f64>()
+            / baseline_values.len() as f64;
         let std_dev = variance.sqrt();
 
         let current_value = values.last().unwrap().1;
@@ -540,19 +580,45 @@ impl AlertEvaluator {
         let mut results = Vec::new();
         for condition in conditions {
             let result = match condition {
-                AlertCondition::Threshold { metric_name, operator, value, duration_minutes } => {
-                    self.evaluate_threshold(metric_name, operator, *value, *duration_minutes).await?
-                },
-                AlertCondition::RateOfChange { metric_name, operator, rate_per_minute, window_minutes } => {
-                    self.evaluate_rate_of_change(metric_name, operator, *rate_per_minute, *window_minutes).await?
-                },
-                AlertCondition::Anomaly { metric_name, sensitivity, baseline_minutes } => {
-                    self.evaluate_anomaly(metric_name, *sensitivity, *baseline_minutes).await?
-                },
+                AlertCondition::Threshold {
+                    metric_name,
+                    operator,
+                    value,
+                    duration_minutes,
+                } => {
+                    self.evaluate_threshold(metric_name, operator, *value, *duration_minutes)
+                        .await?
+                }
+                AlertCondition::RateOfChange {
+                    metric_name,
+                    operator,
+                    rate_per_minute,
+                    window_minutes,
+                } => {
+                    self.evaluate_rate_of_change(
+                        metric_name,
+                        operator,
+                        *rate_per_minute,
+                        *window_minutes,
+                    )
+                    .await?
+                }
+                AlertCondition::Anomaly {
+                    metric_name,
+                    sensitivity,
+                    baseline_minutes,
+                } => {
+                    self.evaluate_anomaly(metric_name, *sensitivity, *baseline_minutes)
+                        .await?
+                }
                 AlertCondition::Composite { .. } => {
                     // Prevent infinite recursion by limiting depth
-                    return Err(RragError::config("alert_condition", "non-nested composite", "nested composite"));
-                },
+                    return Err(RragError::config(
+                        "alert_condition",
+                        "non-nested composite",
+                        "nested composite",
+                    ));
+                }
             };
             results.push(result);
         }
@@ -577,7 +643,10 @@ pub struct AlertManager {
 }
 
 impl AlertManager {
-    pub async fn new(config: AlertConfig, metrics_collector: Arc<MetricsCollector>) -> RragResult<Self> {
+    pub async fn new(
+        config: AlertConfig,
+        metrics_collector: Arc<MetricsCollector>,
+    ) -> RragResult<Self> {
         let manager = Self {
             config: config.clone(),
             metrics_collector,
@@ -591,7 +660,7 @@ impl AlertManager {
 
         // Initialize default notification channels
         manager.setup_notification_channels().await?;
-        
+
         // Add default alert rules
         manager.setup_default_rules().await?;
 
@@ -600,7 +669,7 @@ impl AlertManager {
 
     async fn setup_notification_channels(&self) -> RragResult<()> {
         let mut channels = self.notification_channels.write().await;
-        
+
         for channel_config in &self.config.notification_channels {
             if !channel_config.enabled {
                 continue;
@@ -609,11 +678,12 @@ impl AlertManager {
             let channel: Box<dyn NotificationChannel> = match channel_config.channel_type {
                 NotificationChannelType::Console => {
                     Box::new(ConsoleNotificationChannel::new(&channel_config.name))
-                },
+                }
                 NotificationChannelType::Webhook => {
                     if let Some(url) = channel_config.config.get("url") {
-                        let mut webhook = WebhookNotificationChannel::new(&channel_config.name, url);
-                        
+                        let mut webhook =
+                            WebhookNotificationChannel::new(&channel_config.name, url);
+
                         // Add any custom headers
                         for (key, value) in &channel_config.config {
                             if key.starts_with("header_") {
@@ -621,14 +691,17 @@ impl AlertManager {
                                 webhook = webhook.with_header(header_name, value);
                             }
                         }
-                        
+
                         Box::new(webhook)
                     } else {
                         return Err(RragError::config("webhook_channel", "url", "missing"));
                     }
-                },
+                }
                 _ => {
-                    tracing::warn!("Notification channel type {:?} not yet implemented", channel_config.channel_type);
+                    tracing::warn!(
+                        "Notification channel type {:?} not yet implemented",
+                        channel_config.channel_type
+                    );
                     continue;
                 }
             };
@@ -653,7 +726,8 @@ impl AlertManager {
                 duration_minutes: 5,
             },
             AlertSeverity::High,
-        ).with_description("CPU usage is above 80% for more than 5 minutes");
+        )
+        .with_description("CPU usage is above 80% for more than 5 minutes");
 
         // High memory usage alert
         let memory_rule = AlertRule::new(
@@ -666,7 +740,8 @@ impl AlertManager {
                 duration_minutes: 5,
             },
             AlertSeverity::High,
-        ).with_description("Memory usage is above 85% for more than 5 minutes");
+        )
+        .with_description("Memory usage is above 85% for more than 5 minutes");
 
         // High error rate alert
         let error_rate_rule = AlertRule::new(
@@ -679,7 +754,8 @@ impl AlertManager {
                 window_minutes: 10,
             },
             AlertSeverity::Critical,
-        ).with_description("Error rate is increasing rapidly");
+        )
+        .with_description("Error rate is increasing rapidly");
 
         // Slow response time alert
         let slow_response_rule = AlertRule::new(
@@ -692,7 +768,8 @@ impl AlertManager {
                 duration_minutes: 3,
             },
             AlertSeverity::Medium,
-        ).with_description("Search response time is above 1 second");
+        )
+        .with_description("Search response time is above 1 second");
 
         rules.insert("high_cpu_usage".to_string(), cpu_rule);
         rules.insert("high_memory_usage".to_string(), memory_rule);
@@ -705,7 +782,11 @@ impl AlertManager {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("alert_manager", "stopped", "already running"));
+            return Err(RragError::config(
+                "alert_manager",
+                "stopped",
+                "already running",
+            ));
         }
 
         let handle = self.start_evaluation_loop().await?;
@@ -751,9 +832,9 @@ impl AlertManager {
         let is_running = self.is_running.clone();
 
         let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.evaluation_interval_seconds)
-            );
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.evaluation_interval_seconds,
+            ));
 
             while *is_running.read().await {
                 interval.tick().await;
@@ -781,16 +862,18 @@ impl AlertManager {
                                     rule,
                                     &active_alerts,
                                     &notification_channels,
-                                ).await;
+                                )
+                                .await;
                             } else {
                                 Self::handle_alert_resolved(
                                     rule_id,
                                     rule,
                                     &active_alerts,
                                     &notification_channels,
-                                ).await;
+                                )
+                                .await;
                             }
-                        },
+                        }
                         Err(e) => {
                             tracing::error!("Failed to evaluate alert rule {}: {}", rule_id, e);
                         }
@@ -813,14 +896,14 @@ impl AlertManager {
                 } else {
                     Some(0.0)
                 }
-            },
+            }
             MetricValue::Summary { sum, count, .. } => {
                 if *count > 0 {
                     Some(sum / *count as f64)
                 } else {
                     Some(0.0)
                 }
-            },
+            }
         }
     }
 
@@ -831,7 +914,7 @@ impl AlertManager {
         notification_channels: &Arc<RwLock<HashMap<String, Box<dyn NotificationChannel>>>>,
     ) {
         let mut alerts = active_alerts.write().await;
-        
+
         // Check if alert is already active (within cooldown)
         if let Some(existing_alert) = alerts.get(rule_id) {
             let cooldown_duration = Duration::minutes(rule.cooldown_minutes as i64);
@@ -877,7 +960,7 @@ impl AlertManager {
         notification_channels: &Arc<RwLock<HashMap<String, Box<dyn NotificationChannel>>>>,
     ) {
         let mut alerts = active_alerts.write().await;
-        
+
         if let Some(mut alert) = alerts.remove(rule_id) {
             if rule.auto_resolve && alert.status == AlertStatus::Triggered {
                 alert.status = AlertStatus::Resolved;
@@ -891,7 +974,11 @@ impl AlertManager {
                 for channel_name in &rule.notification_channels {
                     if let Some(channel) = channels.get(channel_name) {
                         if let Err(e) = channel.send_notification(&alert).await {
-                            tracing::error!("Failed to send resolution notification via {}: {}", channel_name, e);
+                            tracing::error!(
+                                "Failed to send resolution notification via {}: {}",
+                                channel_name,
+                                e
+                            );
                         }
                     }
                 }
@@ -908,21 +995,25 @@ impl AlertManager {
     pub async fn remove_alert_rule(&self, rule_id: &str) -> RragResult<()> {
         let mut rules = self.alert_rules.write().await;
         rules.remove(rule_id);
-        
+
         // Also remove any active alerts for this rule
         let mut alerts = self.active_alerts.write().await;
         alerts.remove(rule_id);
-        
+
         Ok(())
     }
 
-    pub async fn acknowledge_alert(&self, rule_id: &str, acknowledged_by: impl Into<String>) -> RragResult<()> {
+    pub async fn acknowledge_alert(
+        &self,
+        rule_id: &str,
+        acknowledged_by: impl Into<String>,
+    ) -> RragResult<()> {
         let mut alerts = self.active_alerts.write().await;
         if let Some(alert) = alerts.get_mut(rule_id) {
             alert.status = AlertStatus::Acknowledged;
             alert.acknowledged_at = Some(Utc::now());
             alert.acknowledged_by = Some(acknowledged_by.into());
-            
+
             tracing::info!("Alert {} acknowledged", rule_id);
         }
         Ok(())
@@ -941,19 +1032,17 @@ impl AlertManager {
     pub async fn get_alert_stats(&self) -> AlertStats {
         let alerts = self.active_alerts.read().await;
         let rules = self.alert_rules.read().await;
-        
-        let total_alerts = alerts.len();
-        let by_severity = alerts.values()
-            .fold(HashMap::new(), |mut acc, alert| {
-                *acc.entry(alert.severity).or_insert(0) += 1;
-                acc
-            });
 
-        let by_status = alerts.values()
-            .fold(HashMap::new(), |mut acc, alert| {
-                *acc.entry(alert.status.clone()).or_insert(0) += 1;
-                acc
-            });
+        let total_alerts = alerts.len();
+        let by_severity = alerts.values().fold(HashMap::new(), |mut acc, alert| {
+            *acc.entry(alert.severity).or_insert(0) += 1;
+            acc
+        });
+
+        let by_status = alerts.values().fold(HashMap::new(), |mut acc, alert| {
+            *acc.entry(alert.status.clone()).or_insert(0) += 1;
+            acc
+        });
 
         AlertStats {
             total_active_alerts: total_alerts,
@@ -981,7 +1070,11 @@ mod tests {
     use crate::observability::metrics::MetricsConfig;
 
     async fn create_test_metrics_collector() -> Arc<MetricsCollector> {
-        Arc::new(MetricsCollector::new(MetricsConfig::default()).await.unwrap())
+        Arc::new(
+            MetricsCollector::new(MetricsConfig::default())
+                .await
+                .unwrap(),
+        )
     }
 
     #[tokio::test]
@@ -1055,9 +1148,10 @@ mod tests {
                 duration_minutes: 5,
             },
             AlertSeverity::High,
-        ).with_description("Test alert rule description")
-         .with_tag("component", "test")
-         .with_cooldown(10);
+        )
+        .with_description("Test alert rule description")
+        .with_tag("component", "test")
+        .with_cooldown(10);
 
         assert_eq!(rule.id, "test_rule");
         assert_eq!(rule.name, "Test Alert Rule");
@@ -1112,8 +1206,14 @@ mod tests {
 
     #[test]
     fn test_comparison_operators() {
-        assert_eq!(ComparisonOperator::GreaterThan, ComparisonOperator::GreaterThan);
-        assert_ne!(ComparisonOperator::GreaterThan, ComparisonOperator::LessThan);
+        assert_eq!(
+            ComparisonOperator::GreaterThan,
+            ComparisonOperator::GreaterThan
+        );
+        assert_ne!(
+            ComparisonOperator::GreaterThan,
+            ComparisonOperator::LessThan
+        );
     }
 
     #[tokio::test]
@@ -1144,12 +1244,21 @@ mod tests {
             alerts.insert("test_rule".to_string(), alert);
         }
 
-        manager.acknowledge_alert("test_rule", "test_user").await.unwrap();
+        manager
+            .acknowledge_alert("test_rule", "test_user")
+            .await
+            .unwrap();
 
         let active_alerts = manager.get_active_alerts().await;
-        let acknowledged_alert = active_alerts.iter().find(|a| a.rule_id == "test_rule").unwrap();
+        let acknowledged_alert = active_alerts
+            .iter()
+            .find(|a| a.rule_id == "test_rule")
+            .unwrap();
         assert_eq!(acknowledged_alert.status, AlertStatus::Acknowledged);
         assert!(acknowledged_alert.acknowledged_at.is_some());
-        assert_eq!(acknowledged_alert.acknowledged_by.as_ref().unwrap(), "test_user");
+        assert_eq!(
+            acknowledged_alert.acknowledged_by.as_ref().unwrap(),
+            "test_user"
+        );
     }
 }

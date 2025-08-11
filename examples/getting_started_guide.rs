@@ -1,22 +1,23 @@
 //! # RRAG Getting Started Guide
-//! 
+//!
 //! This comprehensive guide walks you through RRAG from basic setup to advanced features:
 //! - Quick start with minimal setup
 //! - Step-by-step tutorial with explanations
 //! - Common patterns and best practices
 //! - Troubleshooting and optimization tips
 //! - Next steps for production deployment
-//! 
+//!
 //! Run with: `cargo run --bin getting_started_guide`
 
 use rrag::prelude::*;
+use std::collections::HashMap;
 use std::time::Instant;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
     println!("📚 RRAG Framework - Getting Started Guide");
     println!("=========================================\n");
-    
+
     println!("Welcome to RRAG (Rust RAG Framework)! This guide will walk you through");
     println!("the key concepts and help you build your first RAG application.\n");
 
@@ -111,9 +112,7 @@ async fn quick_start_tutorial() -> RragResult<RragSystem> {
     println!();
 
     // Actually build the system
-    let system = RragSystemBuilder::new()
-        .build()
-        .await?;
+    let system = RragSystemBuilder::new().build().await?;
 
     println!("✅ System created successfully!");
     println!();
@@ -138,15 +137,21 @@ async fn quick_start_tutorial() -> RragResult<RragSystem> {
     // Process and index documents
     let start_time = Instant::now();
     for (i, doc_text) in documents.iter().enumerate() {
-        let document = Document::new(doc_text.to_string())
-            .with_id(format!("doc_{}", i))
-            .with_metadata([("topic".to_string(), "AI/ML".to_string())].iter().cloned().collect());
-        
-        system.add_document(document).await?;
+        let document = Document::with_id(format!("doc_{}", i), doc_text.to_string())
+            .with_metadata_map(HashMap::from([(
+                "topic".to_string(),
+                serde_json::Value::String("AI/ML".to_string()),
+            )]));
+
+        system.process_document(document).await?;
     }
     let processing_time = start_time.elapsed();
 
-    println!("✅ Added {} documents in {:.2}ms", documents.len(), processing_time.as_millis());
+    println!(
+        "✅ Added {} documents in {:.2}ms",
+        documents.len(),
+        processing_time.as_millis()
+    );
     println!();
 
     println!("3. Perform your first search:");
@@ -155,21 +160,25 @@ async fn quick_start_tutorial() -> RragResult<RragSystem> {
     println!("```");
     println!();
 
-    let results = system.search("neural networks", Some(3)).await?;
-    
+    let results = system
+        .search("neural networks".to_string(), Some(3))
+        .await?;
+
     println!("📊 Search Results:");
-    for (i, result) in results.iter().enumerate() {
-        println!("  {}. Score: {:.3} - {}", 
-                i + 1, 
-                result.score, 
-                result.content.chars().take(60).collect::<String>() + "...");
+    for (i, result) in results.results.iter().enumerate() {
+        println!(
+            "  {}. Score: {:.3} - {}",
+            i + 1,
+            result.score,
+            result.content.chars().take(60).collect::<String>() + "..."
+        );
     }
     println!();
 
     Ok(system)
 }
 
-async fn document_processing_tutorial(system: &RragSystem) -> RragResult<()> {
+async fn document_processing_tutorial(_system: &RragSystem) -> RragResult<()> {
     println!("RRAG provides powerful document processing capabilities:");
     println!();
 
@@ -206,14 +215,17 @@ async fn document_processing_tutorial(system: &RragSystem) -> RragResult<()> {
 
     println!("Example: Chunking a longer document");
     println!("Original length: {} characters", long_document.len());
-    
+
     // Simulate chunking (in a real implementation, you'd use the actual chunker)
     let chunks = simulate_chunking(long_document, 100);
     println!("Number of chunks: {}", chunks.len());
-    
+
     for (i, chunk) in chunks.iter().enumerate() {
-        println!("  Chunk {}: {}...", i + 1, 
-                chunk.chars().take(50).collect::<String>());
+        println!(
+            "  Chunk {}: {}...",
+            i + 1,
+            chunk.chars().take(50).collect::<String>()
+        );
     }
     println!();
 
@@ -236,12 +248,16 @@ async fn advanced_search_tutorial(system: &RragSystem) -> RragResult<()> {
     println!();
 
     println!("1. Similarity Search:");
-    let similarity_results = system.search("artificial intelligence", Some(2)).await?;
+    let similarity_results = system
+        .search("artificial intelligence".to_string(), Some(2))
+        .await?;
     println!("Query: 'artificial intelligence'");
-    for result in similarity_results {
-        println!("  • Score: {:.3} - {}", 
-                result.score, 
-                result.content.chars().take(60).collect::<String>() + "...");
+    for result in similarity_results.results {
+        println!(
+            "  • Score: {:.3} - {}",
+            result.score,
+            result.content.chars().take(60).collect::<String>() + "..."
+        );
     }
     println!();
 
@@ -274,7 +290,7 @@ async fn advanced_search_tutorial(system: &RragSystem) -> RragResult<()> {
     println!("        .include_text(true)");
     println!("        .include_images(true)");
     println!("        .include_tables(true)");
-    println!()).await?;");
+    println!(").await?;");
     println!("```");
     println!();
 
@@ -310,7 +326,9 @@ async fn query_enhancement_tutorial() -> RragResult<()> {
     println!("```rust");
     println!("// Generate hypothetical answer and search with it");
     println!("let hyde_generator = HyDEGenerator::new();");
-    println!("let hypothetical = hyde_generator.generate(\"How does photosynthesis work?\").await?;");
+    println!(
+        "let hypothetical = hyde_generator.generate(\"How does photosynthesis work?\").await?;"
+    );
     println!("let results = system.search_with_hyde(query, hypothetical).await?;");
     println!("```");
     println!();

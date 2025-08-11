@@ -1,5 +1,5 @@
 //! # Basic RSLLM Usage Example
-//! 
+//!
 //! This example demonstrates basic usage of the RSLLM client library
 //! with mocked responses (no real API calls needed).
 
@@ -17,15 +17,13 @@ async fn main() -> RsllmResult<()> {
         .model("llama3.1")
         .temperature(0.7)
         .build()?;
-    
+
     println!("✅ Client created successfully!\n");
 
     // Test basic chat completion (non-streaming)
     println!("💬 Testing chat completion...");
-    let messages = vec![
-        ChatMessage::user("What is Rust programming language?")
-    ];
-    
+    let messages = vec![ChatMessage::user("What is Rust programming language?")];
+
     match client.chat_completion(messages).await {
         Ok(response) => {
             println!("🤖 Response: {}", response.content);
@@ -35,22 +33,25 @@ async fn main() -> RsllmResult<()> {
             }
         }
         Err(e) => {
-            println!("⚠️  API call failed (expected since no Ollama server): {}", e);
-            println!("📝 This demonstrates the client can be created and would work with a real server");
+            println!(
+                "⚠️  API call failed (expected since no Ollama server): {}",
+                e
+            );
+            println!(
+                "📝 This demonstrates the client can be created and would work with a real server"
+            );
         }
     }
     println!();
 
     // Test streaming chat completion
     println!("🌊 Testing streaming completion...");
-    let stream_messages = vec![
-        ChatMessage::user("Tell me about async programming in Rust")
-    ];
-    
+    let stream_messages = vec![ChatMessage::user("Tell me about async programming in Rust")];
+
     match client.chat_completion_stream(stream_messages).await {
         Ok(mut stream) => {
             print!("🤖 Streaming response: ");
-            
+
             use futures_util::StreamExt;
             while let Some(chunk_result) = stream.next().await {
                 match chunk_result {
@@ -71,12 +72,15 @@ async fn main() -> RsllmResult<()> {
             }
         }
         Err(e) => {
-            println!("⚠️  Streaming failed (expected since no Ollama server): {}", e);
+            println!(
+                "⚠️  Streaming failed (expected since no Ollama server): {}",
+                e
+            );
             println!("📝 But streaming framework is properly implemented and would work with real server");
         }
     }
     println!();
-    
+
     // Test simple completion helper
     println!("⚡ Testing simple completion helper...");
     match client.complete("What are the benefits of Rust?").await {
@@ -88,13 +92,13 @@ async fn main() -> RsllmResult<()> {
         }
     }
     println!();
-    
+
     // Test provider information
     println!("ℹ️  Provider Information:");
     println!("   Provider: {:?}", client.provider().provider_type());
     println!("   Supported models: {:?}", client.supported_models());
     println!();
-    
+
     // Test health check
     println!("🏥 Testing provider health check...");
     match client.health_check().await {
@@ -103,7 +107,7 @@ async fn main() -> RsllmResult<()> {
         Err(e) => println!("⚠️  Health check failed (expected since no Ollama): {}", e),
     }
     println!();
-    
+
     // Demonstrate different message types
     println!("📝 Testing different message types...");
     let complex_messages = vec![
@@ -112,10 +116,13 @@ async fn main() -> RsllmResult<()> {
         ChatMessage::assistant("Ownership is Rust's approach to memory management..."),
         ChatMessage::user("Can you give an example?"),
     ];
-    
+
     match client.chat_completion(complex_messages).await {
         Ok(complex_response) => {
-            println!("🤖 Complex conversation response: {}", complex_response.content);
+            println!(
+                "🤖 Complex conversation response: {}",
+                complex_response.content
+            );
         }
         Err(e) => {
             println!("⚠️  Complex conversation failed (expected): {}", e);
@@ -123,7 +130,7 @@ async fn main() -> RsllmResult<()> {
         }
     }
     println!();
-    
+
     println!("🎉 All tests completed successfully!");
     println!("📚 RSLLM is ready for integration with RRAG framework!");
 

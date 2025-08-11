@@ -1,5 +1,5 @@
 //! # RRAG Observability Dashboard Demo
-//! 
+//!
 //! Comprehensive demonstration of the RRAG observability system featuring:
 //! - Real-time metrics collection and monitoring
 //! - Web dashboard with interactive charts and visualizations
@@ -10,25 +10,35 @@
 //! - Data export and reporting functionality
 //! - Automated data retention and archiving
 
-use rrag::prelude::*;
+use chrono::Utc;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use rrag::observability::{
-    logging::{LogLevel, LogAggregator, LogQuery, LogConfig}, 
-    monitoring::{SystemMonitor, MonitoringConfig},
-    profiling::{PerformanceProfiler, ProfilingConfig},
-    export::{ExportFormat, ReportConfig, ExportConfig},
-    health::HealthConfig,
-    retention::RetentionConfig,
+    self,
+    alerting::{
+        AlertCondition, AlertConfig, AlertRule, AlertSeverity, ComparisonOperator,
+        NotificationChannelConfig, NotificationChannelType,
+    },
     dashboard::DashboardConfig,
-    alerting::AlertConfig,
-    ObservabilityConfig,
+    export::{
+        ExportConfig, ExportDestinationConfig, ExportFilters, ExportFormat, ReportConfig,
+        ReportType,
+    },
+    health::{BasicHealthChecker, ComponentStatus, DatabaseHealthChecker, HealthConfig},
+    logging::{LogAggregator, LogConfig, LogLevel, LogQuery, SortOrder},
+    metrics::{MetricsCollector, MetricsConfig},
+    monitoring::{
+        AlertThresholds, MonitoringConfig, PerformanceMetrics, QueryType, SearchAnalytics,
+        SystemMonitor, SystemOverview, UserAction, UserActivity,
+    },
+    profiling::{PerformanceProfiler, ProfilingConfig},
+    retention::{RetentionConfig, RetentionPolicyConfig},
+    ObservabilityConfig, ObservabilitySystem,
 };
-use rrag::{AlertCondition, AlertSeverity, AlertRule, ComponentStatus};
+use rrag::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::time::{sleep, Duration};
-use chrono::Utc;
-use rand::{Rng, SeedableRng};
-use rand::rngs::StdRng;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
@@ -45,7 +55,7 @@ async fn main() -> RragResult<()> {
     let observability_config = ObservabilityConfig {
         system_id: "rrag-demo-system".to_string(),
         environment: "demo".to_string(),
-        
+
         // Enable all components
         metrics: rrag::observability::metrics::MetricsConfig {
             enabled: true,
@@ -58,7 +68,7 @@ async fn main() -> RragResult<()> {
                 ("version".to_string(), "1.0.0".to_string()),
             ]),
         },
-        
+
         monitoring: MonitoringConfig {
             enabled: true,
             collection_interval_seconds: 10,
@@ -75,7 +85,7 @@ async fn main() -> RragResult<()> {
                 queue_size: 1000,
             },
         },
-        
+
         alerting: AlertConfig {
             enabled: true,
             evaluation_interval_seconds: 15,
@@ -91,9 +101,10 @@ async fn main() -> RragResult<()> {
                     name: "webhook".to_string(),
                     channel_type: rrag::observability::alerting::NotificationChannelType::Webhook,
                     enabled: false, // Disabled for demo
-                    config: HashMap::from([
-                        ("url".to_string(), "http://localhost:9999/alerts".to_string()),
-                    ]),
+                    config: HashMap::from([(
+                        "url".to_string(),
+                        "http://localhost:9999/alerts".to_string(),
+                    )]),
                 },
             ],
             default_severity: AlertSeverity::Medium,
@@ -102,7 +113,7 @@ async fn main() -> RragResult<()> {
             escalation_enabled: false,
             escalation_delay_minutes: 30,
         },
-        
+
         dashboard: DashboardConfig {
             enabled: true,
             host: "127.0.0.1".to_string(),
@@ -116,7 +127,7 @@ async fn main() -> RragResult<()> {
             cors_enabled: true,
             allowed_origins: vec!["*".to_string()],
         },
-        
+
         logging: LogConfig {
             enabled: true,
             level: LogLevel::Info,
@@ -130,7 +141,7 @@ async fn main() -> RragResult<()> {
             log_rotation_size_mb: 10,
             max_log_files: 5,
         },
-        
+
         health: HealthConfig {
             enabled: true,
             check_interval_seconds: 20,
@@ -141,7 +152,7 @@ async fn main() -> RragResult<()> {
             enable_dependency_checks: true,
             custom_checks: vec![],
         },
-        
+
         profiling: ProfilingConfig {
             enabled: true,
             sample_rate: 0.3, // 30% sampling
@@ -153,7 +164,7 @@ async fn main() -> RragResult<()> {
             enable_custom_metrics: true,
             bottleneck_threshold_ms: 100.0,
         },
-        
+
         export: ExportConfig {
             enabled: true,
             default_format: ExportFormat::Json,
@@ -162,18 +173,14 @@ async fn main() -> RragResult<()> {
             retention_days: 90,
             compression_enabled: true,
             scheduled_exports: vec![],
-            destinations: vec![
-                rrag::observability::export::ExportDestinationConfig {
-                    name: "local_files".to_string(),
-                    destination_type: rrag::observability::export::DestinationType::LocalFile,
-                    config: HashMap::from([
-                        ("path".to_string(), "./exports".to_string()),
-                    ]),
-                    enabled: true,
-                },
-            ],
+            destinations: vec![rrag::observability::export::ExportDestinationConfig {
+                name: "local_files".to_string(),
+                destination_type: rrag::observability::export::DestinationType::LocalFile,
+                config: HashMap::from([("path".to_string(), "./exports".to_string())]),
+                enabled: true,
+            }],
         },
-        
+
         retention: RetentionConfig {
             enabled: true,
             retention_days: 90,
@@ -189,7 +196,7 @@ async fn main() -> RragResult<()> {
             historical_analysis_enabled: true,
             trend_analysis_days: 30,
         },
-        
+
         enabled: true,
         sample_rate: 1.0,
         batch_size: 100,
@@ -198,10 +205,10 @@ async fn main() -> RragResult<()> {
 
     // Initialize the observability system
     let observability = ObservabilitySystem::new(observability_config).await?;
-    
+
     println!("📊 Starting observability system components...");
     observability.start().await?;
-    
+
     // Get references to individual components
     let metrics = observability.metrics().clone();
     let monitoring = observability.monitoring().clone();
@@ -223,41 +230,54 @@ async fn main() -> RragResult<()> {
 
     // Set up health checkers for demo components
     println!("🏥 Setting up health checkers...");
-    
+
     // Add various health checkers to demonstrate monitoring
-    health.add_checker(Box::new(
-        rrag::observability::health::BasicHealthChecker::new("search_engine", || {
-            // Simulate occasional search engine issues
-            if rand::random::<f64>() > 0.9 {
-                Err(RragError::agent("search_engine", "Search index temporarily unavailable"))
-            } else {
-                Ok(ComponentStatus::Healthy)
-            }
-        }).with_critical(true)
-    )).await?;
+    health
+        .add_checker(Box::new(
+            rrag::observability::health::BasicHealthChecker::new("search_engine", || {
+                // Simulate occasional search engine issues
+                if rand::random::<f64>() > 0.9 {
+                    Err(RragError::agent(
+                        "search_engine",
+                        "Search index temporarily unavailable",
+                    ))
+                } else {
+                    Ok(ComponentStatus::Healthy)
+                }
+            })
+            .with_critical(true),
+        ))
+        .await?;
 
-    health.add_checker(Box::new(
-        rrag::observability::health::BasicHealthChecker::new("vector_store", || {
-            // Simulate vector store with occasional degradation
-            let rand_val = rand::random::<f64>();
-            if rand_val > 0.95 {
-                Ok(ComponentStatus::Unhealthy)
-            } else if rand_val > 0.85 {
-                Ok(ComponentStatus::Degraded)
-            } else {
-                Ok(ComponentStatus::Healthy)
-            }
-        })
-    )).await?;
+    health
+        .add_checker(Box::new(
+            rrag::observability::health::BasicHealthChecker::new("vector_store", || {
+                // Simulate vector store with occasional degradation
+                let rand_val = rand::random::<f64>();
+                if rand_val > 0.95 {
+                    Ok(ComponentStatus::Unhealthy)
+                } else if rand_val > 0.85 {
+                    Ok(ComponentStatus::Degraded)
+                } else {
+                    Ok(ComponentStatus::Healthy)
+                }
+            }),
+        ))
+        .await?;
 
-    health.add_checker(Box::new(
-        rrag::observability::health::DatabaseHealthChecker::new("embedding_db", "postgresql://localhost:5432/embeddings")
-            .with_critical(true)
-    )).await?;
+    health
+        .add_checker(Box::new(
+            rrag::observability::health::DatabaseHealthChecker::new(
+                "embedding_db",
+                "postgresql://localhost:5432/embeddings",
+            )
+            .with_critical(true),
+        ))
+        .await?;
 
     // Add custom alert rules for demo
     println!("🚨 Setting up custom alert rules...");
-    
+
     let custom_alert = AlertRule::new(
         "demo_high_search_latency",
         "High Search Latency - Demo",
@@ -268,10 +288,11 @@ async fn main() -> RragResult<()> {
             duration_minutes: 2,
         },
         AlertSeverity::High,
-    ).with_description("Search queries are taking too long to complete")
-     .with_channels(vec!["console".to_string()])
-     .with_tag("demo", "true")
-     .with_cooldown(5);
+    )
+    .with_description("Search queries are taking too long to complete")
+    .with_channels(vec!["console".to_string()])
+    .with_tag("demo", "true")
+    .with_cooldown(5);
 
     alerting.add_alert_rule(custom_alert).await?;
 
@@ -287,14 +308,15 @@ async fn main() -> RragResult<()> {
     let monitoring_clone = monitoring.clone();
     let logging_clone = logging.clone();
     let profiling_clone = profiling.clone();
-    
+
     let simulation_handle = tokio::spawn(async move {
         simulate_system_activity(
             metrics_clone,
             monitoring_clone,
             logging_clone,
             profiling_clone,
-        ).await
+        )
+        .await
     });
 
     // Wait for initial data to populate
@@ -310,7 +332,12 @@ async fn main() -> RragResult<()> {
     println!("Component Health:");
     for (component, healthy) in &status.components {
         let status_icon = if *healthy { "✅" } else { "❌" };
-        println!("  {} {}: {}", status_icon, component, if *healthy { "Healthy" } else { "Unhealthy" });
+        println!(
+            "  {} {}: {}",
+            status_icon,
+            component,
+            if *healthy { "Healthy" } else { "Unhealthy" }
+        );
     }
     println!();
 
@@ -318,16 +345,19 @@ async fn main() -> RragResult<()> {
     println!("💾 Exporting current metrics...");
     let all_metrics = observability.metrics().get_all_metrics().await;
     if !all_metrics.is_empty() {
-        let export_result = export.export_metrics(
-            all_metrics.clone(),
-            ExportFormat::Json,
-            vec!["local_files".to_string()],
-            rrag::observability::export::ExportFilters::default(),
-        ).await?;
-        
-        println!("   Exported {} metrics to: {:?}", 
-                 export_result.record_count, 
-                 export_result.file_path);
+        let export_result = export
+            .export_metrics(
+                all_metrics.clone(),
+                ExportFormat::Json,
+                vec!["local_files".to_string()],
+                rrag::observability::export::ExportFilters::default(),
+            )
+            .await?;
+
+        println!(
+            "   Exported {} metrics to: {:?}",
+            export_result.record_count, export_result.file_path
+        );
         println!("   Export status: {:?}", export_result.status);
     }
     println!();
@@ -336,14 +366,17 @@ async fn main() -> RragResult<()> {
     println!("🔍 Analyzing performance bottlenecks...");
     let bottleneck_analysis = profiling.analyze_bottlenecks(5).await;
     if !bottleneck_analysis.bottlenecks.is_empty() {
-        println!("   Detected {} bottlenecks:", bottleneck_analysis.bottlenecks.len());
+        println!(
+            "   Detected {} bottlenecks:",
+            bottleneck_analysis.bottlenecks.len()
+        );
         for bottleneck in &bottleneck_analysis.bottlenecks {
-            println!("   - {}: {:.2}ms avg (Impact: {:.2})", 
-                     bottleneck.operation, 
-                     bottleneck.average_duration_ms,
-                     bottleneck.impact_score);
+            println!(
+                "   - {}: {:.2}ms avg (Impact: {:.2})",
+                bottleneck.operation, bottleneck.average_duration_ms, bottleneck.impact_score
+            );
         }
-        
+
         if !bottleneck_analysis.recommendations.is_empty() {
             println!("   Recommendations:");
             for rec in &bottleneck_analysis.recommendations {
@@ -362,34 +395,40 @@ async fn main() -> RragResult<()> {
         println!("   No active alerts - System is healthy! ✅");
     } else {
         for alert in &active_alerts {
-            println!("   {} {}: {} ({})", 
-                     match alert.severity {
-                         AlertSeverity::Critical => "🔴",
-                         AlertSeverity::High => "🟠",
-                         AlertSeverity::Medium => "🟡",
-                         AlertSeverity::Low => "🟢",
-                     },
-                     alert.rule_name,
-                     alert.message,
-                     alert.triggered_at.format("%H:%M:%S"));
+            println!(
+                "   {} {}: {} ({})",
+                match alert.severity {
+                    AlertSeverity::Critical => "🔴",
+                    AlertSeverity::High => "🟠",
+                    AlertSeverity::Medium => "🟡",
+                    AlertSeverity::Low => "🟢",
+                },
+                alert.rule_name,
+                alert.message,
+                alert.triggered_at.format("%H:%M:%S")
+            );
         }
     }
     println!();
 
     // Demonstrate log search
     println!("📝 Recent Log Entries:");
-    let recent_logs = logging.search_logs(&LogQuery {
-        level_filter: Some(LogLevel::Info),
-        limit: Some(5),
-        sort_order: rrag::observability::logging::SortOrder::Descending,
-        ..Default::default()
-    }).await;
+    let recent_logs = logging
+        .search_logs(&LogQuery {
+            level_filter: Some(LogLevel::Info),
+            limit: Some(5),
+            sort_order: rrag::observability::logging::SortOrder::Descending,
+            ..Default::default()
+        })
+        .await;
 
     for log in recent_logs.iter().take(3) {
-        println!("   [{}] {}: {}", 
-                 log.timestamp.format("%H:%M:%S"),
-                 log.component,
-                 log.message);
+        println!(
+            "   [{}] {}: {}",
+            log.timestamp.format("%H:%M:%S"),
+            log.component,
+            log.message
+        );
     }
     println!();
 
@@ -399,7 +438,10 @@ async fn main() -> RragResult<()> {
     println!("   Overall Status: {}", health_report.overall_status);
     println!("   Components Monitored: {}", health_report.services.len());
     println!("   Active Alerts: {}", health_report.alerts.len());
-    println!("   System Uptime: {} seconds", health_report.system_info.uptime_seconds);
+    println!(
+        "   System Uptime: {} seconds",
+        health_report.system_info.uptime_seconds
+    );
     println!();
 
     // Keep the demo running
@@ -412,7 +454,7 @@ async fn main() -> RragResult<()> {
     // Run for demo duration
     let demo_duration = Duration::from_secs(300); // 5 minutes
     println!("⏰ Demo will run for {} seconds", demo_duration.as_secs());
-    
+
     tokio::select! {
         _ = sleep(demo_duration) => {
             println!("\n⏰ Demo time completed!");
@@ -435,58 +477,63 @@ async fn main() -> RragResult<()> {
     println!("📊 Final Statistics:");
     println!("===================");
     println!("• Total Metrics Collected: {}", final_metrics.len());
-    println!("• Total Alerts Generated: {}", alert_stats.total_active_alerts);
+    println!(
+        "• Total Alerts Generated: {}",
+        alert_stats.total_active_alerts
+    );
     println!("• Total Log Entries: {}", log_stats.total_entries);
     println!("• System Components: {}", final_health.services.len());
     println!("• Overall System Status: {}", final_health.overall_status);
-    
+
     // Export final report
-    let export_result = export.generate_and_export_report(
-        ReportConfig {
-            name: "RRAG Demo Final Report".to_string(),
-            description: "Comprehensive report from the RRAG observability demo".to_string(),
-            report_type: rrag::observability::export::ReportType::SystemHealth,
-            template: None,
-            parameters: HashMap::new(),
-            output_format: ExportFormat::Json,
-            include_charts: true,
-            chart_config: rrag::observability::export::ChartConfig::default(),
-        },
-        rrag::observability::monitoring::SystemOverview {
-            timestamp: Utc::now(),
-            performance_metrics: Some(rrag::observability::monitoring::PerformanceMetrics {
+    let export_result = export
+        .generate_and_export_report(
+            ReportConfig {
+                name: "RRAG Demo Final Report".to_string(),
+                description: "Comprehensive report from the RRAG observability demo".to_string(),
+                report_type: rrag::observability::export::ReportType::SystemHealth,
+                template: None,
+                parameters: HashMap::new(),
+                output_format: ExportFormat::Json,
+                include_charts: true,
+                chart_config: rrag::observability::export::ChartConfig::default(),
+            },
+            rrag::observability::monitoring::SystemOverview {
                 timestamp: Utc::now(),
-                cpu_usage_percent: 45.0,
-                memory_usage_mb: 512.0,
-                memory_usage_percent: 60.0,
-                disk_usage_mb: 2048.0,
-                disk_usage_percent: 40.0,
-                network_bytes_sent: 1000000,
-                network_bytes_received: 2000000,
-                active_connections: 25,
-                thread_count: 50,
-                gc_collections: 10,
-                gc_pause_time_ms: 5.0,
-            }),
-            search_stats: None,
-            user_stats: None,
-            active_sessions: Some(15),
-        },
-        vec!["local_files".to_string()],
-    ).await?;
+                performance_metrics: Some(rrag::observability::monitoring::PerformanceMetrics {
+                    timestamp: Utc::now(),
+                    cpu_usage_percent: 45.0,
+                    memory_usage_mb: 512.0,
+                    memory_usage_percent: 60.0,
+                    disk_usage_mb: 2048.0,
+                    disk_usage_percent: 40.0,
+                    network_bytes_sent: 1000000,
+                    network_bytes_received: 2000000,
+                    active_connections: 25,
+                    thread_count: 50,
+                    gc_collections: 10,
+                    gc_pause_time_ms: 5.0,
+                }),
+                search_stats: None,
+                user_stats: None,
+                active_sessions: Some(15),
+            },
+            vec!["local_files".to_string()],
+        )
+        .await?;
 
     println!("📄 Final report exported: {:?}", export_result.file_path);
 
     // Stop observability system
     println!("\n🛑 Stopping observability system...");
     observability.stop().await?;
-    
+
     println!("✅ RRAG Observability Dashboard Demo completed successfully!");
     println!("\n📁 Generated Files:");
     println!("   • Metrics exports in: ./exports/");
     println!("   • Log files: rrag_demo.log");
     println!("   • Archives in: ./archives/");
-    
+
     Ok(())
 }
 
@@ -507,21 +554,33 @@ async fn simulate_system_activity(
 
         // Simulate various system metrics
         let _ = metrics.inc_counter("requests_total").await;
-        let _ = metrics.inc_counter_by("search_queries_total", rng.gen_range(1..5)).await;
-        let _ = metrics.set_gauge("active_users", rng.gen_range(10.0..100.0)).await;
-        let _ = metrics.set_gauge("system_cpu_usage_percent", rng.gen_range(20.0..80.0)).await;
-        let _ = metrics.set_gauge("system_memory_usage_percent", rng.gen_range(30.0..70.0)).await;
-        
+        let _ = metrics
+            .inc_counter_by("search_queries_total", rng.gen_range(1..5))
+            .await;
+        let _ = metrics
+            .set_gauge("active_users", rng.gen_range(10.0..100.0))
+            .await;
+        let _ = metrics
+            .set_gauge("system_cpu_usage_percent", rng.gen_range(20.0..80.0))
+            .await;
+        let _ = metrics
+            .set_gauge("system_memory_usage_percent", rng.gen_range(30.0..70.0))
+            .await;
+
         // Simulate search processing time (occasionally slow)
-        let search_time = if rng.gen_bool(0.1) { 
+        let search_time = if rng.gen_bool(0.1) {
             rng.gen_range(800.0..1500.0) // Slow query
-        } else { 
+        } else {
             rng.gen_range(50.0..300.0) // Normal query
         };
-        let _ = metrics.record_timer("search_processing_time_ms", search_time).await;
-        
+        let _ = metrics
+            .record_timer("search_processing_time_ms", search_time)
+            .await;
+
         // Simulate histogram metrics
-        let _ = metrics.observe_histogram("response_time_ms", search_time, None).await;
+        let _ = metrics
+            .observe_histogram("response_time_ms", search_time, None)
+            .await;
 
         // Generate log entries
         let log_messages = vec![
@@ -533,36 +592,39 @@ async fn simulate_system_activity(
         ];
 
         for (component, message, level) in &log_messages {
-            if rng.gen_bool(0.3) { // 30% chance for each log
+            if rng.gen_bool(0.3) {
+                // 30% chance for each log
                 let _ = logging.log(*level, *message, *component).await;
             }
         }
 
         // Occasionally generate errors
-        if rng.gen_bool(0.05) { // 5% chance
+        if rng.gen_bool(0.05) {
+            // 5% chance
             let error_messages = vec![
                 ("search_engine", "Index temporarily unavailable"),
                 ("vector_store", "Connection timeout"),
                 ("cache", "Redis connection failed"),
                 ("reranker", "Model inference timeout"),
             ];
-            
+
             let (component, error_msg) = error_messages[rng.gen_range(0..error_messages.len())];
             let _ = logging.log(LogLevel::Error, error_msg, component).await;
             let _ = metrics.inc_counter("errors_total").await;
         }
 
         // Simulate user activity
-        if rng.gen_bool(0.4) { // 40% chance
+        if rng.gen_bool(0.4) {
+            // 40% chance
             let activity = rrag::observability::monitoring::UserActivity {
                 timestamp: Utc::now(),
                 user_id: format!("user_{}", rng.gen_range(1..100)),
                 session_id: format!("session_{}", rng.gen_range(1..20)),
                 action: match rng.gen_range(0..4) {
-                    0 =>                     rrag::observability::monitoring::UserAction::Search,
-                    1 =>                     rrag::observability::monitoring::UserAction::Chat,
-                    2 =>                     rrag::observability::monitoring::UserAction::DocumentView,
-                    _ =>                     rrag::observability::monitoring::UserAction::SystemHealth,
+                    0 => rrag::observability::monitoring::UserAction::Search,
+                    1 => rrag::observability::monitoring::UserAction::Chat,
+                    2 => rrag::observability::monitoring::UserAction::DocumentView,
+                    _ => rrag::observability::monitoring::UserAction::SystemHealth,
                 },
                 query: Some("sample query".to_string()),
                 response_time_ms: search_time,
@@ -575,15 +637,16 @@ async fn simulate_system_activity(
         }
 
         // Simulate search analytics
-        if rng.gen_bool(0.6) { // 60% chance
+        if rng.gen_bool(0.6) {
+            // 60% chance
             let search_analytics = rrag::observability::monitoring::SearchAnalytics {
                 timestamp: Utc::now(),
                 query: format!("demo query {}", request_counter),
                 query_type: match rng.gen_range(0..4) {
-                    0 =>                     rrag::observability::monitoring::QueryType::Factual,
-                    1 =>                     rrag::observability::monitoring::QueryType::Conceptual,
-                    2 =>                     rrag::observability::monitoring::QueryType::Procedural,
-                    _ =>                     rrag::observability::monitoring::QueryType::Conversational,
+                    0 => rrag::observability::monitoring::QueryType::Factual,
+                    1 => rrag::observability::monitoring::QueryType::Conceptual,
+                    2 => rrag::observability::monitoring::QueryType::Procedural,
+                    _ => rrag::observability::monitoring::QueryType::Conversational,
                 },
                 results_count: rng.gen_range(1..20),
                 processing_time_ms: search_time,
@@ -595,27 +658,38 @@ async fn simulate_system_activity(
                 cache_hit: rng.gen_bool(0.3),
             };
 
-            let _ = monitoring.search_analytics().record_search(search_analytics).await;
+            let _ = monitoring
+                .search_analytics()
+                .record_search(search_analytics)
+                .await;
         }
 
         // Simulate performance profiling
-        if rng.gen_bool(0.2) { // 20% chance
+        if rng.gen_bool(0.2) {
+            // 20% chance
             let operation_id = format!("op_{}", request_counter);
             let _ = profiling.start_profile(&operation_id).await;
-            
+
             // Simulate some processing time
             tokio::time::sleep(Duration::from_millis(rng.gen_range(10..200))).await;
-            
-            let _ = profiling.end_profile(&operation_id, "search_operation", "search_engine").await;
+
+            let _ = profiling
+                .end_profile(&operation_id, "search_operation", "search_engine")
+                .await;
         }
 
         // Log periodic status
         if request_counter % 30 == 0 {
-            let _ = logging.log(
-                LogLevel::Info, 
-                &format!("System status update - {} requests processed", request_counter), 
-                "system"
-            ).await;
+            let _ = logging
+                .log(
+                    LogLevel::Info,
+                    &format!(
+                        "System status update - {} requests processed",
+                        request_counter
+                    ),
+                    "system",
+                )
+                .await;
         }
     }
 }

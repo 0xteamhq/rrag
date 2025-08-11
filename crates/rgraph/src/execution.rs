@@ -1,8 +1,8 @@
 //! # Simple Execution Engine
-//! 
+//!
 //! A simplified execution engine that avoids complex lifetime issues.
 
-use crate::core::{WorkflowGraph, ExecutionContext, ExecutionResult, NodeId};
+use crate::core::{ExecutionContext, ExecutionResult, NodeId, WorkflowGraph};
 use crate::state::GraphState;
 use crate::{RGraphError, RGraphResult};
 use std::time::{Duration, Instant};
@@ -133,7 +133,10 @@ impl ExecutionEngine {
 
         // Execute each entry point
         for entry_node_id in &entry_points {
-            match self.execute_single_node(graph, &mut state, entry_node_id).await {
+            match self
+                .execute_single_node(graph, &mut state, entry_node_id)
+                .await
+            {
                 Ok(_) => {
                     nodes_executed += 1;
                 }
@@ -162,9 +165,19 @@ impl ExecutionEngine {
 
         if self.config.verbose_logging {
             #[cfg(feature = "observability")]
-            tracing::info!("Graph execution completed: {} (success: {}, duration: {:?})", graph.id(), success, total_duration);
+            tracing::info!(
+                "Graph execution completed: {} (success: {}, duration: {:?})",
+                graph.id(),
+                success,
+                total_duration
+            );
             #[cfg(not(feature = "observability"))]
-            eprintln!("Graph execution completed: {} (success: {}, duration: {:?})", graph.id(), success, total_duration);
+            eprintln!(
+                "Graph execution completed: {} (success: {}, duration: {:?})",
+                graph.id(),
+                success,
+                total_duration
+            );
         }
 
         Ok(ExecutionResults {
@@ -186,9 +199,9 @@ impl ExecutionEngine {
         node_id: &NodeId,
     ) -> RGraphResult<()> {
         // Get the node
-        let node = graph
-            .get_node(node_id)
-            .ok_or_else(|| RGraphError::execution(format!("Node '{}' not found", node_id.as_str())))?;
+        let node = graph.get_node(node_id).ok_or_else(|| {
+            RGraphError::execution(format!("Node '{}' not found", node_id.as_str()))
+        })?;
 
         // Create execution context
         let context = ExecutionContext::new(graph.id().to_string(), node_id.clone());

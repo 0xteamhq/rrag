@@ -1,15 +1,15 @@
 //! # System Monitoring
-//! 
+//!
 //! Real-time monitoring of RRAG system performance, health, and usage patterns.
 //! Provides insights into search analytics, performance bottlenecks, and user behavior.
 
-use crate::{RragError, RragResult};
 use super::metrics::MetricsCollector;
+use crate::{RragError, RragResult};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Monitoring configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -138,7 +138,10 @@ pub struct PerformanceMonitor {
 }
 
 impl PerformanceMonitor {
-    pub async fn new(config: MonitoringConfig, metrics_collector: Arc<MetricsCollector>) -> RragResult<Self> {
+    pub async fn new(
+        config: MonitoringConfig,
+        metrics_collector: Arc<MetricsCollector>,
+    ) -> RragResult<Self> {
         Ok(Self {
             config,
             metrics_collector,
@@ -151,7 +154,11 @@ impl PerformanceMonitor {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("performance_monitor", "stopped", "already running"));
+            return Err(RragError::config(
+                "performance_monitor",
+                "stopped",
+                "already running",
+            ));
         }
 
         let config = self.config.clone();
@@ -160,20 +167,22 @@ impl PerformanceMonitor {
         let is_running_clone = self.is_running.clone();
 
         let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.collection_interval_seconds)
-            );
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.collection_interval_seconds,
+            ));
 
             while *is_running_clone.read().await {
                 interval.tick().await;
-                
+
                 if let Ok(metrics) = Self::collect_system_metrics().await {
                     // Store in history
                     let mut history = performance_history.write().await;
                     history.push(metrics.clone());
-                    
+
                     // Keep only recent data
-                    let retention_size = (config.performance_window_minutes * 60 / config.collection_interval_seconds as u32) as usize;
+                    let retention_size = (config.performance_window_minutes * 60
+                        / config.collection_interval_seconds as u32)
+                        as usize;
                     let current_len = history.len();
                     if current_len > retention_size {
                         history.drain(0..current_len - retention_size);
@@ -181,12 +190,27 @@ impl PerformanceMonitor {
                     drop(history);
 
                     // Update metrics
-                    let _ = metrics_collector.set_gauge("system_cpu_usage_percent", metrics.cpu_usage_percent).await;
-                    let _ = metrics_collector.set_gauge("system_memory_usage_mb", metrics.memory_usage_mb).await;
-                    let _ = metrics_collector.set_gauge("system_memory_usage_percent", metrics.memory_usage_percent).await;
-                    let _ = metrics_collector.set_gauge("system_disk_usage_mb", metrics.disk_usage_mb).await;
-                    let _ = metrics_collector.set_gauge("system_active_connections", metrics.active_connections as f64).await;
-                    let _ = metrics_collector.set_gauge("system_thread_count", metrics.thread_count as f64).await;
+                    let _ = metrics_collector
+                        .set_gauge("system_cpu_usage_percent", metrics.cpu_usage_percent)
+                        .await;
+                    let _ = metrics_collector
+                        .set_gauge("system_memory_usage_mb", metrics.memory_usage_mb)
+                        .await;
+                    let _ = metrics_collector
+                        .set_gauge("system_memory_usage_percent", metrics.memory_usage_percent)
+                        .await;
+                    let _ = metrics_collector
+                        .set_gauge("system_disk_usage_mb", metrics.disk_usage_mb)
+                        .await;
+                    let _ = metrics_collector
+                        .set_gauge(
+                            "system_active_connections",
+                            metrics.active_connections as f64,
+                        )
+                        .await;
+                    let _ = metrics_collector
+                        .set_gauge("system_thread_count", metrics.thread_count as f64)
+                        .await;
                 }
             }
         });
@@ -207,7 +231,7 @@ impl PerformanceMonitor {
         }
 
         *running = false;
-        
+
         {
             let mut handle_guard = self.collection_handle.write().await;
             if let Some(handle) = handle_guard.take() {
@@ -248,13 +272,37 @@ impl PerformanceMonitor {
         }
 
         let count = recent_metrics.len() as f64;
-        let avg_cpu = recent_metrics.iter().map(|m| m.cpu_usage_percent).sum::<f64>() / count;
-        let avg_memory = recent_metrics.iter().map(|m| m.memory_usage_mb).sum::<f64>() / count;
-        let avg_memory_percent = recent_metrics.iter().map(|m| m.memory_usage_percent).sum::<f64>() / count;
+        let avg_cpu = recent_metrics
+            .iter()
+            .map(|m| m.cpu_usage_percent)
+            .sum::<f64>()
+            / count;
+        let avg_memory = recent_metrics
+            .iter()
+            .map(|m| m.memory_usage_mb)
+            .sum::<f64>()
+            / count;
+        let avg_memory_percent = recent_metrics
+            .iter()
+            .map(|m| m.memory_usage_percent)
+            .sum::<f64>()
+            / count;
         let avg_disk = recent_metrics.iter().map(|m| m.disk_usage_mb).sum::<f64>() / count;
-        let avg_disk_percent = recent_metrics.iter().map(|m| m.disk_usage_percent).sum::<f64>() / count;
-        let avg_connections = recent_metrics.iter().map(|m| m.active_connections as f64).sum::<f64>() / count;
-        let avg_threads = recent_metrics.iter().map(|m| m.thread_count as f64).sum::<f64>() / count;
+        let avg_disk_percent = recent_metrics
+            .iter()
+            .map(|m| m.disk_usage_percent)
+            .sum::<f64>()
+            / count;
+        let avg_connections = recent_metrics
+            .iter()
+            .map(|m| m.active_connections as f64)
+            .sum::<f64>()
+            / count;
+        let avg_threads = recent_metrics
+            .iter()
+            .map(|m| m.thread_count as f64)
+            .sum::<f64>()
+            / count;
 
         Ok(PerformanceMetrics {
             timestamp: Utc::now(),
@@ -315,7 +363,11 @@ impl SearchAnalyzer {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("search_analyzer", "stopped", "already running"));
+            return Err(RragError::config(
+                "search_analyzer",
+                "stopped",
+                "already running",
+            ));
         }
         *running = true;
         tracing::info!("Search analyzer started");
@@ -349,7 +401,7 @@ impl SearchAnalyzer {
         // Store in history
         let mut history = self.search_history.write().await;
         history.push(analytics.clone());
-        
+
         // Keep only recent data (last 1000 searches)
         let current_len = history.len();
         if current_len > 1000 {
@@ -357,20 +409,41 @@ impl SearchAnalyzer {
         }
 
         // Update metrics
-        let _ = self.metrics_collector.inc_counter("search_queries_total").await;
-        let _ = self.metrics_collector.record_timer("search_processing_time_ms", analytics.processing_time_ms).await;
-        let _ = self.metrics_collector.observe_histogram("search_results_count", analytics.results_count as f64, None).await;
+        let _ = self
+            .metrics_collector
+            .inc_counter("search_queries_total")
+            .await;
+        let _ = self
+            .metrics_collector
+            .record_timer("search_processing_time_ms", analytics.processing_time_ms)
+            .await;
+        let _ = self
+            .metrics_collector
+            .observe_histogram("search_results_count", analytics.results_count as f64, None)
+            .await;
 
         if analytics.success {
-            let _ = self.metrics_collector.inc_counter("search_queries_successful").await;
+            let _ = self
+                .metrics_collector
+                .inc_counter("search_queries_successful")
+                .await;
         } else {
-            let _ = self.metrics_collector.inc_counter("search_queries_failed").await;
+            let _ = self
+                .metrics_collector
+                .inc_counter("search_queries_failed")
+                .await;
         }
 
         if analytics.cache_hit {
-            let _ = self.metrics_collector.inc_counter("search_cache_hits").await;
+            let _ = self
+                .metrics_collector
+                .inc_counter("search_cache_hits")
+                .await;
         } else {
-            let _ = self.metrics_collector.inc_counter("search_cache_misses").await;
+            let _ = self
+                .metrics_collector
+                .inc_counter("search_cache_misses")
+                .await;
         }
 
         Ok(())
@@ -378,17 +451,18 @@ impl SearchAnalyzer {
 
     pub async fn get_popular_queries(&self, limit: usize) -> Vec<(String, u64)> {
         let patterns = self.query_patterns.read().await;
-        let mut query_counts: Vec<_> = patterns.iter()
+        let mut query_counts: Vec<_> = patterns
+            .iter()
             .map(|(query, count)| (query.clone(), *count))
             .collect();
-        
+
         query_counts.sort_by(|a, b| b.1.cmp(&a.1));
         query_counts.into_iter().take(limit).collect()
     }
 
     pub async fn get_search_stats(&self) -> SearchStats {
         let history = self.search_history.read().await;
-        
+
         if history.is_empty() {
             return SearchStats::default();
         }
@@ -398,13 +472,11 @@ impl SearchAnalyzer {
         let cache_hits = history.iter().filter(|s| s.cache_hit).count();
         let rerank_applied = history.iter().filter(|s| s.rerank_applied).count();
 
-        let avg_processing_time = history.iter()
-            .map(|s| s.processing_time_ms)
-            .sum::<f64>() / total_searches as f64;
+        let avg_processing_time =
+            history.iter().map(|s| s.processing_time_ms).sum::<f64>() / total_searches as f64;
 
-        let avg_results_count = history.iter()
-            .map(|s| s.results_count as f64)
-            .sum::<f64>() / total_searches as f64;
+        let avg_results_count =
+            history.iter().map(|s| s.results_count as f64).sum::<f64>() / total_searches as f64;
 
         SearchStats {
             total_searches,
@@ -429,18 +501,27 @@ impl SearchAnalyzer {
     fn classify_query(&self, query: &str) -> QueryType {
         // Simple heuristic-based classification
         let query_lower = query.to_lowercase();
-        
-        if query_lower.contains("what") || query_lower.contains("who") || 
-           query_lower.contains("when") || query_lower.contains("where") {
+
+        if query_lower.contains("what")
+            || query_lower.contains("who")
+            || query_lower.contains("when")
+            || query_lower.contains("where")
+        {
             QueryType::Factual
-        } else if query_lower.contains("how") || query_lower.contains("explain") || 
-                  query_lower.contains("describe") {
+        } else if query_lower.contains("how")
+            || query_lower.contains("explain")
+            || query_lower.contains("describe")
+        {
             QueryType::Procedural
-        } else if query_lower.contains("why") || query_lower.contains("concept") ||
-                  query_lower.contains("theory") {
+        } else if query_lower.contains("why")
+            || query_lower.contains("concept")
+            || query_lower.contains("theory")
+        {
             QueryType::Conceptual
-        } else if query_lower.contains("can you") || query_lower.contains("please") ||
-                  query_lower.len() > 50 {
+        } else if query_lower.contains("can you")
+            || query_lower.contains("please")
+            || query_lower.len() > 50
+        {
             QueryType::Conversational
         } else {
             QueryType::Unknown
@@ -499,7 +580,11 @@ impl UserActivityTracker {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("user_activity_tracker", "stopped", "already running"));
+            return Err(RragError::config(
+                "user_activity_tracker",
+                "stopped",
+                "already running",
+            ));
         }
         *running = true;
         tracing::info!("User activity tracker started");
@@ -522,7 +607,11 @@ impl UserActivityTracker {
 
     pub async fn track_activity(&self, activity: UserActivity) -> RragResult<()> {
         if !*self.is_running.read().await {
-            return Err(RragError::config("user_activity_tracker", "running", "stopped"));
+            return Err(RragError::config(
+                "user_activity_tracker",
+                "running",
+                "stopped",
+            ));
         }
 
         // Update active sessions
@@ -533,7 +622,7 @@ impl UserActivityTracker {
         // Store activity
         let mut history = self.activity_history.write().await;
         history.push(activity.clone());
-        
+
         // Keep only recent activity (last 10000 actions)
         let current_len = history.len();
         if current_len > 10000 {
@@ -541,19 +630,31 @@ impl UserActivityTracker {
         }
 
         // Update metrics
-        let _ = self.metrics_collector.inc_counter("user_actions_total").await;
-        let _ = self.metrics_collector.record_timer("user_action_response_time_ms", activity.response_time_ms).await;
+        let _ = self
+            .metrics_collector
+            .inc_counter("user_actions_total")
+            .await;
+        let _ = self
+            .metrics_collector
+            .record_timer("user_action_response_time_ms", activity.response_time_ms)
+            .await;
 
         match activity.action {
             UserAction::Search => {
-                let _ = self.metrics_collector.inc_counter("user_searches_total").await;
-            },
+                let _ = self
+                    .metrics_collector
+                    .inc_counter("user_searches_total")
+                    .await;
+            }
             UserAction::Chat => {
                 let _ = self.metrics_collector.inc_counter("user_chats_total").await;
-            },
+            }
             UserAction::DocumentUpload => {
-                let _ = self.metrics_collector.inc_counter("user_document_uploads_total").await;
-            },
+                let _ = self
+                    .metrics_collector
+                    .inc_counter("user_document_uploads_total")
+                    .await;
+            }
             _ => {}
         }
 
@@ -571,7 +672,7 @@ impl UserActivityTracker {
     pub async fn get_user_stats(&self, time_window_hours: i64) -> UserStats {
         let history = self.activity_history.read().await;
         let cutoff_time = Utc::now() - Duration::hours(time_window_hours);
-        
+
         let recent_activity: Vec<_> = history
             .iter()
             .filter(|a| a.timestamp >= cutoff_time)
@@ -581,10 +682,8 @@ impl UserActivityTracker {
             return UserStats::default();
         }
 
-        let unique_users: std::collections::HashSet<_> = recent_activity
-            .iter()
-            .map(|a| a.user_id.as_str())
-            .collect();
+        let unique_users: std::collections::HashSet<_> =
+            recent_activity.iter().map(|a| a.user_id.as_str()).collect();
 
         let unique_sessions: std::collections::HashSet<_> = recent_activity
             .iter()
@@ -595,7 +694,8 @@ impl UserActivityTracker {
         let avg_response_time = recent_activity
             .iter()
             .map(|a| a.response_time_ms)
-            .sum::<f64>() / recent_activity.len() as f64;
+            .sum::<f64>()
+            / recent_activity.len() as f64;
 
         UserStats {
             total_actions: recent_activity.len(),
@@ -658,10 +758,16 @@ pub struct SystemMonitor {
 }
 
 impl SystemMonitor {
-    pub async fn new(config: MonitoringConfig, metrics_collector: Arc<MetricsCollector>) -> RragResult<Self> {
-        let performance_monitor = Arc::new(PerformanceMonitor::new(config.clone(), metrics_collector.clone()).await?);
-        let search_analyzer = Arc::new(SearchAnalyzer::new(config.clone(), metrics_collector.clone()).await);
-        let user_tracker = Arc::new(UserActivityTracker::new(config.clone(), metrics_collector).await);
+    pub async fn new(
+        config: MonitoringConfig,
+        metrics_collector: Arc<MetricsCollector>,
+    ) -> RragResult<Self> {
+        let performance_monitor =
+            Arc::new(PerformanceMonitor::new(config.clone(), metrics_collector.clone()).await?);
+        let search_analyzer =
+            Arc::new(SearchAnalyzer::new(config.clone(), metrics_collector.clone()).await);
+        let user_tracker =
+            Arc::new(UserActivityTracker::new(config.clone(), metrics_collector).await);
 
         Ok(Self {
             config,
@@ -675,18 +781,22 @@ impl SystemMonitor {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("system_monitor", "stopped", "already running"));
+            return Err(RragError::config(
+                "system_monitor",
+                "stopped",
+                "already running",
+            ));
         }
 
         // Start all monitoring services
         if self.config.resource_monitoring_enabled {
             self.performance_monitor.start().await?;
         }
-        
+
         if self.config.search_analytics_enabled {
             self.search_analyzer.start().await?;
         }
-        
+
         if self.config.user_tracking_enabled {
             self.user_tracker.start().await?;
         }
@@ -713,10 +823,10 @@ impl SystemMonitor {
     }
 
     pub async fn is_healthy(&self) -> bool {
-        *self.is_running.read().await &&
-            self.performance_monitor.is_healthy().await &&
-            self.search_analyzer.is_healthy().await &&
-            self.user_tracker.is_healthy().await
+        *self.is_running.read().await
+            && self.performance_monitor.is_healthy().await
+            && self.search_analyzer.is_healthy().await
+            && self.user_tracker.is_healthy().await
     }
 
     pub fn performance(&self) -> &PerformanceMonitor {
@@ -780,7 +890,10 @@ pub struct MonitoringService {
 }
 
 impl MonitoringService {
-    pub async fn new(config: MonitoringConfig, metrics_collector: Arc<MetricsCollector>) -> RragResult<Self> {
+    pub async fn new(
+        config: MonitoringConfig,
+        metrics_collector: Arc<MetricsCollector>,
+    ) -> RragResult<Self> {
         let system_monitor = SystemMonitor::new(config, metrics_collector).await?;
         Ok(Self {
             system_monitor: Arc::new(RwLock::new(system_monitor)),
@@ -824,24 +937,30 @@ mod tests {
     use crate::observability::metrics::MetricsConfig;
 
     async fn create_test_metrics_collector() -> Arc<MetricsCollector> {
-        Arc::new(MetricsCollector::new(MetricsConfig::default()).await.unwrap())
+        Arc::new(
+            MetricsCollector::new(MetricsConfig::default())
+                .await
+                .unwrap(),
+        )
     }
 
     #[tokio::test]
     async fn test_performance_monitor() {
         let metrics_collector = create_test_metrics_collector().await;
         let config = MonitoringConfig::default();
-        let mut monitor = PerformanceMonitor::new(config, metrics_collector).await.unwrap();
-        
+        let mut monitor = PerformanceMonitor::new(config, metrics_collector)
+            .await
+            .unwrap();
+
         assert!(!monitor.is_healthy().await);
-        
+
         monitor.start().await.unwrap();
         assert!(monitor.is_healthy().await);
-        
+
         let current_metrics = monitor.get_current_metrics().await.unwrap();
         assert!(current_metrics.cpu_usage_percent >= 0.0);
         assert!(current_metrics.memory_usage_mb >= 0.0);
-        
+
         monitor.stop().await.unwrap();
         assert!(!monitor.is_healthy().await);
     }
@@ -851,10 +970,10 @@ mod tests {
         let metrics_collector = create_test_metrics_collector().await;
         let config = MonitoringConfig::default();
         let analyzer = SearchAnalyzer::new(config, metrics_collector).await;
-        
+
         analyzer.start().await.unwrap();
         assert!(analyzer.is_healthy().await);
-        
+
         let search_analytics = SearchAnalytics {
             timestamp: Utc::now(),
             query: "test query".to_string(),
@@ -868,14 +987,14 @@ mod tests {
             rerank_applied: true,
             cache_hit: false,
         };
-        
+
         analyzer.record_search(search_analytics).await.unwrap();
-        
+
         let stats = analyzer.get_search_stats().await;
         assert_eq!(stats.total_searches, 1);
         assert_eq!(stats.successful_searches, 1);
         assert_eq!(stats.success_rate, 100.0);
-        
+
         analyzer.stop().await.unwrap();
         assert!(!analyzer.is_healthy().await);
     }
@@ -885,10 +1004,10 @@ mod tests {
         let metrics_collector = create_test_metrics_collector().await;
         let config = MonitoringConfig::default();
         let tracker = UserActivityTracker::new(config, metrics_collector).await;
-        
+
         tracker.start().await.unwrap();
         assert!(tracker.is_healthy().await);
-        
+
         let activity = UserActivity {
             timestamp: Utc::now(),
             user_id: "user123".to_string(),
@@ -900,14 +1019,14 @@ mod tests {
             ip_address: Some("127.0.0.1".to_string()),
             user_agent: Some("test-agent".to_string()),
         };
-        
+
         tracker.track_activity(activity).await.unwrap();
-        
+
         let stats = tracker.get_user_stats(24).await;
         assert_eq!(stats.total_actions, 1);
         assert_eq!(stats.unique_users, 1);
         assert_eq!(stats.unique_sessions, 1);
-        
+
         tracker.stop().await.unwrap();
         assert!(!tracker.is_healthy().await);
     }
@@ -917,17 +1036,17 @@ mod tests {
         let metrics_collector = create_test_metrics_collector().await;
         let config = MonitoringConfig::default();
         let mut monitor = SystemMonitor::new(config, metrics_collector).await.unwrap();
-        
+
         assert!(!monitor.is_healthy().await);
-        
+
         monitor.start().await.unwrap();
         assert!(monitor.is_healthy().await);
-        
+
         let overview = monitor.get_system_overview().await;
         assert!(overview.performance_metrics.is_some());
         assert!(overview.search_stats.is_some());
         assert!(overview.user_stats.is_some());
-        
+
         monitor.stop().await.unwrap();
         assert!(!monitor.is_healthy().await);
     }
@@ -937,12 +1056,27 @@ mod tests {
         let metrics_collector = futures::executor::block_on(create_test_metrics_collector());
         let config = MonitoringConfig::default();
         let analyzer = futures::executor::block_on(SearchAnalyzer::new(config, metrics_collector));
-        
-        assert_eq!(analyzer.classify_query("What is machine learning?"), QueryType::Factual);
-        assert_eq!(analyzer.classify_query("How do I implement a neural network?"), QueryType::Procedural);
-        assert_eq!(analyzer.classify_query("Why does backpropagation work?"), QueryType::Conceptual);
-        assert_eq!(analyzer.classify_query("Can you help me understand this concept please?"), QueryType::Conversational);
-        assert_eq!(analyzer.classify_query("neural networks"), QueryType::Unknown);
+
+        assert_eq!(
+            analyzer.classify_query("What is machine learning?"),
+            QueryType::Factual
+        );
+        assert_eq!(
+            analyzer.classify_query("How do I implement a neural network?"),
+            QueryType::Procedural
+        );
+        assert_eq!(
+            analyzer.classify_query("Why does backpropagation work?"),
+            QueryType::Conceptual
+        );
+        assert_eq!(
+            analyzer.classify_query("Can you help me understand this concept please?"),
+            QueryType::Conversational
+        );
+        assert_eq!(
+            analyzer.classify_query("neural networks"),
+            QueryType::Unknown
+        );
     }
 
     #[test]

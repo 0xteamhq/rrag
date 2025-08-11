@@ -4,11 +4,11 @@
 //! for evaluating RAG systems comprehensively. Includes faithfulness, answer
 //! relevancy, context precision, context recall, and other RAGAS metrics.
 
-use crate::{RragResult};
 use super::{
-    Evaluator, EvaluatorConfig, EvaluatorPerformance, EvaluationData, EvaluationResult,
-    QueryEvaluationResult, EvaluationSummary, EvaluationMetadata, PerformanceStats,
+    EvaluationData, EvaluationMetadata, EvaluationResult, EvaluationSummary, Evaluator,
+    EvaluatorConfig, EvaluatorPerformance, PerformanceStats, QueryEvaluationResult,
 };
+use crate::RragResult;
 use std::collections::HashMap;
 
 /// RAGAS evaluator
@@ -123,7 +123,10 @@ pub trait RagasMetric: Send + Sync {
         for (i, query) in queries.iter().enumerate() {
             let query_contexts = contexts.get(i).map(|c| c.as_slice()).unwrap_or(&[]);
             let answer = answers.get(i).map(|a| a.as_str()).unwrap_or("");
-            let ground_truth = ground_truths.get(i).and_then(|gt| gt.as_ref()).map(|s| s.as_str());
+            let ground_truth = ground_truths
+                .get(i)
+                .and_then(|gt| gt.as_ref())
+                .map(|s| s.as_str());
 
             let score = self.evaluate_query(query, query_contexts, answer, ground_truth)?;
             scores.push(score);
@@ -293,13 +296,27 @@ impl RagasEvaluator {
     fn initialize_metrics(&mut self) {
         for metric_type in &self.config.enabled_metrics {
             let metric: Box<dyn RagasMetric> = match metric_type {
-                RagasMetricType::Faithfulness => Box::new(FaithfulnessMetric::new(self.config.faithfulness_config.clone())),
-                RagasMetricType::AnswerRelevancy => Box::new(AnswerRelevancyMetric::new(self.config.answer_relevancy_config.clone())),
-                RagasMetricType::ContextPrecision => Box::new(ContextPrecisionMetric::new(self.config.context_precision_config.clone())),
-                RagasMetricType::ContextRecall => Box::new(ContextRecallMetric::new(self.config.context_recall_config.clone())),
-                RagasMetricType::ContextRelevancy => Box::new(ContextRelevancyMetric::new(self.config.context_relevancy_config.clone())),
-                RagasMetricType::AnswerSimilarity => Box::new(AnswerSimilarityMetric::new(self.config.answer_similarity_config.clone())),
-                RagasMetricType::AnswerCorrectness => Box::new(AnswerCorrectnessMetric::new(self.config.answer_correctness_config.clone())),
+                RagasMetricType::Faithfulness => Box::new(FaithfulnessMetric::new(
+                    self.config.faithfulness_config.clone(),
+                )),
+                RagasMetricType::AnswerRelevancy => Box::new(AnswerRelevancyMetric::new(
+                    self.config.answer_relevancy_config.clone(),
+                )),
+                RagasMetricType::ContextPrecision => Box::new(ContextPrecisionMetric::new(
+                    self.config.context_precision_config.clone(),
+                )),
+                RagasMetricType::ContextRecall => Box::new(ContextRecallMetric::new(
+                    self.config.context_recall_config.clone(),
+                )),
+                RagasMetricType::ContextRelevancy => Box::new(ContextRelevancyMetric::new(
+                    self.config.context_relevancy_config.clone(),
+                )),
+                RagasMetricType::AnswerSimilarity => Box::new(AnswerSimilarityMetric::new(
+                    self.config.answer_similarity_config.clone(),
+                )),
+                RagasMetricType::AnswerCorrectness => Box::new(AnswerCorrectnessMetric::new(
+                    self.config.answer_correctness_config.clone(),
+                )),
                 _ => continue, // Skip unsupported metrics for now
             };
 
@@ -326,14 +343,17 @@ impl Evaluator for RagasEvaluator {
             let mut query_scores = HashMap::new();
 
             // Find corresponding system response and ground truth
-            let system_response = data.system_responses.iter()
+            let system_response = data
+                .system_responses
+                .iter()
                 .find(|r| r.query_id == query.id);
-            let ground_truth = data.ground_truth.iter()
-                .find(|gt| gt.query_id == query.id);
+            let ground_truth = data.ground_truth.iter().find(|gt| gt.query_id == query.id);
 
             if let Some(response) = system_response {
                 // Extract contexts and answer
-                let contexts: Vec<String> = response.retrieved_docs.iter()
+                let contexts: Vec<String> = response
+                    .retrieved_docs
+                    .iter()
                     .map(|doc| doc.content.clone())
                     .collect();
                 let answer = response.generated_answer.as_deref().unwrap_or("");
@@ -341,17 +361,29 @@ impl Evaluator for RagasEvaluator {
 
                 // Evaluate each metric for this query
                 for metric in &self.metrics {
-                    match metric.evaluate_query(&query.query, &contexts, answer, ground_truth_answer) {
+                    match metric.evaluate_query(
+                        &query.query,
+                        &contexts,
+                        answer,
+                        ground_truth_answer,
+                    ) {
                         Ok(score) => {
                             let metric_name = metric.name().to_string();
                             query_scores.insert(metric_name.clone(), score);
 
                             // Collect for overall statistics
-                            all_metric_scores.entry(metric_name).or_insert_with(Vec::new).push(score);
+                            all_metric_scores
+                                .entry(metric_name)
+                                .or_insert_with(Vec::new)
+                                .push(score);
                         }
                         Err(e) => {
-                            eprintln!("Warning: Failed to evaluate {} for query {}: {}",
-                                     metric.name(), query.id, e);
+                            eprintln!(
+                                "Warning: Failed to evaluate {} for query {}: {}",
+                                metric.name(),
+                                query.id,
+                                e
+                            );
                         }
                     }
                 }
@@ -382,9 +414,11 @@ impl Evaluator for RagasEvaluator {
                 let avg = scores.iter().sum::<f32>() / scores.len() as f32;
                 avg_scores.insert(metric_name.clone(), avg);
 
-                let variance = scores.iter()
+                let variance = scores
+                    .iter()
                     .map(|score| (score - avg).powi(2))
-                    .sum::<f32>() / scores.len() as f32;
+                    .sum::<f32>()
+                    / scores.len() as f32;
                 std_deviations.insert(metric_name.clone(), variance.sqrt());
             }
         }
@@ -443,7 +477,11 @@ impl Evaluator for RagasEvaluator {
 
 impl RagasEvaluator {
     /// Generate insights based on scores
-    fn generate_insights(&self, scores: &HashMap<String, f32>, std_devs: &HashMap<String, f32>) -> Vec<String> {
+    fn generate_insights(
+        &self,
+        scores: &HashMap<String, f32>,
+        std_devs: &HashMap<String, f32>,
+    ) -> Vec<String> {
         let mut insights = Vec::new();
 
         // Overall performance assessment
@@ -451,7 +489,8 @@ impl RagasEvaluator {
         if avg_score > 0.8 {
             insights.push("🟢 Overall RAGAS performance is excellent".to_string());
         } else if avg_score > 0.6 {
-            insights.push("🟡 Overall RAGAS performance is good with room for improvement".to_string());
+            insights
+                .push("🟡 Overall RAGAS performance is good with room for improvement".to_string());
         } else {
             insights.push("🔴 Overall RAGAS performance needs significant improvement".to_string());
         }
@@ -459,13 +498,19 @@ impl RagasEvaluator {
         // Specific metric insights
         if let Some(&faithfulness) = scores.get("faithfulness") {
             if faithfulness < 0.7 {
-                insights.push("⚠️ Low faithfulness score indicates potential hallucination issues".to_string());
+                insights.push(
+                    "⚠️ Low faithfulness score indicates potential hallucination issues"
+                        .to_string(),
+                );
             }
         }
 
         if let Some(&context_precision) = scores.get("context_precision") {
             if context_precision < 0.6 {
-                insights.push("🎯 Low context precision suggests retrieval is returning irrelevant documents".to_string());
+                insights.push(
+                    "🎯 Low context precision suggests retrieval is returning irrelevant documents"
+                        .to_string(),
+                );
             }
         }
 
@@ -476,7 +521,8 @@ impl RagasEvaluator {
         }
 
         // Consistency insights
-        let high_variance_metrics: Vec<&String> = std_devs.iter()
+        let high_variance_metrics: Vec<&String> = std_devs
+            .iter()
             .filter(|(_, &std_dev)| std_dev > 0.2)
             .map(|(name, _)| name)
             .collect();
@@ -495,29 +541,46 @@ impl RagasEvaluator {
 
         if let Some(&faithfulness) = scores.get("faithfulness") {
             if faithfulness < 0.7 {
-                recommendations.push("📖 Implement stronger grounding mechanisms to improve faithfulness".to_string());
-                recommendations.push("🔍 Consider post-processing to filter out potential hallucinations".to_string());
+                recommendations.push(
+                    "📖 Implement stronger grounding mechanisms to improve faithfulness"
+                        .to_string(),
+                );
+                recommendations.push(
+                    "🔍 Consider post-processing to filter out potential hallucinations"
+                        .to_string(),
+                );
             }
         }
 
         if let Some(&context_precision) = scores.get("context_precision") {
             if context_precision < 0.6 {
-                recommendations.push("🎯 Improve retrieval ranking to surface more relevant documents first".to_string());
-                recommendations.push("⚡ Consider using reranking models to improve context quality".to_string());
+                recommendations.push(
+                    "🎯 Improve retrieval ranking to surface more relevant documents first"
+                        .to_string(),
+                );
+                recommendations.push(
+                    "⚡ Consider using reranking models to improve context quality".to_string(),
+                );
             }
         }
 
         if let Some(&context_recall) = scores.get("context_recall") {
             if context_recall < 0.6 {
                 recommendations.push("📈 Increase the number of retrieved documents".to_string());
-                recommendations.push("🔧 Tune embedding models or retrieval parameters".to_string());
+                recommendations
+                    .push("🔧 Tune embedding models or retrieval parameters".to_string());
             }
         }
 
         if let Some(&answer_relevancy) = scores.get("answer_relevancy") {
             if answer_relevancy < 0.6 {
-                recommendations.push("💬 Improve prompt engineering to generate more relevant answers".to_string());
-                recommendations.push("🧠 Consider fine-tuning the generation model on domain-specific data".to_string());
+                recommendations.push(
+                    "💬 Improve prompt engineering to generate more relevant answers".to_string(),
+                );
+                recommendations.push(
+                    "🧠 Consider fine-tuning the generation model on domain-specific data"
+                        .to_string(),
+                );
             }
         }
 
@@ -558,15 +621,13 @@ impl RagasMetric for FaithfulnessMetric {
 
         // Simple faithfulness evaluation based on content overlap
         let answer_lower = answer.to_lowercase();
-        let answer_words: std::collections::HashSet<&str> = answer_lower
-            .split_whitespace()
-            .collect();
+        let answer_words: std::collections::HashSet<&str> =
+            answer_lower.split_whitespace().collect();
 
         let context_text = contexts.join(" ");
         let context_lower = context_text.to_lowercase();
-        let context_words: std::collections::HashSet<&str> = context_lower
-            .split_whitespace()
-            .collect();
+        let context_words: std::collections::HashSet<&str> =
+            context_lower.split_whitespace().collect();
 
         let overlap = answer_words.intersection(&context_words).count();
         let faithfulness = if answer_words.is_empty() {
@@ -621,14 +682,11 @@ impl RagasMetric for AnswerRelevancyMetric {
 
         // Simple relevancy evaluation based on keyword overlap
         let query_lower = query.to_lowercase();
-        let query_words: std::collections::HashSet<&str> = query_lower
-            .split_whitespace()
-            .collect();
+        let query_words: std::collections::HashSet<&str> = query_lower.split_whitespace().collect();
 
         let answer_lower = answer.to_lowercase();
-        let answer_words: std::collections::HashSet<&str> = answer_lower
-            .split_whitespace()
-            .collect();
+        let answer_words: std::collections::HashSet<&str> =
+            answer_lower.split_whitespace().collect();
 
         let overlap = query_words.intersection(&answer_words).count();
         let union = query_words.union(&answer_words).count();
@@ -684,17 +742,14 @@ impl RagasMetric for ContextPrecisionMetric {
         }
 
         let query_lower = query.to_lowercase();
-        let query_words: std::collections::HashSet<&str> = query_lower
-            .split_whitespace()
-            .collect();
+        let query_words: std::collections::HashSet<&str> = query_lower.split_whitespace().collect();
 
         let mut relevant_contexts = 0;
 
         for context in contexts {
             let context_lower = context.to_lowercase();
-            let context_words: std::collections::HashSet<&str> = context_lower
-                .split_whitespace()
-                .collect();
+            let context_words: std::collections::HashSet<&str> =
+                context_lower.split_whitespace().collect();
 
             let overlap = query_words.intersection(&context_words).count();
             let relevance = overlap as f32 / query_words.len() as f32;
@@ -765,14 +820,12 @@ impl RagasMetric for ContextRecallMetric {
             }
 
             let sentence_lower = sentence.to_lowercase();
-            let sentence_words: std::collections::HashSet<&str> = sentence_lower
-                .split_whitespace()
-                .collect();
+            let sentence_words: std::collections::HashSet<&str> =
+                sentence_lower.split_whitespace().collect();
 
             let context_text_lower = context_text.to_lowercase();
-            let context_words: std::collections::HashSet<&str> = context_text_lower
-                .split_whitespace()
-                .collect();
+            let context_words: std::collections::HashSet<&str> =
+                context_text_lower.split_whitespace().collect();
 
             let overlap = sentence_words.intersection(&context_words).count();
             let similarity = if sentence_words.is_empty() {
@@ -837,15 +890,12 @@ impl RagasMetric for ContextRelevancyMetric {
         }
 
         let query_lower = query.to_lowercase();
-        let query_words: std::collections::HashSet<&str> = query_lower
-            .split_whitespace()
-            .collect();
+        let query_words: std::collections::HashSet<&str> = query_lower.split_whitespace().collect();
 
         let context_text = contexts.join(" ");
         let context_text_lower = context_text.to_lowercase();
-        let context_words: std::collections::HashSet<&str> = context_text_lower
-            .split_whitespace()
-            .collect();
+        let context_words: std::collections::HashSet<&str> =
+            context_text_lower.split_whitespace().collect();
 
         let overlap = query_words.intersection(&context_words).count();
         let union = query_words.union(&context_words).count();
@@ -908,14 +958,12 @@ impl RagasMetric for AnswerSimilarityMetric {
         match self.config.similarity_method {
             SimilarityMethod::Cosine | SimilarityMethod::Jaccard => {
                 let answer_lower = answer.to_lowercase();
-                let answer_words: std::collections::HashSet<&str> = answer_lower
-                    .split_whitespace()
-                    .collect();
+                let answer_words: std::collections::HashSet<&str> =
+                    answer_lower.split_whitespace().collect();
 
                 let gt_lower = ground_truth.to_lowercase();
-                let gt_words: std::collections::HashSet<&str> = gt_lower
-                    .split_whitespace()
-                    .collect();
+                let gt_words: std::collections::HashSet<&str> =
+                    gt_lower.split_whitespace().collect();
 
                 let intersection = answer_words.intersection(&gt_words).count();
                 let union = answer_words.union(&gt_words).count();
@@ -931,14 +979,12 @@ impl RagasMetric for AnswerSimilarityMetric {
             _ => {
                 // For other methods, use simple word overlap for now
                 let answer_lower = answer.to_lowercase();
-                let answer_words: std::collections::HashSet<&str> = answer_lower
-                    .split_whitespace()
-                    .collect();
+                let answer_words: std::collections::HashSet<&str> =
+                    answer_lower.split_whitespace().collect();
 
                 let gt_lower = ground_truth.to_lowercase();
-                let gt_words: std::collections::HashSet<&str> = gt_lower
-                    .split_whitespace()
-                    .collect();
+                let gt_words: std::collections::HashSet<&str> =
+                    gt_lower.split_whitespace().collect();
 
                 let intersection = answer_words.intersection(&gt_words).count();
                 let union = answer_words.union(&gt_words).count();
@@ -1002,14 +1048,11 @@ impl RagasMetric for AnswerCorrectnessMetric {
 
         // Combine factual and semantic correctness
         let answer_lower = answer.to_lowercase();
-        let answer_words: std::collections::HashSet<&str> = answer_lower
-            .split_whitespace()
-            .collect();
+        let answer_words: std::collections::HashSet<&str> =
+            answer_lower.split_whitespace().collect();
 
         let gt_lower = ground_truth.to_lowercase();
-        let gt_words: std::collections::HashSet<&str> = gt_lower
-            .split_whitespace()
-            .collect();
+        let gt_words: std::collections::HashSet<&str> = gt_lower.split_whitespace().collect();
 
         // Factual correctness (word overlap)
         let intersection = answer_words.intersection(&gt_words).count();
@@ -1028,8 +1071,8 @@ impl RagasMetric for AnswerCorrectnessMetric {
         };
 
         // Weighted combination
-        let correctness = factual_score * self.config.factual_weight +
-                         semantic_score * self.config.semantic_weight;
+        let correctness = factual_score * self.config.factual_weight
+            + semantic_score * self.config.semantic_weight;
 
         Ok(correctness.min(1.0))
     }

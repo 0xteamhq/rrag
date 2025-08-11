@@ -1,15 +1,15 @@
 //! # Metrics Collection System
-//! 
+//!
 //! Comprehensive metrics collection and aggregation for RRAG system performance,
 //! usage patterns, and operational insights.
 
 use crate::{RragError, RragResult};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc};
-use chrono::{DateTime, Utc};
-use std::sync::atomic::{AtomicU64, AtomicI64, Ordering};
+use tokio::sync::{mpsc, RwLock};
 
 /// Metrics collection configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,9 +50,20 @@ pub enum MetricType {
 pub enum MetricValue {
     Counter(u64),
     Gauge(f64),
-    Histogram { buckets: Vec<(f64, u64)>, sum: f64, count: u64 },
-    Timer { duration_ms: f64, count: u64 },
-    Summary { sum: f64, count: u64, quantiles: Vec<(f64, f64)> },
+    Histogram {
+        buckets: Vec<(f64, u64)>,
+        sum: f64,
+        count: u64,
+    },
+    Timer {
+        duration_ms: f64,
+        count: u64,
+    },
+    Summary {
+        sum: f64,
+        count: u64,
+        quantiles: Vec<(f64, f64)>,
+    },
 }
 
 /// Individual metric instance
@@ -93,7 +104,10 @@ impl Metric {
         Self {
             name: name.into(),
             metric_type: MetricType::Timer,
-            value: MetricValue::Timer { duration_ms, count: 1 },
+            value: MetricValue::Timer {
+                duration_ms,
+                count: 1,
+            },
             labels: HashMap::new(),
             timestamp: Utc::now(),
             help: None,
@@ -254,12 +268,14 @@ impl HistogramMetric {
 
         // Update sum and count
         let current_sum = f64::from_bits(self.sum.load(Ordering::Relaxed) as u64);
-        self.sum.store((current_sum + value).to_bits() as i64, Ordering::Relaxed);
+        self.sum
+            .store((current_sum + value).to_bits() as i64, Ordering::Relaxed);
         self.count.fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn to_metric(&self) -> Metric {
-        let buckets: Vec<(f64, u64)> = self.buckets
+        let buckets: Vec<(f64, u64)> = self
+            .buckets
             .iter()
             .map(|(le, counter)| (*le, counter.load(Ordering::Relaxed)))
             .collect();
@@ -270,7 +286,11 @@ impl HistogramMetric {
         Metric {
             name: self.name.clone(),
             metric_type: MetricType::Histogram,
-            value: MetricValue::Histogram { buckets, sum, count },
+            value: MetricValue::Histogram {
+                buckets,
+                sum,
+                count,
+            },
             labels: self.labels.clone(),
             timestamp: Utc::now(),
             help: self.help.clone(),
@@ -302,7 +322,7 @@ impl TimerMetric {
         let current_total = f64::from_bits(self.total_duration_ms.load(Ordering::Relaxed) as u64);
         self.total_duration_ms.store(
             (current_total + duration_ms).to_bits() as i64,
-            Ordering::Relaxed
+            Ordering::Relaxed,
         );
         self.count.fetch_add(1, Ordering::Relaxed);
     }
@@ -358,7 +378,8 @@ impl MetricsRegistry {
         drop(counters);
 
         let mut counters = self.counters.write().await;
-        counters.entry(name.to_string())
+        counters
+            .entry(name.to_string())
             .or_insert_with(|| Arc::new(CounterMetric::new(name)))
             .clone()
     }
@@ -371,12 +392,17 @@ impl MetricsRegistry {
         drop(gauges);
 
         let mut gauges = self.gauges.write().await;
-        gauges.entry(name.to_string())
+        gauges
+            .entry(name.to_string())
             .or_insert_with(|| Arc::new(GaugeMetric::new(name)))
             .clone()
     }
 
-    pub async fn get_or_create_histogram(&self, name: &str, buckets: Vec<f64>) -> Arc<HistogramMetric> {
+    pub async fn get_or_create_histogram(
+        &self,
+        name: &str,
+        buckets: Vec<f64>,
+    ) -> Arc<HistogramMetric> {
         let histograms = self.histograms.read().await;
         if let Some(histogram) = histograms.get(name) {
             return histogram.clone();
@@ -384,7 +410,8 @@ impl MetricsRegistry {
         drop(histograms);
 
         let mut histograms = self.histograms.write().await;
-        histograms.entry(name.to_string())
+        histograms
+            .entry(name.to_string())
             .or_insert_with(|| Arc::new(HistogramMetric::new(name, buckets)))
             .clone()
     }
@@ -397,7 +424,8 @@ impl MetricsRegistry {
         drop(timers);
 
         let mut timers = self.timers.write().await;
-        timers.entry(name.to_string())
+        timers
+            .entry(name.to_string())
             .or_insert_with(|| Arc::new(TimerMetric::new(name)))
             .clone()
     }
@@ -512,9 +540,10 @@ impl MetricsCollector {
             return Err(RragError::config("metrics", "running", "stopped"));
         }
 
-        self.sender.send(metric)
+        self.sender
+            .send(metric)
             .map_err(|e| RragError::agent("metrics", e.to_string()))?;
-        
+
         Ok(())
     }
 
@@ -536,12 +565,17 @@ impl MetricsCollector {
         Ok(())
     }
 
-    pub async fn observe_histogram(&self, name: &str, value: f64, buckets: Option<Vec<f64>>) -> RragResult<()> {
+    pub async fn observe_histogram(
+        &self,
+        name: &str,
+        value: f64,
+        buckets: Option<Vec<f64>>,
+    ) -> RragResult<()> {
         let default_buckets = vec![0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0];
-        let histogram = self.registry.get_or_create_histogram(
-            name, 
-            buckets.unwrap_or(default_buckets)
-        ).await;
+        let histogram = self
+            .registry
+            .get_or_create_histogram(name, buckets.unwrap_or(default_buckets))
+            .await;
         histogram.observe(value);
         Ok(())
     }
@@ -555,7 +589,7 @@ impl MetricsCollector {
     pub async fn get_all_metrics(&self) -> Vec<Metric> {
         let registry_metrics = self.registry.collect_all_metrics().await;
         let buffer_metrics = self.buffer.read().await.clone();
-        
+
         let mut all_metrics = registry_metrics;
         all_metrics.extend(buffer_metrics);
         all_metrics
@@ -580,15 +614,15 @@ mod tests {
     #[tokio::test]
     async fn test_counter_metric() {
         let counter = CounterMetric::new("test_counter");
-        
+
         assert_eq!(counter.get(), 0);
-        
+
         counter.inc();
         assert_eq!(counter.get(), 1);
-        
+
         counter.inc_by(5);
         assert_eq!(counter.get(), 6);
-        
+
         counter.reset();
         assert_eq!(counter.get(), 0);
     }
@@ -596,18 +630,18 @@ mod tests {
     #[tokio::test]
     async fn test_gauge_metric() {
         let gauge = GaugeMetric::new("test_gauge");
-        
+
         assert_eq!(gauge.get(), 0.0);
-        
+
         gauge.set(10.5);
         assert_eq!(gauge.get(), 10.5);
-        
+
         gauge.inc();
         assert_eq!(gauge.get(), 11.5);
-        
+
         gauge.dec();
         assert_eq!(gauge.get(), 10.5);
-        
+
         gauge.add(-5.0);
         assert_eq!(gauge.get(), 5.5);
     }
@@ -615,17 +649,22 @@ mod tests {
     #[tokio::test]
     async fn test_histogram_metric() {
         let histogram = HistogramMetric::new("test_histogram", vec![1.0, 5.0, 10.0]);
-        
+
         histogram.observe(0.5);
         histogram.observe(3.0);
         histogram.observe(7.0);
         histogram.observe(15.0);
-        
+
         let metric = histogram.to_metric();
-        if let MetricValue::Histogram { buckets, sum, count } = metric.value {
+        if let MetricValue::Histogram {
+            buckets,
+            sum,
+            count,
+        } = metric.value
+        {
             assert_eq!(count, 4);
             assert_eq!(sum, 25.5);
-            
+
             // Check bucket counts
             assert_eq!(buckets[0], (1.0, 1)); // 0.5 <= 1.0
             assert_eq!(buckets[1], (5.0, 2)); // 0.5, 3.0 <= 5.0
@@ -637,13 +676,13 @@ mod tests {
     #[tokio::test]
     async fn test_timer_metric() {
         let timer = TimerMetric::new("test_timer");
-        
+
         timer.record(100.0);
         timer.record(200.0);
         timer.record(300.0);
-        
+
         assert_eq!(timer.average_duration(), 200.0);
-        
+
         let metric = timer.to_metric();
         if let MetricValue::Timer { duration_ms, count } = metric.value {
             assert_eq!(duration_ms, 200.0);
@@ -654,26 +693,26 @@ mod tests {
     #[tokio::test]
     async fn test_metrics_registry() {
         let registry = MetricsRegistry::new();
-        
+
         // Test counter
         let counter = registry.get_or_create_counter("test_counter").await;
         counter.inc();
-        
+
         // Test gauge
         let gauge = registry.get_or_create_gauge("test_gauge").await;
         gauge.set(42.0);
-        
+
         // Collect all metrics
         let metrics = registry.collect_all_metrics().await;
         assert_eq!(metrics.len(), 2);
-        
+
         // Verify metrics
         let counter_metric = metrics.iter().find(|m| m.name == "test_counter").unwrap();
         assert_eq!(counter_metric.metric_type, MetricType::Counter);
         if let MetricValue::Counter(value) = counter_metric.value {
             assert_eq!(value, 1);
         }
-        
+
         let gauge_metric = metrics.iter().find(|m| m.name == "test_gauge").unwrap();
         assert_eq!(gauge_metric.metric_type, MetricType::Gauge);
         if let MetricValue::Gauge(value) = gauge_metric.value {
@@ -685,26 +724,32 @@ mod tests {
     async fn test_metrics_collector() {
         let config = MetricsConfig::default();
         let collector = MetricsCollector::new(config).await.unwrap();
-        
+
         collector.start().await.unwrap();
         assert!(collector.is_healthy().await);
-        
+
         // Test counter operations
         collector.inc_counter("requests_total").await.unwrap();
         collector.inc_counter_by("requests_total", 5).await.unwrap();
-        
+
         // Test gauge operations
-        collector.set_gauge("active_connections", 10.0).await.unwrap();
-        
+        collector
+            .set_gauge("active_connections", 10.0)
+            .await
+            .unwrap();
+
         // Test histogram operations
-        collector.observe_histogram("request_duration", 0.5, None).await.unwrap();
-        
+        collector
+            .observe_histogram("request_duration", 0.5, None)
+            .await
+            .unwrap();
+
         // Test timer operations
         collector.record_timer("process_time", 150.0).await.unwrap();
-        
+
         let metrics = collector.get_all_metrics().await;
         assert!(!metrics.is_empty());
-        
+
         collector.stop().await.unwrap();
         assert!(!collector.is_healthy().await);
     }
@@ -717,11 +762,11 @@ mod tests {
         if let MetricValue::Counter(value) = counter.value {
             assert_eq!(value, 10);
         }
-        
+
         let gauge = Metric::gauge("test_gauge", 42.5)
             .with_label("host", "server1")
             .with_help("Test gauge metric");
-        
+
         assert_eq!(gauge.name, "test_gauge");
         assert_eq!(gauge.metric_type, MetricType::Gauge);
         assert!(gauge.labels.contains_key("host"));

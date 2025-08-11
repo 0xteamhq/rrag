@@ -1,16 +1,16 @@
 //! # Intelligent Caching Layer
-//! 
-//! Enterprise-grade multi-level caching system designed specifically for RAG applications 
-//! with semantic awareness, intelligent eviction policies, and advanced performance 
+//!
+//! Enterprise-grade multi-level caching system designed specifically for RAG applications
+//! with semantic awareness, intelligent eviction policies, and advanced performance
 //! optimization features.
-//! 
-//! This module provides a comprehensive caching solution that understands the unique 
+//!
+//! This module provides a comprehensive caching solution that understands the unique
 //! characteristics of RAG workloads, including query similarity, embedding reuse,
-//! semantic relationships, and result patterns. It offers multiple cache layers 
+//! semantic relationships, and result patterns. It offers multiple cache layers
 //! working together to minimize latency and computational overhead.
-//! 
+//!
 //! ## Key Features
-//! 
+//!
 //! - **Multi-Layer Architecture**: Query, embedding, semantic, and result caches
 //! - **Semantic Awareness**: Understanding query similarity and content relationships
 //! - **Intelligent Eviction**: Multiple policies (LRU, LFU, TTL, ARC, Semantic-aware)
@@ -18,50 +18,50 @@
 //! - **Performance Monitoring**: Comprehensive metrics and analytics
 //! - **Memory Management**: Automatic cleanup and pressure-based eviction
 //! - **Async Operations**: Non-blocking cache operations for high throughput
-//! 
+//!
 //! ## Architecture
-//! 
+//!
 //! The caching system consists of four specialized cache layers:
-//! 
+//!
 //! 1. **Query Cache**: Caches complete query-response pairs with similarity matching
 //! 2. **Embedding Cache**: Reuses expensive embedding computations
 //! 3. **Semantic Cache**: Groups semantically similar queries for broader cache hits
 //! 4. **Result Cache**: Caches search results for parameter combinations
-//! 
+//!
 //! ## Examples
-//! 
+//!
 //! ### Basic Cache Setup
 //! ```rust
 //! use rrag::caching::{CacheService, CacheConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let cache_config = CacheConfig::default()
 //!     .with_query_cache(true)
 //!     .with_embedding_cache(true)
 //!     .with_semantic_cache(true);
-//! 
+//!
 //! let mut cache = CacheService::new(cache_config)?;
-//! 
+//!
 //! // Cache will automatically optimize based on your RAG workload patterns
 //! println!("Cache initialized with {} layers", 4);
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Query Result Caching
 //! ```rust
 //! use rrag::caching::{QueryCacheEntry, CachedSearchResult};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
 //! let query = "What is machine learning?";
-//! 
+//!
 //! // Check cache first
 //! if let Some(cached_entry) = cache.get_query_results(query).await {
 //!     println!("Cache hit! Retrieved {} results", cached_entry.results.len());
 //!     return Ok(());
 //! }
-//! 
+//!
 //! // If not cached, perform search and cache results
 //! let search_results = vec![
 //!     CachedSearchResult {
@@ -72,7 +72,7 @@
 //!         metadata: std::collections::HashMap::new(),
 //!     }
 //! ];
-//! 
+//!
 //! let cache_entry = QueryCacheEntry {
 //!     query: query.to_string(),
 //!     embedding_hash: "hash123".to_string(),
@@ -80,19 +80,19 @@
 //!     generated_answer: Some("ML is a field of AI...".to_string()),
 //!     metadata: rrag::caching::CacheEntryMetadata::new(),
 //! };
-//! 
+//!
 //! cache.cache_query_results(query.to_string(), cache_entry).await?;
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Embedding Caching for Performance
 //! ```rust
 //! # async fn example() -> rrag::RragResult<()> {
 //! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
 //! let text = "Advanced machine learning techniques";
 //! let model = "sentence-transformers/all-MiniLM-L6-v2";
-//! 
+//!
 //! // Check if embedding is already computed
 //! if let Some(cached_embedding) = cache.get_embedding(text, model).await {
 //!     println!("Using cached embedding of dimension {}", cached_embedding.len());
@@ -103,24 +103,24 @@
 //!     // Cache for future use
 //!     cache.cache_embedding(
 //!         text.to_string(),
-//!         model.to_string(), 
+//!         model.to_string(),
 //!         embedding
 //!     ).await?;
 //!     
 //!     println!("Computed and cached new embedding");
 //! }
-//! 
+//!
 //! # async fn compute_embedding(text: &str, model: &str) -> rrag::RragResult<Vec<f32>> {
 //! #     Ok(vec![0.1, 0.2, 0.3]) // Mock embedding
 //! # }
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Semantic Similarity Caching
 //! ```rust
 //! use rrag::caching::{SemanticCacheEntry, SimilarEntry};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
 //! let similar_queries = [
@@ -128,7 +128,7 @@
 //!     "Explain AI concepts",
 //!     "Define artificial intelligence",
 //! ];
-//! 
+//!
 //! // Check for semantically similar cached results
 //! for query in &similar_queries {
 //!     if let Some(semantic_entry) = cache.get_semantic_results(query).await {
@@ -138,7 +138,7 @@
 //!         return Ok(());
 //!     }
 //! }
-//! 
+//!
 //! // Create semantic cache entry for related queries
 //! let semantic_entry = SemanticCacheEntry {
 //!     representative: "What is artificial intelligence?".to_string(),
@@ -158,23 +158,23 @@
 //!     results: vec![], // Shared results for all similar queries
 //!     metadata: rrag::caching::CacheEntryMetadata::new(),
 //! };
-//! 
+//!
 //! cache.cache_semantic_results(
-//!     "ai_concepts_cluster".to_string(), 
+//!     "ai_concepts_cluster".to_string(),
 //!     semantic_entry
 //! ).await?;
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Advanced Cache Configuration
 //! ```rust
 //! use rrag::caching::{
-//!     CacheConfig, QueryCacheConfig, EmbeddingCacheConfig, 
+//!     CacheConfig, QueryCacheConfig, EmbeddingCacheConfig,
 //!     EvictionPolicy, PersistenceConfig, PersistenceFormat
 //! };
 //! use std::time::Duration;
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let advanced_config = CacheConfig {
 //!     enabled: true,
@@ -200,37 +200,37 @@
 //!     },
 //!     ..Default::default()
 //! };
-//! 
+//!
 //! let cache = CacheService::new(advanced_config)?;
 //! println!("Advanced cache configured with persistence and compression");
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ### Cache Performance Monitoring
 //! ```rust
 //! # async fn example() -> rrag::RragResult<()> {
 //! # let mut cache = rrag::caching::CacheService::new(rrag::caching::CacheConfig::default())?;
 //! // Get comprehensive cache metrics
 //! let metrics = cache.get_metrics();
-//! 
+//!
 //! println!("📊 Cache Performance Report");
-//! println!("Query Cache: {:.1}% hit rate, {} entries", 
+//! println!("Query Cache: {:.1}% hit rate, {} entries",
 //!          metrics.query_cache.hit_rate * 100.0,
 //!          metrics.query_cache.total_entries);
-//! 
-//! println!("Embedding Cache: {:.1}% hit rate, {:.1}MB memory", 
+//!
+//! println!("Embedding Cache: {:.1}% hit rate, {:.1}MB memory",
 //!          metrics.embedding_cache.hit_rate * 100.0,
 //!          metrics.embedding_cache.memory_usage as f32 / 1024.0 / 1024.0);
-//! 
-//! println!("Semantic Cache: {:.1}% hit rate, {} evictions", 
+//!
+//! println!("Semantic Cache: {:.1}% hit rate, {} evictions",
 //!          metrics.semantic_cache.hit_rate * 100.0,
 //!          metrics.semantic_cache.evictions);
-//! 
+//!
 //! println!("Overall Efficiency: {:.1}%, Time Saved: {:.1}ms",
 //!          metrics.overall.efficiency_score * 100.0,
 //!          metrics.overall.time_saved_ms);
-//! 
+//!
 //! // Performance optimization based on metrics
 //! if metrics.overall.memory_pressure > 0.8 {
 //!     println!("⚠️  High memory pressure detected, triggering cleanup");
@@ -239,47 +239,47 @@
 //! # Ok(())
 //! # }
 //! ```
-//! 
+//!
 //! ## Cache Eviction Policies
-//! 
+//!
 //! ### LRU (Least Recently Used)
 //! Best for: General-purpose caching with temporal locality
 //! - Evicts items that haven't been accessed recently
 //! - Good memory efficiency
 //! - Simple and fast
-//! 
+//!
 //! ### LFU (Least Frequently Used)
 //! Best for: Embedding caches where popular items should stay
 //! - Evicts items with lowest access frequency
 //! - Excellent for reusable computations
 //! - Handles long-term access patterns
-//! 
+//!
 //! ### TTL (Time-To-Live)
 //! Best for: Fresh data requirements
 //! - Evicts items after fixed time period
 //! - Ensures data freshness
 //! - Predictable memory usage
-//! 
+//!
 //! ### Semantic-Aware
 //! Best for: RAG-specific query patterns
 //! - Considers semantic similarity in eviction decisions
 //! - Maintains representative queries from clusters
 //! - Optimizes for query pattern diversity
-//! 
+//!
 //! ## Performance Optimization Tips
-//! 
+//!
 //! 1. **Tune Cache Sizes**: Monitor hit rates and adjust max_size accordingly
 //! 2. **Enable Compression**: For embedding caches with large vectors
 //! 3. **Use Persistence**: For frequently reused embeddings across sessions
 //! 4. **Semantic Clustering**: Enable for diverse query workloads
 //! 5. **Async Operations**: Enable for high-throughput applications
 //! 6. **Memory Monitoring**: Set appropriate pressure thresholds
-//! 
+//!
 //! ## Integration with RAG Systems
-//! 
+//!
 //! ```rust
 //! use rrag::{RragSystemBuilder, caching::CacheConfig};
-//! 
+//!
 //! # async fn example() -> rrag::RragResult<()> {
 //! let rag_system = RragSystemBuilder::new()
 //!     .with_caching(
@@ -290,7 +290,7 @@
 //!     )
 //!     .build()
 //!     .await?;
-//! 
+//!
 //! // Cache automatically optimizes based on your query patterns
 //! let results = rag_system.search("machine learning applications", Some(10)).await?;
 //! // Subsequent similar queries will benefit from semantic caching
@@ -299,13 +299,13 @@
 //! ```
 
 pub mod cache_core;
-pub mod semantic_cache;
 pub mod embedding_cache;
-pub mod query_cache;
-pub mod result_cache;
-pub mod policies;
 pub mod metrics;
 pub mod persistence;
+pub mod policies;
+pub mod query_cache;
+pub mod result_cache;
+pub mod semantic_cache;
 
 use crate::RragResult;
 use serde::{Deserialize, Serialize};
@@ -317,19 +317,19 @@ use std::time::{Duration, SystemTime};
 pub struct CacheService {
     /// Query result cache
     query_cache: Box<dyn Cache<String, QueryCacheEntry>>,
-    
+
     /// Embedding cache for reusing computations
     embedding_cache: Box<dyn Cache<String, EmbeddingCacheEntry>>,
-    
+
     /// Semantic similarity cache
     semantic_cache: Box<dyn Cache<String, SemanticCacheEntry>>,
-    
+
     /// Document retrieval cache
     result_cache: Box<dyn Cache<String, ResultCacheEntry>>,
-    
+
     /// Cache configuration
     config: CacheConfig,
-    
+
     /// Performance metrics
     metrics: CacheMetrics,
 }
@@ -339,22 +339,22 @@ pub struct CacheService {
 pub struct CacheConfig {
     /// Enable/disable caching globally
     pub enabled: bool,
-    
+
     /// Query cache configuration
     pub query_cache: QueryCacheConfig,
-    
+
     /// Embedding cache configuration
     pub embedding_cache: EmbeddingCacheConfig,
-    
+
     /// Semantic cache configuration
     pub semantic_cache: SemanticCacheConfig,
-    
+
     /// Result cache configuration
     pub result_cache: ResultCacheConfig,
-    
+
     /// Persistence configuration
     pub persistence: PersistenceConfig,
-    
+
     /// Performance tuning
     pub performance: PerformanceConfig,
 }
@@ -449,22 +449,22 @@ where
 {
     /// Get value from cache
     fn get(&self, key: &K) -> Option<V>;
-    
+
     /// Put value into cache
     fn put(&mut self, key: K, value: V) -> RragResult<()>;
-    
+
     /// Remove value from cache
     fn remove(&mut self, key: &K) -> Option<V>;
-    
+
     /// Check if key exists
     fn contains(&self, key: &K) -> bool;
-    
+
     /// Clear all entries
     fn clear(&mut self);
-    
+
     /// Get cache size
     fn size(&self) -> usize;
-    
+
     /// Get cache statistics
     fn stats(&self) -> CacheStats;
 }
@@ -474,19 +474,19 @@ where
 pub struct CacheEntryMetadata {
     /// Creation timestamp
     pub created_at: SystemTime,
-    
+
     /// Last access timestamp
     pub last_accessed: SystemTime,
-    
+
     /// Access count
     pub access_count: u64,
-    
+
     /// Entry size in bytes
     pub size_bytes: usize,
-    
+
     /// Time-to-live
     pub ttl: Option<Duration>,
-    
+
     /// Custom metadata
     pub custom: HashMap<String, String>,
 }
@@ -496,16 +496,16 @@ pub struct CacheEntryMetadata {
 pub struct QueryCacheEntry {
     /// Original query
     pub query: String,
-    
+
     /// Query embedding hash
     pub embedding_hash: String,
-    
+
     /// Cached results
     pub results: Vec<CachedSearchResult>,
-    
+
     /// Generation result if any
     pub generated_answer: Option<String>,
-    
+
     /// Metadata
     pub metadata: CacheEntryMetadata,
 }
@@ -515,16 +515,16 @@ pub struct QueryCacheEntry {
 pub struct EmbeddingCacheEntry {
     /// Input text
     pub text: String,
-    
+
     /// Text hash for verification
     pub text_hash: String,
-    
+
     /// Computed embedding
     pub embedding: Vec<f32>,
-    
+
     /// Model used for embedding
     pub model: String,
-    
+
     /// Metadata
     pub metadata: CacheEntryMetadata,
 }
@@ -534,16 +534,16 @@ pub struct EmbeddingCacheEntry {
 pub struct SemanticCacheEntry {
     /// Representative query/text
     pub representative: String,
-    
+
     /// Cluster ID if clustering enabled
     pub cluster_id: Option<usize>,
-    
+
     /// Similar queries/texts
     pub similar_entries: Vec<SimilarEntry>,
-    
+
     /// Cached semantic results
     pub results: Vec<CachedSearchResult>,
-    
+
     /// Metadata
     pub metadata: CacheEntryMetadata,
 }
@@ -553,13 +553,13 @@ pub struct SemanticCacheEntry {
 pub struct ResultCacheEntry {
     /// Search parameters hash
     pub params_hash: String,
-    
+
     /// Cached search results
     pub results: Vec<CachedSearchResult>,
-    
+
     /// Result metadata
     pub result_metadata: HashMap<String, String>,
-    
+
     /// Metadata
     pub metadata: CacheEntryMetadata,
 }
@@ -569,10 +569,10 @@ pub struct ResultCacheEntry {
 pub struct SimilarEntry {
     /// Similar text
     pub text: String,
-    
+
     /// Similarity score
     pub similarity: f32,
-    
+
     /// When added
     pub added_at: SystemTime,
 }
@@ -582,16 +582,16 @@ pub struct SimilarEntry {
 pub struct CachedSearchResult {
     /// Document ID
     pub document_id: String,
-    
+
     /// Document content
     pub content: String,
-    
+
     /// Relevance score
     pub score: f32,
-    
+
     /// Result rank
     pub rank: usize,
-    
+
     /// Additional metadata
     pub metadata: HashMap<String, String>,
 }
@@ -601,25 +601,25 @@ pub struct CachedSearchResult {
 pub struct CacheStats {
     /// Total number of entries
     pub total_entries: usize,
-    
+
     /// Total cache hits
     pub hits: u64,
-    
+
     /// Total cache misses
     pub misses: u64,
-    
+
     /// Hit rate percentage
     pub hit_rate: f32,
-    
+
     /// Total memory usage in bytes
     pub memory_usage: usize,
-    
+
     /// Average access time in microseconds
     pub avg_access_time_us: f32,
-    
+
     /// Eviction count
     pub evictions: u64,
-    
+
     /// Last cleanup time
     pub last_cleanup: SystemTime,
 }
@@ -629,16 +629,16 @@ pub struct CacheStats {
 pub struct CacheMetrics {
     /// Query cache metrics
     pub query_cache: CacheStats,
-    
+
     /// Embedding cache metrics
     pub embedding_cache: CacheStats,
-    
+
     /// Semantic cache metrics
     pub semantic_cache: CacheStats,
-    
+
     /// Result cache metrics
     pub result_cache: CacheStats,
-    
+
     /// Overall performance metrics
     pub overall: OverallCacheMetrics,
 }
@@ -648,16 +648,16 @@ pub struct CacheMetrics {
 pub struct OverallCacheMetrics {
     /// Total memory saved (bytes)
     pub memory_saved: usize,
-    
+
     /// Total time saved (milliseconds)
     pub time_saved_ms: f32,
-    
+
     /// Cache efficiency score
     pub efficiency_score: f32,
-    
+
     /// Memory pressure level (0.0 to 1.0)
     pub memory_pressure: f32,
-    
+
     /// Total operations per second
     pub ops_per_second: f32,
 }
@@ -665,22 +665,18 @@ pub struct OverallCacheMetrics {
 impl CacheService {
     /// Create new cache service
     pub fn new(config: CacheConfig) -> RragResult<Self> {
-        let query_cache = Box::new(
-            query_cache::QueryCache::new(config.query_cache.clone())?
-        );
-        
-        let embedding_cache = Box::new(
-            embedding_cache::EmbeddingCache::new(config.embedding_cache.clone())?
-        );
-        
-        let semantic_cache = Box::new(
-            semantic_cache::SemanticCache::new(config.semantic_cache.clone())?
-        );
-        
-        let result_cache = Box::new(
-            result_cache::ResultCache::new(config.result_cache.clone())?
-        );
-        
+        let query_cache = Box::new(query_cache::QueryCache::new(config.query_cache.clone())?);
+
+        let embedding_cache = Box::new(embedding_cache::EmbeddingCache::new(
+            config.embedding_cache.clone(),
+        )?);
+
+        let semantic_cache = Box::new(semantic_cache::SemanticCache::new(
+            config.semantic_cache.clone(),
+        )?);
+
+        let result_cache = Box::new(result_cache::ResultCache::new(config.result_cache.clone())?);
+
         Ok(Self {
             query_cache,
             embedding_cache,
@@ -690,50 +686,50 @@ impl CacheService {
             metrics: CacheMetrics::default(),
         })
     }
-    
+
     /// Get cached query results
     pub async fn get_query_results(&self, query: &str) -> Option<QueryCacheEntry> {
         if !self.config.enabled || !self.config.query_cache.enabled {
             return None;
         }
-        
+
         self.query_cache.get(&query.to_string())
     }
-    
+
     /// Cache query results
     pub async fn cache_query_results(
-        &mut self, 
-        query: String, 
-        entry: QueryCacheEntry
+        &mut self,
+        query: String,
+        entry: QueryCacheEntry,
     ) -> RragResult<()> {
         if !self.config.enabled || !self.config.query_cache.enabled {
             return Ok(());
         }
-        
+
         self.query_cache.put(query, entry)
     }
-    
+
     /// Get cached embedding
     pub async fn get_embedding(&self, text: &str, model: &str) -> Option<Vec<f32>> {
         if !self.config.enabled || !self.config.embedding_cache.enabled {
             return None;
         }
-        
+
         let key = format!("{}:{}", model, text);
         self.embedding_cache.get(&key).map(|entry| entry.embedding)
     }
-    
+
     /// Cache embedding
     pub async fn cache_embedding(
         &mut self,
         text: String,
         model: String,
-        embedding: Vec<f32>
+        embedding: Vec<f32>,
     ) -> RragResult<()> {
         if !self.config.enabled || !self.config.embedding_cache.enabled {
             return Ok(());
         }
-        
+
         let key = format!("{}:{}", model, text);
         let entry = EmbeddingCacheEntry {
             text: text.clone(),
@@ -742,37 +738,37 @@ impl CacheService {
             model,
             metadata: CacheEntryMetadata::new(),
         };
-        
+
         self.embedding_cache.put(key, entry)
     }
-    
+
     /// Get semantically similar cached results
     pub async fn get_semantic_results(&self, query: &str) -> Option<SemanticCacheEntry> {
         if !self.config.enabled || !self.config.semantic_cache.enabled {
             return None;
         }
-        
+
         self.semantic_cache.get(&query.to_string())
     }
-    
+
     /// Cache semantic results
     pub async fn cache_semantic_results(
         &mut self,
         query: String,
-        entry: SemanticCacheEntry
+        entry: SemanticCacheEntry,
     ) -> RragResult<()> {
         if !self.config.enabled || !self.config.semantic_cache.enabled {
             return Ok(());
         }
-        
+
         self.semantic_cache.put(query, entry)
     }
-    
+
     /// Get cache metrics
     pub fn get_metrics(&self) -> &CacheMetrics {
         &self.metrics
     }
-    
+
     /// Clear all caches
     pub fn clear_all(&mut self) {
         self.query_cache.clear();
@@ -780,13 +776,13 @@ impl CacheService {
         self.semantic_cache.clear();
         self.result_cache.clear();
     }
-    
+
     /// Perform cache maintenance
     pub async fn maintenance(&mut self) -> RragResult<()> {
         // Background cleanup, eviction, persistence, etc.
         Ok(())
     }
-    
+
     /// Hash string for cache keys
     fn hash_string(s: &str) -> String {
         use std::collections::hash_map::DefaultHasher;
@@ -809,13 +805,13 @@ impl CacheEntryMetadata {
             custom: HashMap::new(),
         }
     }
-    
+
     /// Update access info
     pub fn accessed(&mut self) {
         self.last_accessed = SystemTime::now();
         self.access_count += 1;
     }
-    
+
     /// Check if entry has expired
     pub fn is_expired(&self) -> bool {
         if let Some(ttl) = self.ttl {
@@ -954,25 +950,25 @@ impl Default for OverallCacheMetrics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_cache_service_creation() {
         let config = CacheConfig::default();
         let cache_service = CacheService::new(config).unwrap();
-        
+
         let metrics = cache_service.get_metrics();
         assert_eq!(metrics.overall.efficiency_score, 0.0);
     }
-    
+
     #[test]
     fn test_cache_entry_metadata() {
         let mut metadata = CacheEntryMetadata::new();
         assert_eq!(metadata.access_count, 0);
-        
+
         metadata.accessed();
         assert_eq!(metadata.access_count, 1);
     }
-    
+
     #[test]
     fn test_cache_config_defaults() {
         let config = CacheConfig::default();

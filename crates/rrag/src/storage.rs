@@ -1,9 +1,9 @@
 //! # RRAG Storage System
-//! 
+//!
 //! Pluggable storage backends with async I/O and efficient serialization.
 //! Designed for Rust's ownership model and zero-copy operations where possible.
 
-use crate::{RragError, RragResult, Document, DocumentChunk, Embedding};
+use crate::{Document, DocumentChunk, Embedding, RragError, RragResult};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -26,10 +26,10 @@ pub enum StorageEntry {
 pub struct StorageKey {
     /// Entry type
     pub entry_type: EntryType,
-    
+
     /// Unique identifier
     pub id: String,
-    
+
     /// Optional namespace/collection
     pub namespace: Option<String>,
 }
@@ -82,11 +82,11 @@ impl StorageKey {
         };
 
         let mut path = PathBuf::from(type_str);
-        
+
         if let Some(namespace) = &self.namespace {
             path.push(namespace);
         }
-        
+
         path.push(format!("{}.json", self.id));
         path
     }
@@ -97,19 +97,19 @@ impl StorageKey {
 pub struct StorageQuery {
     /// Entry type filter
     pub entry_type: Option<EntryType>,
-    
+
     /// Namespace filter
     pub namespace: Option<String>,
-    
+
     /// Key prefix filter
     pub key_prefix: Option<String>,
-    
+
     /// Metadata filters
     pub metadata_filters: HashMap<String, serde_json::Value>,
-    
+
     /// Maximum results
     pub limit: Option<usize>,
-    
+
     /// Offset for pagination
     pub offset: Option<usize>,
 }
@@ -175,42 +175,48 @@ impl Default for StorageQuery {
 pub trait Storage: Send + Sync {
     /// Storage backend name
     fn name(&self) -> &str;
-    
+
     /// Store an entry
     async fn put(&self, key: &StorageKey, entry: &StorageEntry) -> RragResult<()>;
-    
+
     /// Retrieve an entry
     async fn get(&self, key: &StorageKey) -> RragResult<Option<StorageEntry>>;
-    
+
     /// Delete an entry
     async fn delete(&self, key: &StorageKey) -> RragResult<bool>;
-    
+
     /// Check if an entry exists
     async fn exists(&self, key: &StorageKey) -> RragResult<bool>;
-    
+
     /// List keys matching a query
     async fn list_keys(&self, query: &StorageQuery) -> RragResult<Vec<StorageKey>>;
-    
+
     /// Bulk get operation
-    async fn get_many(&self, keys: &[StorageKey]) -> RragResult<Vec<(StorageKey, Option<StorageEntry>)>>;
-    
+    async fn get_many(
+        &self,
+        keys: &[StorageKey],
+    ) -> RragResult<Vec<(StorageKey, Option<StorageEntry>)>>;
+
     /// Bulk put operation
     async fn put_many(&self, entries: &[(StorageKey, StorageEntry)]) -> RragResult<()>;
-    
+
     /// Bulk delete operation
     async fn delete_many(&self, keys: &[StorageKey]) -> RragResult<usize>;
-    
+
     /// Clear all entries (optional)
     async fn clear(&self) -> RragResult<()> {
-        Err(RragError::storage("clear", std::io::Error::new(
-            std::io::ErrorKind::Unsupported,
-            "Clear operation not supported"
-        )))
+        Err(RragError::storage(
+            "clear",
+            std::io::Error::new(
+                std::io::ErrorKind::Unsupported,
+                "Clear operation not supported",
+            ),
+        ))
     }
-    
+
     /// Get storage statistics
     async fn stats(&self) -> RragResult<StorageStats>;
-    
+
     /// Health check
     async fn health_check(&self) -> RragResult<bool>;
 }
@@ -220,19 +226,19 @@ pub trait Storage: Send + Sync {
 pub struct StorageStats {
     /// Total number of entries
     pub total_entries: usize,
-    
+
     /// Entries by type
     pub entries_by_type: HashMap<String, usize>,
-    
+
     /// Storage size in bytes
     pub size_bytes: u64,
-    
+
     /// Available space in bytes (if applicable)
     pub available_bytes: Option<u64>,
-    
+
     /// Backend type
     pub backend_type: String,
-    
+
     /// Last updated
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -241,7 +247,7 @@ pub struct StorageStats {
 pub struct InMemoryStorage {
     /// Internal storage map
     data: Arc<tokio::sync::RwLock<HashMap<StorageKey, StorageEntry>>>,
-    
+
     /// Configuration
     config: MemoryStorageConfig,
 }
@@ -250,7 +256,7 @@ pub struct InMemoryStorage {
 pub struct MemoryStorageConfig {
     /// Maximum number of entries
     pub max_entries: Option<usize>,
-    
+
     /// Maximum memory usage in bytes
     pub max_memory_bytes: Option<u64>,
 }
@@ -282,19 +288,19 @@ impl InMemoryStorage {
     /// Check if we're within memory limits
     async fn check_limits(&self) -> RragResult<()> {
         let data = self.data.read().await;
-        
+
         if let Some(max_entries) = self.config.max_entries {
             if data.len() >= max_entries {
                 return Err(RragError::storage(
                     "memory_limit",
                     std::io::Error::new(
                         std::io::ErrorKind::OutOfMemory,
-                        format!("Exceeded maximum entries: {}", max_entries)
-                    )
+                        format!("Exceeded maximum entries: {}", max_entries),
+                    ),
                 ));
             }
         }
-        
+
         Ok(())
     }
 
@@ -306,23 +312,23 @@ impl InMemoryStorage {
                 return false;
             }
         }
-        
+
         // Check namespace
         if let Some(namespace) = &query.namespace {
             match &key.namespace {
-                Some(key_ns) if key_ns == namespace => {},
-                None if namespace.is_empty() => {},
+                Some(key_ns) if key_ns == namespace => {}
+                None if namespace.is_empty() => {}
                 _ => return false,
             }
         }
-        
+
         // Check prefix
         if let Some(prefix) = &query.key_prefix {
             if !key.id.starts_with(prefix) {
                 return false;
             }
         }
-        
+
         true
     }
 }
@@ -341,7 +347,7 @@ impl Storage for InMemoryStorage {
 
     async fn put(&self, key: &StorageKey, entry: &StorageEntry) -> RragResult<()> {
         self.check_limits().await?;
-        
+
         let mut data = self.data.write().await;
         data.insert(key.clone(), entry.clone());
         Ok(())
@@ -369,7 +375,7 @@ impl Storage for InMemoryStorage {
             .filter(|key| self.matches_query(key, query))
             .cloned()
             .collect();
-        
+
         // Apply offset and limit
         if let Some(offset) = query.offset {
             if offset < keys.len() {
@@ -378,15 +384,18 @@ impl Storage for InMemoryStorage {
                 keys.clear();
             }
         }
-        
+
         if let Some(limit) = query.limit {
             keys.truncate(limit);
         }
-        
+
         Ok(keys)
     }
 
-    async fn get_many(&self, keys: &[StorageKey]) -> RragResult<Vec<(StorageKey, Option<StorageEntry>)>> {
+    async fn get_many(
+        &self,
+        keys: &[StorageKey],
+    ) -> RragResult<Vec<(StorageKey, Option<StorageEntry>)>> {
         let data = self.data.read().await;
         let results = keys
             .iter()
@@ -397,7 +406,7 @@ impl Storage for InMemoryStorage {
 
     async fn put_many(&self, entries: &[(StorageKey, StorageEntry)]) -> RragResult<()> {
         self.check_limits().await?;
-        
+
         let mut data = self.data.write().await;
         for (key, entry) in entries {
             data.insert(key.clone(), entry.clone());
@@ -424,26 +433,29 @@ impl Storage for InMemoryStorage {
 
     async fn stats(&self) -> RragResult<StorageStats> {
         let data = self.data.read().await;
-        
+
         let mut entries_by_type = HashMap::new();
         for key in data.keys() {
             let type_str = match key.entry_type {
                 EntryType::Document => "documents",
-                EntryType::Chunk => "chunks", 
+                EntryType::Chunk => "chunks",
                 EntryType::Embedding => "embeddings",
                 EntryType::Metadata => "metadata",
             };
             *entries_by_type.entry(type_str.to_string()).or_insert(0) += 1;
         }
-        
+
         // Estimate memory usage (rough calculation)
         let estimated_size = data.len() * 1024; // Rough estimate per entry
-        
+
         Ok(StorageStats {
             total_entries: data.len(),
             entries_by_type,
             size_bytes: estimated_size as u64,
-            available_bytes: self.config.max_memory_bytes.map(|max| max - estimated_size as u64),
+            available_bytes: self
+                .config
+                .max_memory_bytes
+                .map(|max| max - estimated_size as u64),
             backend_type: "in_memory".to_string(),
             last_updated: chrono::Utc::now(),
         })
@@ -460,7 +472,7 @@ impl Storage for InMemoryStorage {
 pub struct FileStorage {
     /// Base directory for storage
     base_dir: PathBuf,
-    
+
     /// Configuration
     config: FileStorageConfig,
 }
@@ -469,13 +481,13 @@ pub struct FileStorage {
 pub struct FileStorageConfig {
     /// Whether to create directories automatically
     pub create_dirs: bool,
-    
+
     /// File permissions (Unix only)
     pub file_permissions: Option<u32>,
-    
+
     /// Whether to use compression
     pub compress: bool,
-    
+
     /// Sync writes to disk immediately
     pub sync_writes: bool,
 }
@@ -494,28 +506,31 @@ impl Default for FileStorageConfig {
 impl FileStorage {
     pub async fn new(base_dir: impl AsRef<Path>) -> RragResult<Self> {
         let base_dir = base_dir.as_ref().to_path_buf();
-        
+
         if !base_dir.exists() {
             fs::create_dir_all(&base_dir)
                 .await
                 .map_err(|e| RragError::storage("create_directory", e))?;
         }
-        
+
         Ok(Self {
             base_dir,
             config: FileStorageConfig::default(),
         })
     }
 
-    pub async fn with_config(base_dir: impl AsRef<Path>, config: FileStorageConfig) -> RragResult<Self> {
+    pub async fn with_config(
+        base_dir: impl AsRef<Path>,
+        config: FileStorageConfig,
+    ) -> RragResult<Self> {
         let base_dir = base_dir.as_ref().to_path_buf();
-        
+
         if config.create_dirs && !base_dir.exists() {
             fs::create_dir_all(&base_dir)
                 .await
                 .map_err(|e| RragError::storage("create_directory", e))?;
         }
-        
+
         Ok(Self { base_dir, config })
     }
 
@@ -546,60 +561,60 @@ impl Storage for FileStorage {
     async fn put(&self, key: &StorageKey, entry: &StorageEntry) -> RragResult<()> {
         let file_path = self.get_file_path(key);
         self.ensure_parent_dir(&file_path).await?;
-        
-        let json_data = serde_json::to_vec_pretty(entry)
-            .map_err(|e| RragError::storage("serialize", e))?;
-        
+
+        let json_data =
+            serde_json::to_vec_pretty(entry).map_err(|e| RragError::storage("serialize", e))?;
+
         let mut file = fs::File::create(&file_path)
             .await
             .map_err(|e| RragError::storage("create_file", e))?;
-        
+
         file.write_all(&json_data)
             .await
             .map_err(|e| RragError::storage("write_file", e))?;
-        
+
         if self.config.sync_writes {
             file.sync_all()
                 .await
                 .map_err(|e| RragError::storage("sync_file", e))?;
         }
-        
+
         Ok(())
     }
 
     async fn get(&self, key: &StorageKey) -> RragResult<Option<StorageEntry>> {
         let file_path = self.get_file_path(key);
-        
+
         if !file_path.exists() {
             return Ok(None);
         }
-        
+
         let mut file = fs::File::open(&file_path)
             .await
             .map_err(|e| RragError::storage("open_file", e))?;
-        
+
         let mut contents = Vec::new();
         file.read_to_end(&mut contents)
             .await
             .map_err(|e| RragError::storage("read_file", e))?;
-        
-        let entry = serde_json::from_slice(&contents)
-            .map_err(|e| RragError::storage("deserialize", e))?;
-        
+
+        let entry =
+            serde_json::from_slice(&contents).map_err(|e| RragError::storage("deserialize", e))?;
+
         Ok(Some(entry))
     }
 
     async fn delete(&self, key: &StorageKey) -> RragResult<bool> {
         let file_path = self.get_file_path(key);
-        
+
         if !file_path.exists() {
             return Ok(false);
         }
-        
+
         fs::remove_file(&file_path)
             .await
             .map_err(|e| RragError::storage("delete_file", e))?;
-        
+
         Ok(true)
     }
 
@@ -612,20 +627,23 @@ impl Storage for FileStorage {
         // This is a simplified implementation
         // In production, you'd want more efficient directory traversal
         let keys = Vec::new();
-        
+
         // For now, return empty - would need recursive directory walking
         // This is a limitation of the simple file storage implementation
         Ok(keys)
     }
 
-    async fn get_many(&self, keys: &[StorageKey]) -> RragResult<Vec<(StorageKey, Option<StorageEntry>)>> {
+    async fn get_many(
+        &self,
+        keys: &[StorageKey],
+    ) -> RragResult<Vec<(StorageKey, Option<StorageEntry>)>> {
         let mut results = Vec::with_capacity(keys.len());
-        
+
         for key in keys {
             let entry = self.get(key).await?;
             results.push((key.clone(), entry));
         }
-        
+
         Ok(results)
     }
 
@@ -638,13 +656,13 @@ impl Storage for FileStorage {
 
     async fn delete_many(&self, keys: &[StorageKey]) -> RragResult<usize> {
         let mut deleted = 0;
-        
+
         for key in keys {
             if self.delete(key).await? {
                 deleted += 1;
             }
         }
-        
+
         Ok(deleted)
     }
 
@@ -671,7 +689,7 @@ impl Storage for FileStorage {
 pub struct StorageService {
     /// Active storage backend
     storage: Arc<dyn Storage>,
-    
+
     /// Service configuration
     #[allow(dead_code)]
     config: StorageServiceConfig,
@@ -681,16 +699,16 @@ pub struct StorageService {
 pub struct StorageServiceConfig {
     /// Enable write batching
     pub enable_batching: bool,
-    
+
     /// Batch size for bulk operations
     pub batch_size: usize,
-    
+
     /// Batch timeout in milliseconds
     pub batch_timeout_ms: u64,
-    
+
     /// Enable read caching
     pub enable_caching: bool,
-    
+
     /// Cache TTL in seconds
     pub cache_ttl_seconds: u64,
 }
@@ -768,25 +786,25 @@ mod tests {
     #[tokio::test]
     async fn test_in_memory_storage() {
         let storage = InMemoryStorage::new();
-        
+
         let doc = Document::new("Test document");
         let key = StorageKey::document(&doc.id);
         let entry = StorageEntry::Document(doc.clone());
-        
+
         // Test put and get
         storage.put(&key, &entry).await.unwrap();
-        
+
         let retrieved = storage.get(&key).await.unwrap();
         assert!(retrieved.is_some());
-        
+
         if let Some(StorageEntry::Document(retrieved_doc)) = retrieved {
             assert_eq!(retrieved_doc.id, doc.id);
             assert_eq!(retrieved_doc.content_str(), doc.content_str());
         }
-        
+
         // Test exists
         assert!(storage.exists(&key).await.unwrap());
-        
+
         // Test delete
         assert!(storage.delete(&key).await.unwrap());
         assert!(!storage.exists(&key).await.unwrap());
@@ -796,21 +814,21 @@ mod tests {
     async fn test_file_storage() {
         let temp_dir = TempDir::new().unwrap();
         let storage = FileStorage::new(temp_dir.path()).await.unwrap();
-        
+
         let doc = Document::new("Test document for file storage");
         let key = StorageKey::document(&doc.id);
         let entry = StorageEntry::Document(doc.clone());
-        
+
         // Test put and get
         storage.put(&key, &entry).await.unwrap();
-        
+
         let retrieved = storage.get(&key).await.unwrap();
         assert!(retrieved.is_some());
-        
+
         if let Some(StorageEntry::Document(retrieved_doc)) = retrieved {
             assert_eq!(retrieved_doc.id, doc.id);
         }
-        
+
         // Test file exists on disk
         let file_path = temp_dir.path().join(key.to_path());
         assert!(file_path.exists());
@@ -821,11 +839,11 @@ mod tests {
         let doc_key = StorageKey::document("doc1");
         assert_eq!(doc_key.entry_type, EntryType::Document);
         assert_eq!(doc_key.id, "doc1");
-        
+
         let chunk_key = StorageKey::chunk("doc1", 5);
         assert_eq!(chunk_key.entry_type, EntryType::Chunk);
         assert_eq!(chunk_key.id, "doc1_5");
-        
+
         let ns_key = doc_key.with_namespace("test_namespace");
         assert_eq!(ns_key.namespace, Some("test_namespace".to_string()));
     }
@@ -834,17 +852,17 @@ mod tests {
     async fn test_storage_service() {
         let storage = Arc::new(InMemoryStorage::new());
         let service = StorageService::new(storage);
-        
+
         let doc = Document::new("Test document for service");
-        
+
         // Store document
         service.store_document(&doc).await.unwrap();
-        
+
         // Retrieve document
         let retrieved = service.get_document(&doc.id).await.unwrap();
         assert!(retrieved.is_some());
         assert_eq!(retrieved.unwrap().id, doc.id);
-        
+
         // Check stats
         let stats = service.get_stats().await.unwrap();
         assert_eq!(stats.total_entries, 1);

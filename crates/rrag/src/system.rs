@@ -1,13 +1,11 @@
 //! # RRAG System Integration
-//! 
+//!
 //! High-level system components for orchestrating complete RAG applications.
 //! Designed for production deployment with monitoring, configuration, and lifecycle management.
 
 use crate::{
-    RragError, RragResult, 
-    EmbeddingService, RetrievalService, StorageService, MemoryService,
-    RragAgent, Pipeline,
-    Document, SearchResult,
+    Document, EmbeddingService, MemoryService, Pipeline, RetrievalService, RragAgent, RragError,
+    RragResult, SearchResult, StorageService,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -20,22 +18,22 @@ use tokio::sync::RwLock;
 pub struct RragSystemConfig {
     /// System name/identifier
     pub name: String,
-    
+
     /// Version information
     pub version: String,
-    
+
     /// Environment (dev, staging, prod)
     pub environment: String,
-    
+
     /// Component configurations
     pub components: ComponentConfigs,
-    
+
     /// Performance settings
     pub performance: PerformanceConfig,
-    
+
     /// Monitoring configuration
     pub monitoring: MonitoringConfig,
-    
+
     /// Feature flags
     pub features: FeatureFlags,
 }
@@ -45,16 +43,16 @@ pub struct RragSystemConfig {
 pub struct ComponentConfigs {
     /// Embedding service configuration
     pub embedding: EmbeddingConfig,
-    
+
     /// Storage configuration
     pub storage: StorageConfig,
-    
+
     /// Retrieval configuration
     pub retrieval: RetrievalConfig,
-    
+
     /// Memory configuration
     pub memory: MemoryConfig,
-    
+
     /// Agent configuration
     pub agent: AgentConfig,
 }
@@ -116,17 +114,17 @@ pub struct AgentConfig {
 pub struct PerformanceConfig {
     /// Maximum concurrent operations
     pub max_concurrency: usize,
-    
+
     /// Request timeout in seconds
     pub request_timeout_seconds: u64,
-    
+
     /// Connection pool settings
     pub connection_pool_size: usize,
-    
+
     /// Cache settings
     pub cache_size: usize,
     pub cache_ttl_seconds: u64,
-    
+
     /// Rate limiting
     pub rate_limit_per_second: Option<u32>,
 }
@@ -136,16 +134,16 @@ pub struct PerformanceConfig {
 pub struct MonitoringConfig {
     /// Enable metrics collection
     pub enable_metrics: bool,
-    
+
     /// Enable distributed tracing
     pub enable_tracing: bool,
-    
+
     /// Log level
     pub log_level: String,
-    
+
     /// Health check interval in seconds
     pub health_check_interval_seconds: u64,
-    
+
     /// Metrics export configuration
     pub metrics_endpoint: Option<String>,
     pub tracing_endpoint: Option<String>,
@@ -156,16 +154,16 @@ pub struct MonitoringConfig {
 pub struct FeatureFlags {
     /// Enable experimental features
     pub enable_experimental: bool,
-    
+
     /// Enable async processing
     pub enable_async_processing: bool,
-    
+
     /// Enable automatic retries
     pub enable_auto_retry: bool,
-    
+
     /// Enable request validation
     pub enable_validation: bool,
-    
+
     /// Enable response caching
     pub enable_caching: bool,
 }
@@ -301,19 +299,19 @@ impl Default for FeatureFlags {
 pub struct SystemMetrics {
     /// System uptime in seconds
     pub uptime_seconds: u64,
-    
+
     /// Request counts
     pub request_counts: RequestCounts,
-    
+
     /// Performance metrics
     pub performance: PerformanceMetrics,
-    
+
     /// Component health status
     pub component_health: HashMap<String, HealthStatus>,
-    
+
     /// Resource usage
     pub resource_usage: ResourceUsage,
-    
+
     /// Last updated timestamp
     pub last_updated: chrono::DateTime<chrono::Utc>,
 }
@@ -358,16 +356,16 @@ pub enum HealthStatus {
 pub struct RragSystem {
     /// System configuration
     config: RragSystemConfig,
-    
+
     /// System services
     services: SystemServices,
-    
+
     /// System metrics
     metrics: Arc<RwLock<SystemMetrics>>,
-    
+
     /// System start time
     start_time: Instant,
-    
+
     /// Component health checkers
     health_checkers: HashMap<String, Box<dyn HealthChecker>>,
 }
@@ -376,26 +374,28 @@ pub struct RragSystem {
 pub struct SystemServices {
     /// Embedding service
     pub embedding: Option<Arc<EmbeddingService>>,
-    
+
     /// Storage service
     pub storage: Option<Arc<StorageService>>,
-    
+
     /// Retrieval service
     pub retrieval: Option<Arc<RetrievalService>>,
-    
+
     /// Memory service
     pub memory: Option<Arc<MemoryService>>,
-    
+
     /// Agent instances
     pub agents: HashMap<String, Arc<RragAgent>>,
-    
+
     /// Pipeline instances
     pub pipelines: HashMap<String, Arc<Pipeline>>,
 }
 
 /// Health checker trait for components
 trait HealthChecker: Send + Sync {
-    fn check_health(&self) -> Box<dyn std::future::Future<Output = RragResult<HealthStatus>> + Send + '_>;
+    fn check_health(
+        &self,
+    ) -> Box<dyn std::future::Future<Output = RragResult<HealthStatus>> + Send + '_>;
 }
 
 impl RragSystem {
@@ -409,7 +409,7 @@ impl RragSystem {
             agents: HashMap::new(),
             pipelines: HashMap::new(),
         };
-        
+
         let metrics = Arc::new(RwLock::new(SystemMetrics {
             uptime_seconds: 0,
             request_counts: RequestCounts {
@@ -437,7 +437,7 @@ impl RragSystem {
             },
             last_updated: chrono::Utc::now(),
         }));
-        
+
         Ok(Self {
             config,
             services,
@@ -451,16 +451,18 @@ impl RragSystem {
     pub async fn initialize(&mut self) -> RragResult<()> {
         // Initialize components based on configuration
         // This is a simplified implementation - in production, would create actual service instances
-        
+
         println!("Initializing RRAG System: {}", self.config.name);
         println!("Environment: {}", self.config.environment);
         println!("Version: {}", self.config.version);
-        
+
         // Update metrics with initial health status
         let mut metrics = self.metrics.write().await;
-        metrics.component_health.insert("system".to_string(), HealthStatus::Healthy);
+        metrics
+            .component_health
+            .insert("system".to_string(), HealthStatus::Healthy);
         metrics.last_updated = chrono::Utc::now();
-        
+
         Ok(())
     }
 
@@ -468,48 +470,51 @@ impl RragSystem {
     pub async fn process_document(&self, document: Document) -> RragResult<ProcessingResult> {
         let start_time = Instant::now();
         let mut result = ProcessingResult::new();
-        
+
         // Update request metrics
         {
             let mut metrics = self.metrics.write().await;
             metrics.request_counts.total_requests += 1;
         }
-        
+
         // In a full implementation, this would:
         // 1. Use the embedding service to generate embeddings
         // 2. Store the document and embeddings in storage
         // 3. Index for retrieval
         // 4. Update metrics
-        
+
         result.processing_time_ms = start_time.elapsed().as_millis() as u64;
         result.success = true;
-        result.metadata.insert("document_id".to_string(), serde_json::Value::String(document.id.clone()));
-        
+        result.metadata.insert(
+            "document_id".to_string(),
+            serde_json::Value::String(document.id.clone()),
+        );
+
         // Update success metrics
         {
             let mut metrics = self.metrics.write().await;
             metrics.request_counts.successful_requests += 1;
         }
-        
+
         Ok(result)
     }
 
     /// Perform similarity search
     pub async fn search(&self, query: String, _limit: Option<usize>) -> RragResult<SearchResponse> {
         let start_time = Instant::now();
-        
+
         // Update request metrics
         {
             let mut metrics = self.metrics.write().await;
             metrics.request_counts.total_requests += 1;
             metrics.request_counts.retrieval_requests += 1;
         }
-        
+
         // In a full implementation, this would:
         // 1. Generate embedding for the query
         // 2. Perform similarity search
         // 3. Return ranked results
-        
+
         let response = SearchResponse {
             query: query.clone(),
             results: Vec::new(), // Would contain actual search results
@@ -517,33 +522,38 @@ impl RragSystem {
             total_results: 0,
             metadata: HashMap::new(),
         };
-        
+
         // Update metrics
         {
             let mut metrics = self.metrics.write().await;
             metrics.request_counts.successful_requests += 1;
         }
-        
+
         Ok(response)
     }
 
     /// Chat with an agent
-    pub async fn chat(&self, agent_id: &str, message: String, conversation_id: Option<String>) -> RragResult<ChatResponse> {
+    pub async fn chat(
+        &self,
+        agent_id: &str,
+        message: String,
+        conversation_id: Option<String>,
+    ) -> RragResult<ChatResponse> {
         let start_time = Instant::now();
-        
+
         // Update request metrics
         {
             let mut metrics = self.metrics.write().await;
             metrics.request_counts.total_requests += 1;
             metrics.request_counts.agent_requests += 1;
         }
-        
+
         // In a full implementation, this would:
         // 1. Get the specified agent
         // 2. Process the message
         // 3. Generate response with tool calling if needed
         // 4. Update conversation memory
-        
+
         let response = ChatResponse {
             agent_id: agent_id.to_string(),
             response: format!("Echo: {}", message), // Mock response
@@ -552,13 +562,13 @@ impl RragSystem {
             tool_calls: Vec::new(),
             metadata: HashMap::new(),
         };
-        
+
         // Update metrics
         {
             let mut metrics = self.metrics.write().await;
             metrics.request_counts.successful_requests += 1;
         }
-        
+
         Ok(response)
     }
 
@@ -579,27 +589,41 @@ impl RragSystem {
             uptime_seconds: self.start_time.elapsed().as_secs(),
             version: self.config.version.clone(),
         };
-        
+
         // Check system components
-        result.component_status.insert("system".to_string(), HealthStatus::Healthy);
-        
+        result
+            .component_status
+            .insert("system".to_string(), HealthStatus::Healthy);
+
         // In a full implementation, would check each service health
         if let Some(_embedding_service) = &self.services.embedding {
-            result.component_status.insert("embedding".to_string(), HealthStatus::Healthy);
+            result
+                .component_status
+                .insert("embedding".to_string(), HealthStatus::Healthy);
         }
-        
+
         if let Some(_storage_service) = &self.services.storage {
-            result.component_status.insert("storage".to_string(), HealthStatus::Healthy);
+            result
+                .component_status
+                .insert("storage".to_string(), HealthStatus::Healthy);
         }
-        
+
         if let Some(_retrieval_service) = &self.services.retrieval {
-            result.component_status.insert("retrieval".to_string(), HealthStatus::Healthy);
+            result
+                .component_status
+                .insert("retrieval".to_string(), HealthStatus::Healthy);
         }
-        
+
         // Determine overall status
-        let has_unhealthy = result.component_status.values().any(|status| *status == HealthStatus::Unhealthy);
-        let has_degraded = result.component_status.values().any(|status| *status == HealthStatus::Degraded);
-        
+        let has_unhealthy = result
+            .component_status
+            .values()
+            .any(|status| *status == HealthStatus::Unhealthy);
+        let has_degraded = result
+            .component_status
+            .values()
+            .any(|status| *status == HealthStatus::Degraded);
+
         result.overall_status = if has_unhealthy {
             HealthStatus::Unhealthy
         } else if has_degraded {
@@ -607,21 +631,21 @@ impl RragSystem {
         } else {
             HealthStatus::Healthy
         };
-        
+
         Ok(result)
     }
 
     /// Shutdown the system gracefully
     pub async fn shutdown(&self) -> RragResult<()> {
         println!("Shutting down RRAG System gracefully...");
-        
+
         // In a full implementation, would:
         // 1. Stop accepting new requests
         // 2. Wait for ongoing requests to complete
         // 3. Shutdown services in reverse dependency order
         // 4. Persist any necessary state
         // 5. Close connections and cleanup resources
-        
+
         println!("RRAG System shutdown complete");
         Ok(())
     }
@@ -635,10 +659,10 @@ impl RragSystem {
     pub async fn update_config(&mut self, new_config: RragSystemConfig) -> RragResult<()> {
         // Validate configuration
         self.validate_config(&new_config)?;
-        
+
         // Update configuration
         self.config = new_config;
-        
+
         println!("System configuration updated");
         Ok(())
     }
@@ -649,15 +673,15 @@ impl RragSystem {
         if config.name.is_empty() {
             return Err(RragError::validation("name", "non-empty", "empty"));
         }
-        
+
         if config.version.is_empty() {
             return Err(RragError::validation("version", "non-empty", "empty"));
         }
-        
+
         if config.performance.max_concurrency == 0 {
             return Err(RragError::validation("max_concurrency", "> 0", "0"));
         }
-        
+
         Ok(())
     }
 }
@@ -785,7 +809,7 @@ mod tests {
     async fn test_system_creation() {
         let config = RragSystemConfig::default();
         let system = RragSystem::new(config).await.unwrap();
-        
+
         assert_eq!(system.config.name, "RRAG System");
         assert_eq!(system.config.environment, "development");
     }
@@ -799,7 +823,7 @@ mod tests {
             .build()
             .await
             .unwrap();
-        
+
         assert_eq!(system.config.name, "Test System");
         assert_eq!(system.config.environment, "test");
         assert!(system.config.features.enable_experimental);
@@ -809,7 +833,7 @@ mod tests {
     async fn test_health_check() {
         let system = RragSystemBuilder::new().build().await.unwrap();
         let health = system.health_check().await.unwrap();
-        
+
         assert_eq!(health.overall_status, HealthStatus::Healthy);
         assert!(health.component_status.contains_key("system"));
         assert!(health.uptime_seconds >= 0);
@@ -819,7 +843,7 @@ mod tests {
     async fn test_metrics() {
         let system = RragSystemBuilder::new().build().await.unwrap();
         let metrics = system.get_metrics().await;
-        
+
         assert_eq!(metrics.request_counts.total_requests, 0);
         assert!(metrics.uptime_seconds >= 0);
     }
@@ -828,9 +852,9 @@ mod tests {
     async fn test_document_processing() {
         let system = RragSystemBuilder::new().build().await.unwrap();
         let doc = Document::new("Test document");
-        
+
         let result = system.process_document(doc).await.unwrap();
-        
+
         assert!(result.success);
         assert!(result.processing_time_ms > 0);
     }
@@ -838,9 +862,12 @@ mod tests {
     #[tokio::test]
     async fn test_search() {
         let system = RragSystemBuilder::new().build().await.unwrap();
-        
-        let response = system.search("test query".to_string(), Some(5)).await.unwrap();
-        
+
+        let response = system
+            .search("test query".to_string(), Some(5))
+            .await
+            .unwrap();
+
         assert_eq!(response.query, "test query");
         assert!(response.processing_time_ms > 0);
     }
@@ -848,9 +875,12 @@ mod tests {
     #[tokio::test]
     async fn test_chat() {
         let system = RragSystemBuilder::new().build().await.unwrap();
-        
-        let response = system.chat("test_agent", "Hello".to_string(), None).await.unwrap();
-        
+
+        let response = system
+            .chat("test_agent", "Hello".to_string(), None)
+            .await
+            .unwrap();
+
         assert_eq!(response.agent_id, "test_agent");
         assert!(response.response.contains("Hello"));
         assert!(response.processing_time_ms > 0);
@@ -860,10 +890,10 @@ mod tests {
     fn test_config_validation() {
         let system = RragSystemBuilder::new().build();
         // Test would be async in a real implementation
-        
+
         let mut invalid_config = RragSystemConfig::default();
         invalid_config.name = "".to_string();
-        
+
         // In a real implementation, this would test the validation
         assert!(invalid_config.name.is_empty());
     }
@@ -873,7 +903,7 @@ mod tests {
         let mut config = RragSystemConfig::default();
         config.features.enable_experimental = true;
         config.features.enable_caching = false;
-        
+
         assert!(config.features.enable_experimental);
         assert!(!config.features.enable_caching);
     }

@@ -1,10 +1,10 @@
 //! # Embedding Fusion
-//! 
+//!
 //! Advanced multi-modal embedding fusion strategies for unified representation.
 
 use super::{
-    MultiModalDocument, MultiModalEmbeddings, EmbeddingWeights, EmbeddingFusionStrategy,
-    ProcessedImage, ExtractedTable, FusionStrategy
+    EmbeddingFusionStrategy, EmbeddingWeights, ExtractedTable, FusionStrategy, MultiModalDocument,
+    MultiModalEmbeddings, ProcessedImage,
 };
 use crate::RragResult;
 use serde::{Deserialize, Serialize};
@@ -14,16 +14,16 @@ use std::collections::HashMap;
 pub struct DefaultFusionStrategy {
     /// Fusion strategy
     strategy: FusionStrategy,
-    
+
     /// Fusion configuration
     config: FusionConfig,
-    
+
     /// Weight calculator
     weight_calculator: WeightCalculator,
-    
+
     /// Dimension normalizer
     dimension_normalizer: DimensionNormalizer,
-    
+
     /// Attention mechanism (for attention-based fusion)
     attention_mechanism: Option<AttentionMechanism>,
 }
@@ -33,19 +33,19 @@ pub struct DefaultFusionStrategy {
 pub struct FusionConfig {
     /// Target embedding dimension
     pub target_dimension: usize,
-    
+
     /// Normalize embeddings before fusion
     pub normalize_embeddings: bool,
-    
+
     /// Use adaptive weights
     pub adaptive_weights: bool,
-    
+
     /// Minimum weight threshold
     pub min_weight: f32,
-    
+
     /// Maximum weight threshold
     pub max_weight: f32,
-    
+
     /// Learning rate for adaptive fusion
     pub learning_rate: f32,
 }
@@ -54,7 +54,7 @@ pub struct FusionConfig {
 pub struct WeightCalculator {
     /// Content analysis
     content_analyzer: ContentAnalyzer,
-    
+
     /// Quality assessor
     quality_assessor: QualityAssessor,
 }
@@ -63,7 +63,7 @@ pub struct WeightCalculator {
 pub struct DimensionNormalizer {
     /// Target dimension
     target_dim: usize,
-    
+
     /// Normalization strategy
     strategy: NormalizationStrategy,
 }
@@ -72,13 +72,13 @@ pub struct DimensionNormalizer {
 pub struct AttentionMechanism {
     /// Attention weights
     attention_weights: HashMap<String, Vec<f32>>,
-    
+
     /// Query projection
     query_projection: AttentionProjection,
-    
+
     /// Key projection
     key_projection: AttentionProjection,
-    
+
     /// Value projection
     value_projection: AttentionProjection,
 }
@@ -87,10 +87,10 @@ pub struct AttentionMechanism {
 pub struct ContentAnalyzer {
     /// Text importance scorer
     text_scorer: TextImportanceScorer,
-    
+
     /// Visual importance scorer
     visual_scorer: VisualImportanceScorer,
-    
+
     /// Table importance scorer
     table_scorer: TableImportanceScorer,
 }
@@ -106,16 +106,16 @@ pub struct QualityAssessor {
 pub enum NormalizationStrategy {
     /// L2 normalization
     L2Norm,
-    
+
     /// Min-Max scaling
     MinMax,
-    
+
     /// Z-score normalization
     ZScore,
-    
+
     /// Linear projection
     LinearProjection,
-    
+
     /// PCA reduction
     PCA,
 }
@@ -125,7 +125,7 @@ pub enum NormalizationStrategy {
 pub struct AttentionProjection {
     /// Weight matrix
     pub weights: Vec<Vec<f32>>,
-    
+
     /// Bias vector
     pub bias: Vec<f32>,
 }
@@ -134,7 +134,7 @@ pub struct AttentionProjection {
 pub struct TextImportanceScorer {
     /// TF-IDF calculator
     tfidf_calculator: TfIdfCalculator,
-    
+
     /// Named entity recognizer
     ner: NamedEntityRecognizer,
 }
@@ -143,7 +143,7 @@ pub struct TextImportanceScorer {
 pub struct VisualImportanceScorer {
     /// Saliency detector
     saliency_detector: SaliencyDetector,
-    
+
     /// Aesthetic analyzer
     aesthetic_analyzer: AestheticAnalyzer,
 }
@@ -159,10 +159,10 @@ pub struct TableImportanceScorer {
 pub struct QualityMetric {
     /// Metric name
     pub name: String,
-    
+
     /// Metric weight
     pub weight: f32,
-    
+
     /// Metric function
     pub metric_type: QualityMetricType,
 }
@@ -172,13 +172,13 @@ pub struct QualityMetric {
 pub enum QualityMetricType {
     /// Embedding norm
     EmbeddingNorm,
-    
+
     /// Variance
     Variance,
-    
+
     /// Coherence
     Coherence,
-    
+
     /// Distinctiveness
     Distinctiveness,
 }
@@ -187,7 +187,7 @@ pub enum QualityMetricType {
 pub struct TfIdfCalculator {
     /// Document frequency map
     document_frequencies: HashMap<String, usize>,
-    
+
     /// Total documents
     total_documents: usize,
 }
@@ -209,13 +209,13 @@ pub struct InformationDensityCalculator;
 pub struct FusionResult {
     /// Fused embedding
     pub fused_embedding: Vec<f32>,
-    
+
     /// Final weights used
     pub weights: EmbeddingWeights,
-    
+
     /// Fusion confidence
     pub confidence: f32,
-    
+
     /// Individual modality scores
     pub modality_scores: ModalityScores,
 }
@@ -225,13 +225,13 @@ pub struct FusionResult {
 pub struct ModalityScores {
     /// Text quality score
     pub text_score: f32,
-    
+
     /// Visual quality score
     pub visual_score: f32,
-    
+
     /// Table quality score
     pub table_score: f32,
-    
+
     /// Chart quality score
     pub chart_score: f32,
 }
@@ -242,13 +242,13 @@ impl DefaultFusionStrategy {
         let config = FusionConfig::default();
         let weight_calculator = WeightCalculator::new()?;
         let dimension_normalizer = DimensionNormalizer::new(config.target_dimension);
-        
+
         let attention_mechanism = if matches!(strategy, FusionStrategy::Attention) {
             Some(AttentionMechanism::new(config.target_dimension)?)
         } else {
             None
         };
-        
+
         Ok(Self {
             strategy,
             config,
@@ -257,22 +257,25 @@ impl DefaultFusionStrategy {
             attention_mechanism,
         })
     }
-    
+
     /// Fuse embeddings with detailed analysis
-    pub fn fuse_embeddings_detailed(&self, document: &MultiModalDocument) -> RragResult<FusionResult> {
+    pub fn fuse_embeddings_detailed(
+        &self,
+        document: &MultiModalDocument,
+    ) -> RragResult<FusionResult> {
         // Calculate optimal weights
         let weights = if self.config.adaptive_weights {
             self.calculate_weights(document)?
         } else {
             document.embeddings.weights.clone()
         };
-        
+
         // Score individual modalities
         let modality_scores = self.calculate_modality_scores(document)?;
-        
+
         // Normalize embeddings
         let normalized_embeddings = self.normalize_embeddings(&document.embeddings)?;
-        
+
         // Perform fusion based on strategy
         let fused_embedding = match self.strategy {
             FusionStrategy::Average => self.fuse_average(&normalized_embeddings, &weights)?,
@@ -281,10 +284,10 @@ impl DefaultFusionStrategy {
             FusionStrategy::Attention => self.fuse_attention(&normalized_embeddings, &weights)?,
             FusionStrategy::Learned => self.fuse_learned(&normalized_embeddings, &weights)?,
         };
-        
+
         // Calculate fusion confidence
         let confidence = self.calculate_fusion_confidence(&fused_embedding, &modality_scores)?;
-        
+
         Ok(FusionResult {
             fused_embedding,
             weights,
@@ -292,36 +295,44 @@ impl DefaultFusionStrategy {
             modality_scores,
         })
     }
-    
+
     /// Normalize embeddings to consistent dimensions
-    fn normalize_embeddings(&self, embeddings: &MultiModalEmbeddings) -> RragResult<NormalizedEmbeddings> {
-        let text_normalized = self.dimension_normalizer
+    fn normalize_embeddings(
+        &self,
+        embeddings: &MultiModalEmbeddings,
+    ) -> RragResult<NormalizedEmbeddings> {
+        let text_normalized = self
+            .dimension_normalizer
             .normalize(&embeddings.text_embeddings)?;
-        
+
         let visual_normalized = if let Some(ref visual) = embeddings.visual_embeddings {
             Some(self.dimension_normalizer.normalize(visual)?)
         } else {
             None
         };
-        
+
         let table_normalized = if let Some(ref table) = embeddings.table_embeddings {
             Some(self.dimension_normalizer.normalize(table)?)
         } else {
             None
         };
-        
+
         Ok(NormalizedEmbeddings {
             text: text_normalized,
             visual: visual_normalized,
             table: table_normalized,
         })
     }
-    
+
     /// Average fusion
-    fn fuse_average(&self, embeddings: &NormalizedEmbeddings, _weights: &EmbeddingWeights) -> RragResult<Vec<f32>> {
+    fn fuse_average(
+        &self,
+        embeddings: &NormalizedEmbeddings,
+        _weights: &EmbeddingWeights,
+    ) -> RragResult<Vec<f32>> {
         let mut fused = embeddings.text.clone();
         let mut count = 1;
-        
+
         if let Some(ref visual) = embeddings.visual {
             for (i, &val) in visual.iter().enumerate() {
                 if i < fused.len() {
@@ -330,7 +341,7 @@ impl DefaultFusionStrategy {
             }
             count += 1;
         }
-        
+
         if let Some(ref table) = embeddings.table {
             for (i, &val) in table.iter().enumerate() {
                 if i < fused.len() {
@@ -339,26 +350,30 @@ impl DefaultFusionStrategy {
             }
             count += 1;
         }
-        
+
         // Average
         for val in &mut fused {
             *val /= count as f32;
         }
-        
+
         Ok(fused)
     }
-    
+
     /// Weighted fusion
-    fn fuse_weighted(&self, embeddings: &NormalizedEmbeddings, weights: &EmbeddingWeights) -> RragResult<Vec<f32>> {
+    fn fuse_weighted(
+        &self,
+        embeddings: &NormalizedEmbeddings,
+        weights: &EmbeddingWeights,
+    ) -> RragResult<Vec<f32>> {
         let mut fused = vec![0.0; self.config.target_dimension];
-        
+
         // Weighted combination
         for (i, &val) in embeddings.text.iter().enumerate() {
             if i < fused.len() {
                 fused[i] += val * weights.text_weight;
             }
         }
-        
+
         if let Some(ref visual) = embeddings.visual {
             for (i, &val) in visual.iter().enumerate() {
                 if i < fused.len() {
@@ -366,7 +381,7 @@ impl DefaultFusionStrategy {
                 }
             }
         }
-        
+
         if let Some(ref table) = embeddings.table {
             for (i, &val) in table.iter().enumerate() {
                 if i < fused.len() {
@@ -374,39 +389,43 @@ impl DefaultFusionStrategy {
                 }
             }
         }
-        
+
         // Normalize if configured
         if self.config.normalize_embeddings {
             self.l2_normalize(&mut fused);
         }
-        
+
         Ok(fused)
     }
-    
+
     /// Concatenation fusion
     fn fuse_concatenate(&self, embeddings: &NormalizedEmbeddings) -> RragResult<Vec<f32>> {
         let mut fused = embeddings.text.clone();
-        
+
         if let Some(ref visual) = embeddings.visual {
             fused.extend_from_slice(visual);
         }
-        
+
         if let Some(ref table) = embeddings.table {
             fused.extend_from_slice(table);
         }
-        
+
         // Resize to target dimension if needed
         if fused.len() > self.config.target_dimension {
             fused.truncate(self.config.target_dimension);
         } else if fused.len() < self.config.target_dimension {
             fused.resize(self.config.target_dimension, 0.0);
         }
-        
+
         Ok(fused)
     }
-    
+
     /// Attention-based fusion
-    fn fuse_attention(&self, embeddings: &NormalizedEmbeddings, _weights: &EmbeddingWeights) -> RragResult<Vec<f32>> {
+    fn fuse_attention(
+        &self,
+        embeddings: &NormalizedEmbeddings,
+        _weights: &EmbeddingWeights,
+    ) -> RragResult<Vec<f32>> {
         if let Some(ref attention) = self.attention_mechanism {
             attention.apply_attention(embeddings)
         } else {
@@ -414,39 +433,53 @@ impl DefaultFusionStrategy {
             self.fuse_weighted(embeddings, _weights)
         }
     }
-    
+
     /// Learned fusion (placeholder for ML model)
-    fn fuse_learned(&self, embeddings: &NormalizedEmbeddings, weights: &EmbeddingWeights) -> RragResult<Vec<f32>> {
+    fn fuse_learned(
+        &self,
+        embeddings: &NormalizedEmbeddings,
+        weights: &EmbeddingWeights,
+    ) -> RragResult<Vec<f32>> {
         // For now, use weighted fusion with learned weights
         self.fuse_weighted(embeddings, weights)
     }
-    
+
     /// Calculate modality scores
-    fn calculate_modality_scores(&self, document: &MultiModalDocument) -> RragResult<ModalityScores> {
-        let text_score = self.weight_calculator.content_analyzer
-            .text_scorer.calculate_text_score(&document.text_content)?;
-        
+    fn calculate_modality_scores(
+        &self,
+        document: &MultiModalDocument,
+    ) -> RragResult<ModalityScores> {
+        let text_score = self
+            .weight_calculator
+            .content_analyzer
+            .text_scorer
+            .calculate_text_score(&document.text_content)?;
+
         let visual_score = if !document.images.is_empty() {
-            self.weight_calculator.content_analyzer
-                .visual_scorer.calculate_visual_score(&document.images)?
+            self.weight_calculator
+                .content_analyzer
+                .visual_scorer
+                .calculate_visual_score(&document.images)?
         } else {
             0.0
         };
-        
+
         let table_score = if !document.tables.is_empty() {
-            self.weight_calculator.content_analyzer
-                .table_scorer.calculate_table_score(&document.tables)?
+            self.weight_calculator
+                .content_analyzer
+                .table_scorer
+                .calculate_table_score(&document.tables)?
         } else {
             0.0
         };
-        
+
         let chart_score = if !document.charts.is_empty() {
             // Simplified chart scoring
             0.7
         } else {
             0.0
         };
-        
+
         Ok(ModalityScores {
             text_score,
             visual_score,
@@ -454,41 +487,45 @@ impl DefaultFusionStrategy {
             chart_score,
         })
     }
-    
+
     /// Calculate fusion confidence
-    fn calculate_fusion_confidence(&self, _fused_embedding: &[f32], scores: &ModalityScores) -> RragResult<f32> {
+    fn calculate_fusion_confidence(
+        &self,
+        _fused_embedding: &[f32],
+        scores: &ModalityScores,
+    ) -> RragResult<f32> {
         // Confidence based on modality diversity and quality
         let mut confidence = 0.0;
         let mut active_modalities = 0;
-        
+
         if scores.text_score > 0.0 {
             confidence += scores.text_score * 0.4;
             active_modalities += 1;
         }
-        
+
         if scores.visual_score > 0.0 {
             confidence += scores.visual_score * 0.3;
             active_modalities += 1;
         }
-        
+
         if scores.table_score > 0.0 {
             confidence += scores.table_score * 0.2;
             active_modalities += 1;
         }
-        
+
         if scores.chart_score > 0.0 {
             confidence += scores.chart_score * 0.1;
             active_modalities += 1;
         }
-        
+
         // Bonus for multi-modal content
         if active_modalities > 1 {
             confidence *= 1.0 + (active_modalities as f32 - 1.0) * 0.1;
         }
-        
+
         Ok(confidence.min(1.0))
     }
-    
+
     /// L2 normalization
     fn l2_normalize(&self, vector: &mut [f32]) {
         let norm: f32 = vector.iter().map(|x| x * x).sum::<f32>().sqrt();
@@ -506,7 +543,7 @@ impl EmbeddingFusionStrategy for DefaultFusionStrategy {
             FusionStrategy::Average => {
                 let mut fused = embeddings.text_embeddings.clone();
                 let mut count = 1;
-                
+
                 if let Some(ref visual) = embeddings.visual_embeddings {
                     for (i, &val) in visual.iter().enumerate() {
                         if i < fused.len() {
@@ -515,22 +552,22 @@ impl EmbeddingFusionStrategy for DefaultFusionStrategy {
                     }
                     count += 1;
                 }
-                
+
                 for val in &mut fused {
                     *val /= count as f32;
                 }
-                
+
                 Ok(fused)
             }
-            
+
             FusionStrategy::Weighted => {
                 let mut fused = vec![0.0; embeddings.text_embeddings.len()];
                 let weights = &embeddings.weights;
-                
+
                 for (i, &val) in embeddings.text_embeddings.iter().enumerate() {
                     fused[i] += val * weights.text_weight;
                 }
-                
+
                 if let Some(ref visual) = embeddings.visual_embeddings {
                     for (i, &val) in visual.iter().enumerate() {
                         if i < fused.len() {
@@ -538,10 +575,10 @@ impl EmbeddingFusionStrategy for DefaultFusionStrategy {
                         }
                     }
                 }
-                
+
                 Ok(fused)
             }
-            
+
             _ => {
                 // Fallback to weighted
                 self.fuse_embeddings(&MultiModalEmbeddings {
@@ -559,7 +596,7 @@ impl EmbeddingFusionStrategy for DefaultFusionStrategy {
             }
         }
     }
-    
+
     fn calculate_weights(&self, document: &MultiModalDocument) -> RragResult<EmbeddingWeights> {
         self.weight_calculator.calculate_weights(document)
     }
@@ -567,7 +604,7 @@ impl EmbeddingFusionStrategy for DefaultFusionStrategy {
 
 /// Normalized embeddings container
 #[derive(Debug, Clone)]
-struct NormalizedEmbeddings {
+pub struct NormalizedEmbeddings {
     text: Vec<f32>,
     visual: Option<Vec<f32>>,
     table: Option<Vec<f32>>,
@@ -581,21 +618,21 @@ impl WeightCalculator {
             quality_assessor: QualityAssessor::new(),
         })
     }
-    
+
     /// Calculate optimal weights for document
     pub fn calculate_weights(&self, document: &MultiModalDocument) -> RragResult<EmbeddingWeights> {
         let scores = self.content_analyzer.analyze_content(document)?;
         let quality_scores = self.quality_assessor.assess_quality(&document.embeddings)?;
-        
+
         // Combine content importance with quality scores
         let text_weight = scores.text_importance * quality_scores.text_quality;
         let visual_weight = scores.visual_importance * quality_scores.visual_quality;
         let table_weight = scores.table_importance * quality_scores.table_quality;
         let chart_weight = scores.chart_importance * quality_scores.chart_quality;
-        
+
         // Normalize weights to sum to 1.0
         let total = text_weight + visual_weight + table_weight + chart_weight;
-        
+
         if total > 0.0 {
             Ok(EmbeddingWeights {
                 text_weight: text_weight / total,
@@ -623,7 +660,7 @@ impl DimensionNormalizer {
             strategy: NormalizationStrategy::LinearProjection,
         }
     }
-    
+
     /// Normalize embedding to target dimension
     pub fn normalize(&self, embedding: &[f32]) -> RragResult<Vec<f32>> {
         match self.strategy {
@@ -640,7 +677,7 @@ impl DimensionNormalizer {
                     Ok(normalized)
                 }
             }
-            
+
             NormalizationStrategy::L2Norm => {
                 let mut normalized = embedding.to_vec();
                 let norm: f32 = normalized.iter().map(|x| x * x).sum::<f32>().sqrt();
@@ -649,15 +686,15 @@ impl DimensionNormalizer {
                         *val /= norm;
                     }
                 }
-                
+
                 // Resize to target dimension
                 if normalized.len() != self.target_dim {
                     normalized.resize(self.target_dim, 0.0);
                 }
-                
+
                 Ok(normalized)
             }
-            
+
             _ => {
                 // Fallback to linear projection
                 self.normalize(embedding)
@@ -676,15 +713,15 @@ impl AttentionMechanism {
             value_projection: AttentionProjection::new(dim, dim)?,
         })
     }
-    
+
     /// Apply attention to embeddings
     pub fn apply_attention(&self, embeddings: &NormalizedEmbeddings) -> RragResult<Vec<f32>> {
         // Simplified attention mechanism
         // In practice, this would implement proper multi-head attention
-        
+
         let query = &embeddings.text;
         let mut attended = query.clone();
-        
+
         if let Some(ref visual) = embeddings.visual {
             let attention_score = self.compute_attention_score(query, visual)?;
             for (i, &val) in visual.iter().enumerate() {
@@ -693,7 +730,7 @@ impl AttentionMechanism {
                 }
             }
         }
-        
+
         if let Some(ref table) = embeddings.table {
             let attention_score = self.compute_attention_score(query, table)?;
             for (i, &val) in table.iter().enumerate() {
@@ -702,21 +739,18 @@ impl AttentionMechanism {
                 }
             }
         }
-        
+
         Ok(attended)
     }
-    
+
     /// Compute attention score between query and key
     fn compute_attention_score(&self, query: &[f32], key: &[f32]) -> RragResult<f32> {
         // Dot product attention
-        let score: f32 = query.iter()
-            .zip(key.iter())
-            .map(|(q, k)| q * k)
-            .sum();
-        
+        let score: f32 = query.iter().zip(key.iter()).map(|(q, k)| q * k).sum();
+
         // Normalize by sqrt of dimension
         let normalized_score = score / (query.len() as f32).sqrt();
-        
+
         // Apply softmax (simplified)
         Ok(normalized_score.exp() / (1.0 + normalized_score.exp()))
     }
@@ -728,7 +762,7 @@ impl AttentionProjection {
         // Initialize with small random values (simplified)
         let weights = vec![vec![0.01; input_dim]; output_dim];
         let bias = vec![0.0; output_dim];
-        
+
         Ok(Self { weights, bias })
     }
 }
@@ -742,14 +776,22 @@ impl ContentAnalyzer {
             table_scorer: TableImportanceScorer::new(),
         })
     }
-    
+
     /// Analyze content importance
     pub fn analyze_content(&self, document: &MultiModalDocument) -> RragResult<ContentScores> {
-        let text_importance = self.text_scorer.calculate_text_score(&document.text_content)?;
-        let visual_importance = self.visual_scorer.calculate_visual_score(&document.images)?;
+        let text_importance = self
+            .text_scorer
+            .calculate_text_score(&document.text_content)?;
+        let visual_importance = self
+            .visual_scorer
+            .calculate_visual_score(&document.images)?;
         let table_importance = self.table_scorer.calculate_table_score(&document.tables)?;
-        let chart_importance = if !document.charts.is_empty() { 0.7 } else { 0.0 };
-        
+        let chart_importance = if !document.charts.is_empty() {
+            0.7
+        } else {
+            0.0
+        };
+
         Ok(ContentScores {
             text_importance,
             visual_importance,
@@ -784,11 +826,11 @@ impl TextImportanceScorer {
             ner: NamedEntityRecognizer,
         })
     }
-    
+
     pub fn calculate_text_score(&self, text: &str) -> RragResult<f32> {
         let word_count = text.split_whitespace().count();
         let entity_score = self.ner.calculate_entity_score(text)?;
-        
+
         // Combine length and entity density
         let length_score = (word_count as f32 / 1000.0).min(1.0);
         Ok(length_score * 0.7 + entity_score * 0.3)
@@ -802,22 +844,24 @@ impl VisualImportanceScorer {
             aesthetic_analyzer: AestheticAnalyzer,
         }
     }
-    
+
     pub fn calculate_visual_score(&self, images: &[ProcessedImage]) -> RragResult<f32> {
         if images.is_empty() {
             return Ok(0.0);
         }
-        
+
         let mut total_score = 0.0;
         for image in images {
-            let quality_score = image.features.as_ref()
+            let quality_score = image
+                .features
+                .as_ref()
                 .map(|f| (f.quality.sharpness + f.quality.contrast) / 2.0)
                 .unwrap_or(0.5);
-            
+
             let aesthetic_score = self.aesthetic_analyzer.analyze_aesthetics(image)?;
             total_score += quality_score * 0.6 + aesthetic_score * 0.4;
         }
-        
+
         Ok(total_score / images.len() as f32)
     }
 }
@@ -828,19 +872,19 @@ impl TableImportanceScorer {
             density_calculator: InformationDensityCalculator,
         }
     }
-    
+
     pub fn calculate_table_score(&self, tables: &[ExtractedTable]) -> RragResult<f32> {
         if tables.is_empty() {
             return Ok(0.0);
         }
-        
+
         let mut total_score = 0.0;
         for table in tables {
             let size_score = (table.rows.len() * table.headers.len()) as f32 / 100.0;
             let density_score = self.density_calculator.calculate_density(table)?;
             total_score += size_score.min(1.0) * 0.5 + density_score * 0.5;
         }
-        
+
         Ok(total_score / tables.len() as f32)
     }
 }
@@ -867,22 +911,22 @@ impl QualityAssessor {
             ],
         }
     }
-    
+
     pub fn assess_quality(&self, embeddings: &MultiModalEmbeddings) -> RragResult<QualityScores> {
         let text_quality = self.calculate_embedding_quality(&embeddings.text_embeddings)?;
-        
+
         let visual_quality = if let Some(ref visual) = embeddings.visual_embeddings {
             self.calculate_embedding_quality(visual)?
         } else {
             0.0
         };
-        
+
         let table_quality = if let Some(ref table) = embeddings.table_embeddings {
             self.calculate_embedding_quality(table)?
         } else {
             0.0
         };
-        
+
         Ok(QualityScores {
             text_quality,
             visual_quality,
@@ -890,10 +934,10 @@ impl QualityAssessor {
             chart_quality: 0.7, // Simplified
         })
     }
-    
+
     fn calculate_embedding_quality(&self, embedding: &[f32]) -> RragResult<f32> {
         let mut quality_score = 0.0;
-        
+
         for metric in &self.quality_metrics {
             let score = match metric.metric_type {
                 QualityMetricType::EmbeddingNorm => {
@@ -902,18 +946,17 @@ impl QualityAssessor {
                 }
                 QualityMetricType::Variance => {
                     let mean = embedding.iter().sum::<f32>() / embedding.len() as f32;
-                    let variance = embedding.iter()
-                        .map(|x| (x - mean).powi(2))
-                        .sum::<f32>() / embedding.len() as f32;
+                    let variance = embedding.iter().map(|x| (x - mean).powi(2)).sum::<f32>()
+                        / embedding.len() as f32;
                     variance.min(1.0)
                 }
                 QualityMetricType::Coherence => 0.8, // Simplified
                 QualityMetricType::Distinctiveness => 0.7, // Simplified
             };
-            
+
             quality_score += score * metric.weight;
         }
-        
+
         Ok(quality_score)
     }
 }
@@ -947,11 +990,13 @@ impl AestheticAnalyzer {
 impl InformationDensityCalculator {
     pub fn calculate_density(&self, table: &ExtractedTable) -> RragResult<f32> {
         let total_cells = table.rows.len() * table.headers.len();
-        let filled_cells = table.rows.iter()
+        let filled_cells = table
+            .rows
+            .iter()
             .flatten()
             .filter(|cell| !cell.value.trim().is_empty())
             .count();
-        
+
         Ok(filled_cells as f32 / total_cells as f32)
     }
 }
@@ -972,28 +1017,28 @@ impl Default for FusionConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_fusion_strategy_creation() {
         let strategy = DefaultFusionStrategy::new(FusionStrategy::Weighted).unwrap();
         assert!(matches!(strategy.strategy, FusionStrategy::Weighted));
     }
-    
+
     #[test]
     fn test_dimension_normalization() {
         let normalizer = DimensionNormalizer::new(512);
-        
+
         let embedding = vec![1.0, 2.0, 3.0];
         let normalized = normalizer.normalize(&embedding).unwrap();
-        
+
         assert_eq!(normalized.len(), 512);
         assert_eq!(&normalized[..3], &[1.0, 2.0, 3.0]);
     }
-    
+
     #[test]
     fn test_weight_calculation() {
         let calculator = WeightCalculator::new().unwrap();
-        
+
         // Create test document
         let document = MultiModalDocument {
             id: "test".to_string(),
@@ -1031,7 +1076,7 @@ mod tests {
                 format: super::super::DocumentType::PlainText,
             },
         };
-        
+
         let weights = calculator.calculate_weights(&document).unwrap();
         assert!(weights.text_weight > 0.0);
     }

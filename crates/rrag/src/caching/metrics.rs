@@ -1,26 +1,26 @@
 //! # Cache Metrics and Monitoring
-//! 
+//!
 //! Performance metrics and monitoring for the caching layer.
 
 use super::{CacheStats, OverallCacheMetrics};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::{SystemTime, Duration};
+use std::time::{Duration, SystemTime};
 
 /// Cache metrics collector
 pub struct MetricsCollector {
     /// Per-cache metrics
     cache_metrics: HashMap<String, CacheStats>,
-    
+
     /// Operation timings
     operation_timings: OperationTimings,
-    
+
     /// Memory tracking
     memory_tracker: MemoryTracker,
-    
+
     /// Performance analyzer
     analyzer: PerformanceAnalyzer,
-    
+
     /// Metrics history
     history: MetricsHistory,
 }
@@ -30,16 +30,16 @@ pub struct MetricsCollector {
 pub struct OperationTimings {
     /// Get operation timings
     pub get_timings: TimingStats,
-    
+
     /// Put operation timings
     pub put_timings: TimingStats,
-    
+
     /// Remove operation timings
     pub remove_timings: TimingStats,
-    
+
     /// Eviction timings
     pub eviction_timings: TimingStats,
-    
+
     /// Compression timings
     pub compression_timings: TimingStats,
 }
@@ -49,25 +49,25 @@ pub struct OperationTimings {
 pub struct TimingStats {
     /// Total operations
     pub count: u64,
-    
+
     /// Total time in microseconds
     pub total_us: u64,
-    
+
     /// Average time in microseconds
     pub avg_us: f32,
-    
+
     /// Minimum time
     pub min_us: u64,
-    
+
     /// Maximum time
     pub max_us: u64,
-    
+
     /// 50th percentile
     pub p50_us: u64,
-    
+
     /// 95th percentile
     pub p95_us: u64,
-    
+
     /// 99th percentile
     pub p99_us: u64,
 }
@@ -77,16 +77,16 @@ pub struct TimingStats {
 pub struct MemoryTracker {
     /// Current memory usage
     pub current_bytes: usize,
-    
+
     /// Peak memory usage
     pub peak_bytes: usize,
-    
+
     /// Memory saved through compression
     pub compression_saved_bytes: usize,
-    
+
     /// Memory saved through deduplication
     pub deduplication_saved_bytes: usize,
-    
+
     /// Memory pressure events
     pub pressure_events: Vec<MemoryPressureEvent>,
 }
@@ -96,16 +96,16 @@ pub struct MemoryTracker {
 pub struct MemoryPressureEvent {
     /// When the event occurred
     pub timestamp: SystemTime,
-    
+
     /// Memory usage at time of event
     pub memory_bytes: usize,
-    
+
     /// Pressure level (0.0 to 1.0)
     pub pressure_level: f32,
-    
+
     /// Action taken
     pub action: PressureAction,
-    
+
     /// Memory freed
     pub freed_bytes: usize,
 }
@@ -115,13 +115,13 @@ pub struct MemoryPressureEvent {
 pub enum PressureAction {
     /// Evicted entries
     Eviction { count: usize },
-    
+
     /// Compressed entries
     Compression { count: usize },
-    
+
     /// Cleared entire cache
     ClearCache,
-    
+
     /// No action needed
     None,
 }
@@ -131,13 +131,13 @@ pub enum PressureAction {
 pub struct PerformanceAnalyzer {
     /// Hit rate over time
     pub hit_rate_history: Vec<(SystemTime, f32)>,
-    
+
     /// Operations per second history
     pub ops_history: Vec<(SystemTime, f32)>,
-    
+
     /// Latency percentiles over time
     pub latency_history: Vec<(SystemTime, LatencySnapshot)>,
-    
+
     /// Efficiency score history
     pub efficiency_history: Vec<(SystemTime, f32)>,
 }
@@ -156,13 +156,13 @@ pub struct LatencySnapshot {
 pub struct MetricsHistory {
     /// Historical snapshots
     pub snapshots: Vec<MetricsSnapshot>,
-    
+
     /// Maximum history size
     pub max_size: usize,
-    
+
     /// Snapshot interval
     pub interval: Duration,
-    
+
     /// Last snapshot time
     pub last_snapshot: SystemTime,
 }
@@ -172,16 +172,16 @@ pub struct MetricsHistory {
 pub struct MetricsSnapshot {
     /// Snapshot timestamp
     pub timestamp: SystemTime,
-    
+
     /// Overall metrics
     pub overall: OverallCacheMetrics,
-    
+
     /// Individual cache stats
     pub cache_stats: HashMap<String, CacheStats>,
-    
+
     /// Memory usage
     pub memory_bytes: usize,
-    
+
     /// Active operations
     pub active_operations: u32,
 }
@@ -197,15 +197,15 @@ impl MetricsCollector {
             history: MetricsHistory::new(1000, Duration::from_secs(60)),
         }
     }
-    
+
     /// Record cache operation
     pub fn record_operation(&mut self, cache: &str, operation: Operation, duration: Duration) {
         let duration_us = duration.as_micros() as u64;
-        
+
         match operation {
             Operation::Get { hit } => {
                 self.operation_timings.get_timings.record(duration_us);
-                
+
                 if let Some(stats) = self.cache_metrics.get_mut(cache) {
                     if hit {
                         stats.hits += 1;
@@ -223,47 +223,49 @@ impl MetricsCollector {
             }
             Operation::Evict => {
                 self.operation_timings.eviction_timings.record(duration_us);
-                
+
                 if let Some(stats) = self.cache_metrics.get_mut(cache) {
                     stats.evictions += 1;
                 }
             }
         }
     }
-    
+
     /// Update memory usage
     pub fn update_memory(&mut self, cache: &str, bytes: usize) {
         self.memory_tracker.current_bytes = bytes;
         self.memory_tracker.peak_bytes = self.memory_tracker.peak_bytes.max(bytes);
-        
+
         if let Some(stats) = self.cache_metrics.get_mut(cache) {
             stats.memory_usage = bytes;
         }
-        
+
         // Check for memory pressure
         let pressure = self.calculate_memory_pressure();
         if pressure > 0.8 {
-            self.memory_tracker.pressure_events.push(MemoryPressureEvent {
-                timestamp: SystemTime::now(),
-                memory_bytes: bytes,
-                pressure_level: pressure,
-                action: PressureAction::None,
-                freed_bytes: 0,
-            });
+            self.memory_tracker
+                .pressure_events
+                .push(MemoryPressureEvent {
+                    timestamp: SystemTime::now(),
+                    memory_bytes: bytes,
+                    pressure_level: pressure,
+                    action: PressureAction::None,
+                    freed_bytes: 0,
+                });
         }
     }
-    
+
     /// Calculate memory pressure (0.0 to 1.0)
     fn calculate_memory_pressure(&self) -> f32 {
         // Simplified - would use system memory in real implementation
         const MAX_MEMORY: usize = 1024 * 1024 * 1024; // 1GB
         (self.memory_tracker.current_bytes as f32 / MAX_MEMORY as f32).min(1.0)
     }
-    
+
     /// Take metrics snapshot
     pub fn snapshot(&mut self) -> MetricsSnapshot {
         let overall = self.calculate_overall_metrics();
-        
+
         MetricsSnapshot {
             timestamp: SystemTime::now(),
             overall,
@@ -272,45 +274,45 @@ impl MetricsCollector {
             active_operations: 0, // Would track active operations
         }
     }
-    
+
     /// Calculate overall metrics
     fn calculate_overall_metrics(&self) -> OverallCacheMetrics {
         let total_hits: u64 = self.cache_metrics.values().map(|s| s.hits).sum();
         let total_misses: u64 = self.cache_metrics.values().map(|s| s.misses).sum();
         let total_ops = total_hits + total_misses;
-        
+
         let hit_rate = if total_ops > 0 {
             total_hits as f32 / total_ops as f32
         } else {
             0.0
         };
-        
+
         // Calculate time saved (estimated)
         let avg_cache_time = self.operation_timings.get_timings.avg_us;
         let avg_miss_time = avg_cache_time * 10.0; // Assume cache is 10x faster
         let time_saved_ms = (total_hits as f32 * (avg_miss_time - avg_cache_time)) / 1000.0;
-        
+
         // Calculate efficiency score
-        let efficiency_score = hit_rate * 0.4 + 
-            (1.0 - self.calculate_memory_pressure()) * 0.3 +
-            (time_saved_ms / 1000.0).min(1.0) * 0.3;
-        
+        let efficiency_score = hit_rate * 0.4
+            + (1.0 - self.calculate_memory_pressure()) * 0.3
+            + (time_saved_ms / 1000.0).min(1.0) * 0.3;
+
         OverallCacheMetrics {
-            memory_saved: self.memory_tracker.compression_saved_bytes + 
-                         self.memory_tracker.deduplication_saved_bytes,
+            memory_saved: self.memory_tracker.compression_saved_bytes
+                + self.memory_tracker.deduplication_saved_bytes,
             time_saved_ms,
             efficiency_score,
             memory_pressure: self.calculate_memory_pressure(),
             ops_per_second: self.calculate_ops_per_second(),
         }
     }
-    
+
     /// Calculate operations per second
     fn calculate_ops_per_second(&self) -> f32 {
         // Would calculate based on recent operations
         100.0 // Placeholder
     }
-    
+
     /// Get performance report
     pub fn get_report(&self) -> PerformanceReport {
         PerformanceReport {
@@ -320,12 +322,12 @@ impl MetricsCollector {
             trends: self.analyze_trends(),
         }
     }
-    
+
     /// Get summary statistics
     fn get_summary(&self) -> SummaryStats {
         let total_hits: u64 = self.cache_metrics.values().map(|s| s.hits).sum();
         let total_misses: u64 = self.cache_metrics.values().map(|s| s.misses).sum();
-        
+
         SummaryStats {
             total_operations: total_hits + total_misses,
             overall_hit_rate: if total_hits + total_misses > 0 {
@@ -338,11 +340,11 @@ impl MetricsCollector {
             efficiency_score: self.calculate_overall_metrics().efficiency_score,
         }
     }
-    
+
     /// Generate performance recommendations
     fn generate_recommendations(&self) -> Vec<String> {
         let mut recommendations = Vec::new();
-        
+
         // Check hit rate
         let summary = self.get_summary();
         if summary.overall_hit_rate < 0.5 {
@@ -350,28 +352,27 @@ impl MetricsCollector {
                 "Low hit rate detected. Consider increasing cache size or adjusting eviction policy.".to_string()
             );
         }
-        
+
         // Check memory pressure
         if self.calculate_memory_pressure() > 0.8 {
-            recommendations.push(
-                "High memory pressure. Enable compression or reduce cache size.".to_string()
-            );
+            recommendations
+                .push("High memory pressure. Enable compression or reduce cache size.".to_string());
         }
-        
+
         // Check latency
         if self.operation_timings.get_timings.p99_us > 1000 {
             recommendations.push(
-                "High cache latency detected. Consider optimizing data structures.".to_string()
+                "High cache latency detected. Consider optimizing data structures.".to_string(),
             );
         }
-        
+
         recommendations
     }
-    
+
     /// Generate alerts for issues
     fn generate_alerts(&self) -> Vec<Alert> {
         let mut alerts = Vec::new();
-        
+
         if self.calculate_memory_pressure() > 0.9 {
             alerts.push(Alert {
                 severity: AlertSeverity::Critical,
@@ -379,7 +380,7 @@ impl MetricsCollector {
                 timestamp: SystemTime::now(),
             });
         }
-        
+
         if self.get_summary().overall_hit_rate < 0.3 {
             alerts.push(Alert {
                 severity: AlertSeverity::Warning,
@@ -387,10 +388,10 @@ impl MetricsCollector {
                 timestamp: SystemTime::now(),
             });
         }
-        
+
         alerts
     }
-    
+
     /// Analyze performance trends
     fn analyze_trends(&self) -> TrendAnalysis {
         TrendAnalysis {
@@ -501,7 +502,7 @@ impl TimingStats {
         self.avg_us = self.total_us as f32 / self.count as f32;
         self.min_us = self.min_us.min(duration_us);
         self.max_us = self.max_us.max(duration_us);
-        
+
         // Update percentiles (simplified - would use proper algorithm)
         self.p50_us = self.avg_us as u64;
         self.p95_us = (self.avg_us * 1.5) as u64;
@@ -541,7 +542,7 @@ impl MetricsHistory {
             last_snapshot: SystemTime::now(),
         }
     }
-    
+
     pub fn add_snapshot(&mut self, snapshot: MetricsSnapshot) {
         self.snapshots.push(snapshot);
         if self.snapshots.len() > self.max_size {
@@ -554,50 +555,57 @@ impl MetricsHistory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_timing_stats() {
         let mut stats = TimingStats::default();
-        
+
         stats.record(100);
         stats.record(200);
         stats.record(150);
-        
+
         assert_eq!(stats.count, 3);
         assert_eq!(stats.avg_us, 150.0);
         assert_eq!(stats.min_us, 100);
         assert_eq!(stats.max_us, 200);
     }
-    
+
     #[test]
     fn test_metrics_collector() {
         let mut collector = MetricsCollector::new();
-        
-        collector.cache_metrics.insert("test".to_string(), CacheStats {
-            total_entries: 100,
-            hits: 80,
-            misses: 20,
-            hit_rate: 0.8,
-            memory_usage: 1024,
-            avg_access_time_us: 10.0,
-            evictions: 5,
-            last_cleanup: SystemTime::now(),
-        });
-        
-        collector.record_operation("test", Operation::Get { hit: true }, Duration::from_micros(10));
-        
+
+        collector.cache_metrics.insert(
+            "test".to_string(),
+            CacheStats {
+                total_entries: 100,
+                hits: 80,
+                misses: 20,
+                hit_rate: 0.8,
+                memory_usage: 1024,
+                avg_access_time_us: 10.0,
+                evictions: 5,
+                last_cleanup: SystemTime::now(),
+            },
+        );
+
+        collector.record_operation(
+            "test",
+            Operation::Get { hit: true },
+            Duration::from_micros(10),
+        );
+
         let report = collector.get_report();
         assert!(report.summary.overall_hit_rate > 0.0);
     }
-    
+
     #[test]
     fn test_memory_tracker() {
         let mut tracker = MemoryTracker::new();
-        
+
         tracker.current_bytes = 1024;
         tracker.peak_bytes = 2048;
         tracker.compression_saved_bytes = 512;
-        
+
         assert_eq!(tracker.peak_bytes, 2048);
     }
 }

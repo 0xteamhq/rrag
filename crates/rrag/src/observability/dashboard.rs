@@ -1,19 +1,19 @@
 //! # Web Dashboard for RRAG Observability
-//! 
+//!
 //! Modern web interface providing real-time monitoring, metrics visualization,
 //! and system insights through interactive charts and dashboards.
 
-use crate::{RragError, RragResult};
 use super::{
     metrics::MetricsCollector,
-    monitoring::{SystemMonitor, SystemOverview, PerformanceMetrics, SearchStats, UserStats}
+    monitoring::{PerformanceMetrics, SearchStats, SystemMonitor, SystemOverview, UserStats},
 };
+use crate::{RragError, RragResult};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::{RwLock, broadcast, mpsc};
-use chrono::{DateTime, Utc};
 use std::net::SocketAddr;
+use std::sync::Arc;
+use tokio::sync::{broadcast, mpsc, RwLock};
 
 /// Dashboard configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -140,7 +140,7 @@ pub struct WebSocketManager {
 impl WebSocketManager {
     pub fn new() -> Self {
         let (broadcast_sender, broadcast_receiver) = broadcast::channel(1000);
-        
+
         Self {
             clients: Arc::new(RwLock::new(HashMap::new())),
             broadcast_sender,
@@ -151,13 +151,19 @@ impl WebSocketManager {
     pub async fn add_client(&self, client_id: String, sender: mpsc::UnboundedSender<String>) {
         let mut clients = self.clients.write().await;
         clients.insert(client_id, sender);
-        tracing::info!("WebSocket client connected, total clients: {}", clients.len());
+        tracing::info!(
+            "WebSocket client connected, total clients: {}",
+            clients.len()
+        );
     }
 
     pub async fn remove_client(&self, client_id: &str) {
         let mut clients = self.clients.write().await;
         clients.remove(client_id);
-        tracing::info!("WebSocket client disconnected, total clients: {}", clients.len());
+        tracing::info!(
+            "WebSocket client disconnected, total clients: {}",
+            clients.len()
+        );
     }
 
     pub async fn broadcast_message(&self, message: WebSocketMessage) -> RragResult<()> {
@@ -217,7 +223,7 @@ impl DashboardMetrics {
     pub async fn update_performance(&self, metrics: PerformanceMetrics) {
         let mut history = self.performance_history.write().await;
         history.push(metrics);
-        
+
         let current_len = history.len();
         if current_len > self.max_data_points {
             history.drain(0..current_len - self.max_data_points);
@@ -227,7 +233,7 @@ impl DashboardMetrics {
     pub async fn update_search_stats(&self, stats: SearchStats) {
         let mut history = self.search_stats_history.write().await;
         history.push(stats);
-        
+
         let current_len = history.len();
         if current_len > self.max_data_points {
             history.drain(0..current_len - self.max_data_points);
@@ -237,7 +243,7 @@ impl DashboardMetrics {
     pub async fn update_user_stats(&self, stats: UserStats) {
         let mut history = self.user_stats_history.write().await;
         history.push(stats);
-        
+
         let current_len = history.len();
         if current_len > self.max_data_points {
             history.drain(0..current_len - self.max_data_points);
@@ -251,27 +257,41 @@ impl DashboardMetrics {
         charts.insert("cpu_usage".to_string(), self.create_cpu_chart().await);
         charts.insert("memory_usage".to_string(), self.create_memory_chart().await);
         charts.insert("disk_usage".to_string(), self.create_disk_chart().await);
-        
+
         // Search analytics charts
-        charts.insert("search_performance".to_string(), self.create_search_performance_chart().await);
-        charts.insert("search_success_rate".to_string(), self.create_search_success_chart().await);
-        charts.insert("cache_hit_rate".to_string(), self.create_cache_hit_chart().await);
-        
+        charts.insert(
+            "search_performance".to_string(),
+            self.create_search_performance_chart().await,
+        );
+        charts.insert(
+            "search_success_rate".to_string(),
+            self.create_search_success_chart().await,
+        );
+        charts.insert(
+            "cache_hit_rate".to_string(),
+            self.create_cache_hit_chart().await,
+        );
+
         // User activity charts
-        charts.insert("active_users".to_string(), self.create_active_users_chart().await);
-        charts.insert("user_actions".to_string(), self.create_user_actions_chart().await);
+        charts.insert(
+            "active_users".to_string(),
+            self.create_active_users_chart().await,
+        );
+        charts.insert(
+            "user_actions".to_string(),
+            self.create_user_actions_chart().await,
+        );
 
         charts
     }
 
     async fn create_cpu_chart(&self) -> ChartData {
         let history = self.performance_history.read().await;
-        let labels: Vec<String> = history.iter()
+        let labels: Vec<String> = history
+            .iter()
             .map(|m| m.timestamp.format("%H:%M:%S").to_string())
             .collect();
-        let data: Vec<f64> = history.iter()
-            .map(|m| m.cpu_usage_percent)
-            .collect();
+        let data: Vec<f64> = history.iter().map(|m| m.cpu_usage_percent).collect();
 
         ChartData {
             labels,
@@ -289,12 +309,11 @@ impl DashboardMetrics {
 
     async fn create_memory_chart(&self) -> ChartData {
         let history = self.performance_history.read().await;
-        let labels: Vec<String> = history.iter()
+        let labels: Vec<String> = history
+            .iter()
             .map(|m| m.timestamp.format("%H:%M:%S").to_string())
             .collect();
-        let data: Vec<f64> = history.iter()
-            .map(|m| m.memory_usage_percent)
-            .collect();
+        let data: Vec<f64> = history.iter().map(|m| m.memory_usage_percent).collect();
 
         ChartData {
             labels,
@@ -312,12 +331,11 @@ impl DashboardMetrics {
 
     async fn create_disk_chart(&self) -> ChartData {
         let history = self.performance_history.read().await;
-        let labels: Vec<String> = history.iter()
+        let labels: Vec<String> = history
+            .iter()
             .map(|m| m.timestamp.format("%H:%M:%S").to_string())
             .collect();
-        let data: Vec<f64> = history.iter()
-            .map(|m| m.disk_usage_percent)
-            .collect();
+        let data: Vec<f64> = history.iter().map(|m| m.disk_usage_percent).collect();
 
         ChartData {
             labels,
@@ -338,7 +356,8 @@ impl DashboardMetrics {
         let labels: Vec<String> = (0..history.len())
             .map(|i| format!("Point {}", i + 1))
             .collect();
-        let data: Vec<f64> = history.iter()
+        let data: Vec<f64> = history
+            .iter()
             .map(|s| s.average_processing_time_ms)
             .collect();
 
@@ -361,9 +380,7 @@ impl DashboardMetrics {
         let labels: Vec<String> = (0..history.len())
             .map(|i| format!("Point {}", i + 1))
             .collect();
-        let data: Vec<f64> = history.iter()
-            .map(|s| s.success_rate)
-            .collect();
+        let data: Vec<f64> = history.iter().map(|s| s.success_rate).collect();
 
         ChartData {
             labels,
@@ -384,9 +401,7 @@ impl DashboardMetrics {
         let labels: Vec<String> = (0..history.len())
             .map(|i| format!("Point {}", i + 1))
             .collect();
-        let data: Vec<f64> = history.iter()
-            .map(|s| s.cache_hit_rate)
-            .collect();
+        let data: Vec<f64> = history.iter().map(|s| s.cache_hit_rate).collect();
 
         ChartData {
             labels,
@@ -407,9 +422,7 @@ impl DashboardMetrics {
         let labels: Vec<String> = (0..history.len())
             .map(|i| format!("Point {}", i + 1))
             .collect();
-        let data: Vec<f64> = history.iter()
-            .map(|s| s.unique_users as f64)
-            .collect();
+        let data: Vec<f64> = history.iter().map(|s| s.unique_users as f64).collect();
 
         ChartData {
             labels,
@@ -429,7 +442,9 @@ impl DashboardMetrics {
         let history = self.user_stats_history.read().await;
         if let Some(latest_stats) = history.last() {
             let labels: Vec<String> = latest_stats.action_breakdown.keys().cloned().collect();
-            let data: Vec<f64> = latest_stats.action_breakdown.values()
+            let data: Vec<f64> = latest_stats
+                .action_breakdown
+                .values()
                 .map(|&count| count as f64)
                 .collect();
 
@@ -497,7 +512,11 @@ impl DashboardServer {
 
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("dashboard_server", "stopped", "already running"));
+            return Err(RragError::config(
+                "dashboard_server",
+                "stopped",
+                "already running",
+            ));
         }
 
         // Start the HTTP server
@@ -561,7 +580,7 @@ impl DashboardServer {
             // In a real implementation, this would start an actual HTTP server
             // using a framework like warp, axum, or actix-web
             // For now, we'll simulate the server behavior
-            
+
             let addr: SocketAddr = format!("{}:{}", config.host, config.port)
                 .parse()
                 .expect("Invalid address");
@@ -572,7 +591,7 @@ impl DashboardServer {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
             while *is_running.read().await {
                 interval.tick().await;
-                
+
                 // Simulate periodic cleanup of WebSocket connections
                 let client_count = websocket_manager.get_client_count().await;
                 tracing::debug!("Active WebSocket clients: {}", client_count);
@@ -590,9 +609,9 @@ impl DashboardServer {
         let is_running = self.is_running.clone();
 
         let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.refresh_interval_seconds as u64)
-            );
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.refresh_interval_seconds as u64,
+            ));
 
             while *is_running.read().await {
                 interval.tick().await;
@@ -605,10 +624,14 @@ impl DashboardServer {
                     dashboard_metrics.update_performance(perf.clone()).await;
                 }
                 if let Some(ref search_stats) = overview.search_stats {
-                    dashboard_metrics.update_search_stats(search_stats.clone()).await;
+                    dashboard_metrics
+                        .update_search_stats(search_stats.clone())
+                        .await;
                 }
                 if let Some(ref user_stats) = overview.user_stats {
-                    dashboard_metrics.update_user_stats(user_stats.clone()).await;
+                    dashboard_metrics
+                        .update_user_stats(user_stats.clone())
+                        .await;
                 }
 
                 // Generate charts
@@ -618,20 +641,26 @@ impl DashboardServer {
                 let health_status = ComponentHealthStatus {
                     overall: "healthy".to_string(),
                     components: HashMap::from([
-                        ("metrics".to_string(), ComponentHealth {
-                            status: "healthy".to_string(),
-                            uptime_seconds: 3600,
-                            last_check: Utc::now(),
-                            error_count: 0,
-                            response_time_ms: 10.0,
-                        }),
-                        ("monitoring".to_string(), ComponentHealth {
-                            status: "healthy".to_string(),
-                            uptime_seconds: 3600,
-                            last_check: Utc::now(),
-                            error_count: 0,
-                            response_time_ms: 15.0,
-                        }),
+                        (
+                            "metrics".to_string(),
+                            ComponentHealth {
+                                status: "healthy".to_string(),
+                                uptime_seconds: 3600,
+                                last_check: Utc::now(),
+                                error_count: 0,
+                                response_time_ms: 10.0,
+                            },
+                        ),
+                        (
+                            "monitoring".to_string(),
+                            ComponentHealth {
+                                status: "healthy".to_string(),
+                                uptime_seconds: 3600,
+                                last_check: Utc::now(),
+                                error_count: 0,
+                                response_time_ms: 15.0,
+                            },
+                        ),
                     ]),
                 };
 
@@ -645,9 +674,12 @@ impl DashboardServer {
                 };
 
                 // Broadcast to WebSocket clients
-                if let Err(e) = websocket_manager.broadcast_message(
-                    WebSocketMessage::MetricsUpdate { data: realtime_metrics }
-                ).await {
+                if let Err(e) = websocket_manager
+                    .broadcast_message(WebSocketMessage::MetricsUpdate {
+                        data: realtime_metrics,
+                    })
+                    .await
+                {
                     tracing::warn!("Failed to broadcast metrics update: {}", e);
                 }
             }
@@ -663,15 +695,16 @@ impl DashboardServer {
 
         let health_status = ComponentHealthStatus {
             overall: "healthy".to_string(),
-            components: HashMap::from([
-                ("metrics".to_string(), ComponentHealth {
+            components: HashMap::from([(
+                "metrics".to_string(),
+                ComponentHealth {
                     status: "healthy".to_string(),
                     uptime_seconds: 3600,
                     last_check: Utc::now(),
                     error_count: 0,
                     response_time_ms: 10.0,
-                }),
-            ]),
+                },
+            )]),
         };
 
         Ok(RealtimeMetrics {
@@ -708,7 +741,7 @@ impl DashboardHandler {
     pub async fn handle_dashboard(&self) -> RragResult<String> {
         // In a real implementation, this would render the dashboard HTML
         let data = self.server.get_current_data().await?;
-        
+
         Ok(format!(
             r#"
 <!DOCTYPE html>
@@ -817,14 +850,26 @@ impl DashboardHandler {
             self.server.config().title,
             data.timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
             self.server.websocket_manager().get_client_count().await,
-            data.system_overview.performance_metrics.as_ref()
-                .map(|p| p.cpu_usage_percent).unwrap_or(0.0),
-            data.system_overview.performance_metrics.as_ref()
-                .map(|p| p.memory_usage_percent).unwrap_or(0.0),
-            data.system_overview.search_stats.as_ref()
-                .map(|s| s.success_rate).unwrap_or(0.0),
-            data.system_overview.user_stats.as_ref()
-                .map(|u| u.unique_users).unwrap_or(0),
+            data.system_overview
+                .performance_metrics
+                .as_ref()
+                .map(|p| p.cpu_usage_percent)
+                .unwrap_or(0.0),
+            data.system_overview
+                .performance_metrics
+                .as_ref()
+                .map(|p| p.memory_usage_percent)
+                .unwrap_or(0.0),
+            data.system_overview
+                .search_stats
+                .as_ref()
+                .map(|s| s.success_rate)
+                .unwrap_or(0.0),
+            data.system_overview
+                .user_stats
+                .as_ref()
+                .map(|u| u.unique_users)
+                .unwrap_or(0),
             self.server.config().host,
             self.server.config().port
         ))
@@ -841,19 +886,19 @@ impl DashboardHandler {
     pub async fn handle_health(&self) -> RragResult<String> {
         let health = ComponentHealthStatus {
             overall: "healthy".to_string(),
-            components: HashMap::from([
-                ("dashboard".to_string(), ComponentHealth {
+            components: HashMap::from([(
+                "dashboard".to_string(),
+                ComponentHealth {
                     status: "healthy".to_string(),
                     uptime_seconds: 3600,
                     last_check: Utc::now(),
                     error_count: 0,
                     response_time_ms: 5.0,
-                }),
-            ]),
+                },
+            )]),
         };
-        
-        serde_json::to_string(&health)
-            .map_err(|e| RragError::agent("dashboard", e.to_string()))
+
+        serde_json::to_string(&health).map_err(|e| RragError::agent("dashboard", e.to_string()))
     }
 }
 
@@ -864,10 +909,14 @@ mod tests {
 
     async fn create_test_components() -> (Arc<MetricsCollector>, Arc<SystemMonitor>) {
         let metrics_collector = Arc::new(
-            MetricsCollector::new(MetricsConfig::default()).await.unwrap()
+            MetricsCollector::new(MetricsConfig::default())
+                .await
+                .unwrap(),
         );
         let system_monitor = Arc::new(
-            SystemMonitor::new(MonitoringConfig::default(), metrics_collector.clone()).await.unwrap()
+            SystemMonitor::new(MonitoringConfig::default(), metrics_collector.clone())
+                .await
+                .unwrap(),
         );
         (metrics_collector, system_monitor)
     }
@@ -876,11 +925,11 @@ mod tests {
     async fn test_websocket_manager() {
         let manager = WebSocketManager::new();
         assert_eq!(manager.get_client_count().await, 0);
-        
+
         let (sender, _receiver) = mpsc::unbounded_channel();
         manager.add_client("client1".to_string(), sender).await;
         assert_eq!(manager.get_client_count().await, 1);
-        
+
         manager.remove_client("client1").await;
         assert_eq!(manager.get_client_count().await, 0);
     }
@@ -888,7 +937,7 @@ mod tests {
     #[tokio::test]
     async fn test_dashboard_metrics() {
         let dashboard_metrics = DashboardMetrics::new(100);
-        
+
         let perf_metrics = PerformanceMetrics {
             timestamp: Utc::now(),
             cpu_usage_percent: 50.0,
@@ -903,9 +952,9 @@ mod tests {
             gc_collections: 5,
             gc_pause_time_ms: 2.5,
         };
-        
+
         dashboard_metrics.update_performance(perf_metrics).await;
-        
+
         let charts = dashboard_metrics.generate_charts().await;
         assert!(charts.contains_key("cpu_usage"));
         assert!(charts.contains_key("memory_usage"));
@@ -917,16 +966,17 @@ mod tests {
         let (metrics_collector, system_monitor) = create_test_components().await;
         let config = DashboardConfig::default();
         let mut server = DashboardServer::new(config, metrics_collector, system_monitor)
-            .await.unwrap();
-        
+            .await
+            .unwrap();
+
         assert!(!server.is_healthy().await);
-        
+
         server.start().await.unwrap();
         assert!(server.is_healthy().await);
-        
+
         let current_data = server.get_current_data().await.unwrap();
         assert!(current_data.charts.len() > 0);
-        
+
         server.stop().await.unwrap();
         assert!(!server.is_healthy().await);
     }
@@ -936,18 +986,20 @@ mod tests {
         let (metrics_collector, system_monitor) = create_test_components().await;
         let config = DashboardConfig::default();
         let server = Arc::new(
-            DashboardServer::new(config, metrics_collector, system_monitor).await.unwrap()
+            DashboardServer::new(config, metrics_collector, system_monitor)
+                .await
+                .unwrap(),
         );
-        
+
         let handler = DashboardHandler::new(server);
-        
+
         let dashboard_html = handler.handle_dashboard().await.unwrap();
         assert!(dashboard_html.contains("<!DOCTYPE html>"));
         assert!(dashboard_html.contains("RRAG Observability Dashboard"));
-        
+
         let metrics_json = handler.handle_metrics_api().await.unwrap();
         assert!(serde_json::from_str::<RealtimeMetrics>(&metrics_json).is_ok());
-        
+
         let health_json = handler.handle_health().await.unwrap();
         assert!(serde_json::from_str::<ComponentHealthStatus>(&health_json).is_ok());
     }
@@ -966,7 +1018,7 @@ mod tests {
             title: "Test Chart".to_string(),
             unit: Some("units".to_string()),
         };
-        
+
         assert_eq!(chart_data.labels.len(), 3);
         assert_eq!(chart_data.datasets[0].data.len(), 3);
         assert_eq!(chart_data.title, "Test Chart");
@@ -977,13 +1029,13 @@ mod tests {
         let message = WebSocketMessage::Ping {
             timestamp: Utc::now(),
         };
-        
+
         let json = serde_json::to_string(&message).unwrap();
         assert!(json.contains("\"type\":\"ping\""));
-        
+
         let deserialized: WebSocketMessage = serde_json::from_str(&json).unwrap();
         match deserialized {
-            WebSocketMessage::Ping { .. } => {},
+            WebSocketMessage::Ping { .. } => {}
             _ => panic!("Wrong message type"),
         }
     }

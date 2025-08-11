@@ -10,21 +10,21 @@
 #![allow(dead_code)]
 
 //! # RRAG - Enterprise-Grade Rust RAG Framework
-//! 
+//!
 //! [![Crates.io](https://img.shields.io/crates/v/rrag.svg)](https://crates.io/crates/rrag)
 //! [![Documentation](https://docs.rs/rrag/badge.svg)](https://docs.rs/rrag)
 //! [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 //! [![Build Status](https://img.shields.io/github/actions/workflow/status/yourusername/rrag/ci.yml?branch=main)](https://github.com/yourusername/rrag/actions)
-//! 
-//! **RRAG** (Rust RAG) is a comprehensive, high-performance framework for building 
-//! production-ready Retrieval-Augmented Generation (RAG) applications in Rust. 
-//! 
-//! Designed for enterprise deployments requiring extreme performance, reliability, and 
-//! observability, RRAG provides everything needed to build, deploy, and maintain 
+//!
+//! **RRAG** (Rust RAG) is a comprehensive, high-performance framework for building
+//! production-ready Retrieval-Augmented Generation (RAG) applications in Rust.
+//!
+//! Designed for enterprise deployments requiring extreme performance, reliability, and
+//! observability, RRAG provides everything needed to build, deploy, and maintain
 //! sophisticated RAG systems at scale.
-//! 
+//!
 //! ## 🚀 Key Features
-//! 
+//!
 //! - **🔥 Native Performance**: Zero-cost abstractions with compile-time optimizations
 //! - **🛡️ Memory Safe**: Leverage Rust's ownership system for bulletproof memory management
 //! - **⚡ Async First**: Built on Tokio for high-concurrency workloads
@@ -32,12 +32,12 @@
 //! - **🔌 Pluggable**: Modular architecture with swappable components
 //! - **🌊 Streaming**: Real-time token streaming with async iterators
 //! - **📊 Observable**: Built-in metrics, tracing, and health checks
-//! 
+//!
 //! ## 🏗️ Architecture Overview
-//! 
+//!
 //! RRAG follows a modular, pipeline-based architecture that maximizes performance
 //! while maintaining flexibility:
-//! 
+//!
 //! ```text
 //! ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 //! │   Documents     │───▶│   Processing    │───▶│   Vector Store  │
@@ -50,14 +50,14 @@
 //! │   (Output)      │    │   (rsllm)       │    │   (Search)      │
 //! └─────────────────┘    └─────────────────┘    └─────────────────┘
 //! ```
-//! 
+//!
 //! ## 🚀 Quick Start
-//! 
+//!
 //! ### Basic RAG System
-//! 
+//!
 //! ```rust
 //! use rrag::prelude::*;
-//! 
+//!
 //! #[tokio::main]
 //! async fn main() -> RragResult<()> {
 //!     // Create a RAG system
@@ -81,12 +81,12 @@
 //!     Ok(())
 //! }
 //! ```
-//! 
+//!
 //! ### Advanced Agent with Tools
-//! 
+//!
 //! ```rust
 //! use rrag::prelude::*;
-//! 
+//!
 //! #[tokio::main]
 //! async fn main() -> RragResult<()> {
 //!     // Create an agent with tools
@@ -114,11 +114,11 @@
 //!     Ok(())
 //! }
 //! ```
-//! 
+//!
 //! ## 📦 Feature Flags
-//! 
+//!
 //! RRAG supports multiple feature flags for flexible deployments:
-//! 
+//!
 //! - `default`: Core functionality with HTTP and concurrency support
 //! - `rsllm-client`: Integration with rsllm for LLM operations
 //! - `http`: HTTP client support for external services
@@ -126,19 +126,19 @@
 //! - `observability`: Metrics, monitoring, and alerting
 //! - `security`: Authentication, authorization, and security features
 //! - `security-full`: Complete security suite with 2FA and WebAuthn
-//! 
+//!
 //! ```toml
 //! [dependencies]
 //! rrag = { version = "0.1", features = ["rsllm-client", "observability", "security"] }
 //! ```
 
-//! 
+//!
 //! ## 🏗️ Module Organization
-//! 
+//!
 //! RRAG is organized into focused modules, each handling specific aspects of RAG functionality:
-//! 
+//!
 //! ### Core Modules
-//! 
+//!
 //! - [`error`]: Comprehensive error handling with structured error types
 //! - [`document`]: Document processing, chunking, and metadata management
 //! - [`embeddings`]: Multi-provider embedding generation and management
@@ -147,9 +147,9 @@
 //! - [`agent`]: LLM agents with tool calling and streaming support
 //! - [`pipeline`]: Composable processing pipelines
 //! - [`system`]: High-level system orchestration and lifecycle management
-//! 
+//!
 //! ### Advanced Modules
-//! 
+//!
 //! - [`retrieval_core`]: Core retrieval interfaces and implementations
 //! - [`retrieval_enhanced`]: Advanced hybrid retrieval with BM25 and semantic search
 //! - [`reranking`]: Result reranking and relevance scoring
@@ -164,17 +164,17 @@
 //! - [`multimodal`]: Multi-modal content processing support
 
 // Core modules - foundational components
-pub mod error;
+pub mod agent;
 pub mod document;
 pub mod embeddings;
+pub mod error;
+pub mod memory;
+pub mod pipeline;
 pub mod retrieval_core;
 pub mod storage;
-pub mod memory;
-pub mod tools;
 pub mod streaming;
-pub mod agent;
-pub mod pipeline;
 pub mod system;
+pub mod tools;
 
 // Enhanced retrieval capabilities
 #[path = "retrieval/mod.rs"]
@@ -205,51 +205,40 @@ pub mod incremental;
 pub mod observability;
 
 // Re-exports for convenience
-pub use error::{RragError, RragResult, ErrorSeverity};
-pub use document::{Document, DocumentChunk, DocumentChunker, ChunkingStrategy, Metadata};
+pub use agent::{AgentBuilder, AgentConfig, AgentResponse, ModelConfig, RragAgent, ToolCall};
+pub use document::{ChunkingStrategy, Document, DocumentChunk, DocumentChunker, Metadata};
 pub use embeddings::{
-    Embedding, EmbeddingService, EmbeddingProvider, 
-    OpenAIEmbeddingProvider, LocalEmbeddingProvider,
-    EmbeddingRequest, EmbeddingBatch, MockEmbeddingService
+    Embedding, EmbeddingBatch, EmbeddingProvider, EmbeddingRequest, EmbeddingService,
+    LocalEmbeddingProvider, MockEmbeddingService, OpenAIEmbeddingProvider,
+};
+pub use error::{ErrorSeverity, RragError, RragResult};
+pub use memory::{
+    ConversationBufferMemory, ConversationMessage, ConversationSummaryMemory,
+    ConversationTokenBufferMemory, Memory, MemoryService, MessageRole,
+};
+pub use pipeline::{
+    DocumentChunkingStep, EmbeddingStep, Pipeline, PipelineConfig, PipelineContext, PipelineData,
+    PipelineStep, RagPipelineBuilder, RetrievalStep, TextOperation, TextPreprocessingStep,
 };
 pub use retrieval_core::{
-    Retriever, RetrievalService, InMemoryRetriever,
-    SearchResult, SearchQuery, SearchConfig, SearchAlgorithm
+    InMemoryRetriever, RetrievalService, Retriever, SearchAlgorithm, SearchConfig, SearchQuery,
+    SearchResult,
 };
 pub use retrieval_enhanced::{
-    HybridRetriever, HybridConfig, FusionStrategy,
-    BM25Retriever, BM25Config, TokenizerType,
-    SemanticRetriever, SemanticConfig,
-    RankFusion, ReciprocalRankFusion, WeightedFusion
+    BM25Config, BM25Retriever, FusionStrategy, HybridConfig, HybridRetriever, RankFusion,
+    ReciprocalRankFusion, SemanticConfig, SemanticRetriever, TokenizerType, WeightedFusion,
 };
 pub use storage::{
-    Storage, StorageService, InMemoryStorage, FileStorage,
-    StorageKey, StorageEntry, StorageQuery
+    FileStorage, InMemoryStorage, Storage, StorageEntry, StorageKey, StorageQuery, StorageService,
 };
-pub use memory::{
-    Memory, MemoryService, ConversationMessage, MessageRole,
-    ConversationBufferMemory, ConversationTokenBufferMemory, ConversationSummaryMemory
-};
-pub use tools::{
-    Tool, ToolRegistry, ToolResult, Calculator, EchoTool
+pub use streaming::{StreamToken, StreamingResponse, TokenStreamBuilder, TokenType};
+pub use system::{
+    ChatResponse, HealthCheckResult, ProcessingResult, RragSystem, RragSystemBuilder,
+    RragSystemConfig, SearchResponse, SystemMetrics,
 };
 #[cfg(feature = "http")]
 pub use tools::HttpTool;
-pub use streaming::{
-    StreamingResponse, StreamToken, TokenType, TokenStreamBuilder
-};
-pub use agent::{
-    RragAgent, AgentBuilder, AgentConfig, ModelConfig, AgentResponse, ToolCall
-};
-pub use pipeline::{
-    Pipeline, PipelineStep, PipelineContext, PipelineData, PipelineConfig,
-    RagPipelineBuilder, TextPreprocessingStep, DocumentChunkingStep, EmbeddingStep, RetrievalStep,
-    TextOperation
-};
-pub use system::{
-    RragSystem, RragSystemBuilder, RragSystemConfig,
-    ProcessingResult, SearchResponse, ChatResponse, HealthCheckResult, SystemMetrics
-};
+pub use tools::{Calculator, EchoTool, Tool, ToolRegistry, ToolResult};
 
 // rsllm re-exports when feature is enabled
 #[cfg(feature = "rsllm-client")]
@@ -257,40 +246,38 @@ pub use rsllm;
 
 // Graph retrieval re-exports
 pub use graph_retrieval::{
-    GraphRetriever, GraphRetrievalBuilder, GraphRetrievalConfig, GraphBuildConfig,
-    KnowledgeGraph, GraphNode, GraphEdge, NodeType, EdgeType, GraphMetrics,
-    EntityExtractor, Entity, Relationship, EntityType, RelationType,
-    GraphAlgorithms, PageRankConfig, TraversalConfig, PathFindingConfig,
-    GraphStorage, GraphIndex, GraphQuery, GraphQueryResult,
-    QueryExpander, ExpansionStrategy, ExpansionResult,
-    GraphConfig, GraphConfigBuilder,
+    EdgeType, Entity, EntityExtractor, EntityType, ExpansionResult, ExpansionStrategy,
+    GraphAlgorithms, GraphBuildConfig, GraphConfig, GraphConfigBuilder, GraphEdge, GraphIndex,
+    GraphMetrics, GraphNode, GraphQuery, GraphQueryResult, GraphRetrievalBuilder,
+    GraphRetrievalConfig, GraphRetriever, GraphStorage, KnowledgeGraph, NodeType, PageRankConfig,
+    PathFindingConfig, QueryExpander, RelationType, Relationship, TraversalConfig,
 };
 
 // Incremental indexing re-exports
 pub use incremental::{
-    IncrementalIndexingService, IncrementalServiceConfig, IncrementalServiceBuilder,
-    ChangeDetector, ChangeResult, ChangeType, DocumentChange, ContentDelta, ChangeDetectionConfig,
-    IncrementalIndexManager, IndexOperation, IndexUpdate, UpdateResult, ConflictResolution, IndexManagerConfig,
-    BatchProcessor, BatchOperation, BatchConfig, BatchResult, BatchProcessingStats, BatchExecutor, QueueManager,
-    DocumentVersion, VersionManager, VersionConflict, VersionResolution, VersioningConfig, VersionHistory,
-    RollbackManager, RollbackOperation, RollbackPoint, RecoveryResult, RollbackConfig, OperationLog,
-    IntegrityChecker, ConsistencyReport, IntegrityError, ValidationResult, IntegrityConfig, HealthMetrics,
-    VectorUpdateManager, VectorOperation, EmbeddingUpdate, VectorBatch, VectorUpdateConfig, IndexUpdateStrategy,
-    IncrementalMetrics, PerformanceTracker, IndexingStats, MonitoringConfig, AlertConfig, MetricsCollector,
+    AlertConfig, BatchConfig, BatchExecutor, BatchOperation, BatchProcessingStats, BatchProcessor,
+    BatchResult, ChangeDetectionConfig, ChangeDetector, ChangeResult, ChangeType,
+    ConflictResolution, ConsistencyReport, ContentDelta, DocumentChange, DocumentVersion,
+    EmbeddingUpdate, HealthMetrics, IncrementalIndexManager, IncrementalIndexingService,
+    IncrementalMetrics, IncrementalServiceBuilder, IncrementalServiceConfig, IndexManagerConfig,
+    IndexOperation, IndexUpdate, IndexUpdateStrategy, IndexingStats, IntegrityChecker,
+    IntegrityConfig, IntegrityError, MetricsCollector, MonitoringConfig, OperationLog,
+    PerformanceTracker, QueueManager, RecoveryResult, RollbackConfig, RollbackManager,
+    RollbackOperation, RollbackPoint, UpdateResult, ValidationResult, VectorBatch, VectorOperation,
+    VectorUpdateConfig, VectorUpdateManager, VersionConflict, VersionHistory, VersionManager,
+    VersionResolution, VersioningConfig,
 };
 
-// Observability re-exports  
+// Observability re-exports
 pub use observability::{
-    ObservabilitySystem, ObservabilityConfig, ObservabilityBuilder,
-    MetricsCollector as ObsMetricsCollector, MetricsRegistry, Metric, MetricType, MetricValue,
-    SystemMonitor, PerformanceMonitor, SearchAnalyzer, UserActivityTracker,
-    AlertManager, AlertRule, AlertSeverity, AlertCondition, AlertNotification,
-    DashboardServer, DashboardConfig, WebSocketManager, RealtimeMetrics,
-    LogAggregator, LogLevel, LogEntry, LogQuery, LogFilter,
-    HealthChecker, HealthReport, ComponentStatus,
-    Profiler, ProfileData, BottleneckAnalysis, PerformanceReport,
-    ExportManager, ExportFormat, ReportGenerator, MetricsExporter,
-    DataRetention, RetentionPolicy, HistoricalAnalyzer,
+    AlertCondition, AlertManager, AlertNotification, AlertRule, AlertSeverity, BottleneckAnalysis,
+    ComponentStatus, DashboardConfig, DashboardServer, DataRetention, ExportFormat, ExportManager,
+    HealthChecker, HealthReport, HistoricalAnalyzer, LogAggregator, LogEntry, LogFilter, LogLevel,
+    LogQuery, Metric, MetricType, MetricValue, MetricsCollector as ObsMetricsCollector,
+    MetricsExporter, MetricsRegistry, ObservabilityBuilder, ObservabilityConfig,
+    ObservabilitySystem, PerformanceMonitor, PerformanceReport, ProfileData, Profiler,
+    RealtimeMetrics, ReportGenerator, RetentionPolicy, SearchAnalyzer, SystemMonitor,
+    UserActivityTracker, WebSocketManager,
 };
 
 /// Prelude module for convenient imports
@@ -333,89 +320,78 @@ pub mod prelude {
     //! ```rust
     //! use rrag::prelude::*;
     //! ```
-    
+
     // System components
     pub use crate::{
-        RragSystem, RragSystemBuilder, RragSystemConfig,
-        ProcessingResult, SearchResponse, ChatResponse, 
-        HealthCheckResult, SystemMetrics,
+        ChatResponse, HealthCheckResult, ProcessingResult, RragSystem, RragSystemBuilder,
+        RragSystemConfig, SearchResponse, SystemMetrics,
     };
-    
+
     // Core types and error handling
     pub use crate::{
-        RragError, RragResult, ErrorSeverity,
-        Document, DocumentChunk, DocumentChunker, ChunkingStrategy, Metadata,
-        Embedding, EmbeddingService, EmbeddingProvider,
+        ChunkingStrategy, Document, DocumentChunk, DocumentChunker, Embedding, EmbeddingProvider,
+        EmbeddingService, ErrorSeverity, Metadata, RragError, RragResult,
     };
-    
+
     // Service interfaces
     pub use crate::{
-        RetrievalService, StorageService, MemoryService,
-        InMemoryRetriever, SearchResult, SearchQuery, SearchConfig,
+        InMemoryRetriever, MemoryService, RetrievalService, SearchConfig, SearchQuery,
+        SearchResult, StorageService,
     };
-    
+
     // Agents and tools
     pub use crate::{
-        RragAgent, AgentBuilder, AgentConfig, AgentResponse,
-        Tool, ToolRegistry, ToolResult, Calculator,
+        AgentBuilder, AgentConfig, AgentResponse, Calculator, RragAgent, Tool, ToolRegistry,
+        ToolResult,
     };
-    
+
     // HTTP tools when feature is enabled
     #[cfg(feature = "http")]
     pub use crate::HttpTool;
-    
+
     // Memory and conversations
     pub use crate::{
-        Memory, ConversationMessage, MessageRole,
-        ConversationBufferMemory, ConversationTokenBufferMemory,
-        ConversationSummaryMemory,
+        ConversationBufferMemory, ConversationMessage, ConversationSummaryMemory,
+        ConversationTokenBufferMemory, Memory, MessageRole,
     };
-    
+
     // Streaming support
-    pub use crate::{
-        StreamingResponse, StreamToken, TokenType, TokenStreamBuilder,
-    };
-    
+    pub use crate::{StreamToken, StreamingResponse, TokenStreamBuilder, TokenType};
+
     // Pipeline processing
     pub use crate::{
-        Pipeline, PipelineStep, PipelineContext, PipelineData,
-        RagPipelineBuilder, TextPreprocessingStep, DocumentChunkingStep,
-        EmbeddingStep, RetrievalStep, TextOperation,
+        DocumentChunkingStep, EmbeddingStep, Pipeline, PipelineContext, PipelineData, PipelineStep,
+        RagPipelineBuilder, RetrievalStep, TextOperation, TextPreprocessingStep,
     };
-    
+
     // Enhanced retrieval
     pub use crate::{
-        HybridRetriever, HybridConfig, FusionStrategy,
-        BM25Retriever, SemanticRetriever,
-        RankFusion, ReciprocalRankFusion,
+        BM25Retriever, FusionStrategy, HybridConfig, HybridRetriever, RankFusion,
+        ReciprocalRankFusion, SemanticRetriever,
     };
-    
+
     // Incremental indexing
     pub use crate::{
-        IncrementalIndexingService, IncrementalServiceBuilder,
-        ChangeDetector, ChangeResult, ChangeType, IncrementalIndexManager,
-        BatchProcessor, VersionManager, RollbackManager,
-        IntegrityChecker, VectorUpdateManager, MetricsCollector,
+        BatchProcessor, ChangeDetector, ChangeResult, ChangeType, IncrementalIndexManager,
+        IncrementalIndexingService, IncrementalServiceBuilder, IntegrityChecker, MetricsCollector,
+        RollbackManager, VectorUpdateManager, VersionManager,
     };
-    
+
     // Graph retrieval
     pub use crate::{
-        GraphRetriever, GraphRetrievalBuilder, KnowledgeGraph,
-        GraphNode, GraphEdge, EntityExtractor, QueryExpander,
+        EntityExtractor, GraphEdge, GraphNode, GraphRetrievalBuilder, GraphRetriever,
+        KnowledgeGraph, QueryExpander,
     };
-    
+
     // Observability
-    pub use crate::{
-        ObservabilitySystem, MetricsRegistry, AlertManager,
-        HealthChecker, Profiler,
-    };
-    
+    pub use crate::{AlertManager, HealthChecker, MetricsRegistry, ObservabilitySystem, Profiler};
+
     // External dependencies commonly used with RRAG
     pub use async_trait::async_trait;
     pub use futures::{Stream, StreamExt};
     pub use serde::{Deserialize, Serialize};
     pub use tokio;
-    
+
     // rsllm integration when feature is enabled
     #[cfg(feature = "rsllm-client")]
     pub use rsllm;
@@ -446,7 +422,8 @@ pub const NAME: &str = "RRAG";
 /// Framework description
 ///
 /// A brief description of the framework's purpose and capabilities.
-pub const DESCRIPTION: &str = "Rust RAG Framework - High-performance Retrieval-Augmented Generation";
+pub const DESCRIPTION: &str =
+    "Rust RAG Framework - High-performance Retrieval-Augmented Generation";
 
 /// Framework repository URL
 ///

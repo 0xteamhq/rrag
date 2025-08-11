@@ -1,5 +1,5 @@
 //! # RRAG Memory System
-//! 
+//!
 //! Conversation memory and context management with Rust-native async patterns.
 //! Designed for efficient state management and persistence.
 
@@ -15,19 +15,19 @@ use tokio::sync::RwLock;
 pub struct ConversationMessage {
     /// Message ID
     pub id: String,
-    
+
     /// Role (user, assistant, system, tool)
     pub role: MessageRole,
-    
+
     /// Message content
     pub content: String,
-    
+
     /// Message metadata
     pub metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Timestamp
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    
+
     /// Token count (if available)
     pub token_count: Option<usize>,
 }
@@ -93,20 +93,20 @@ impl ConversationMessage {
 pub struct MemorySummary {
     /// Summary text
     pub summary: String,
-    
+
     /// Number of messages summarized
     pub message_count: usize,
-    
+
     /// Token count of original messages
     pub original_tokens: usize,
-    
+
     /// Token count of summary
     pub summary_tokens: usize,
-    
+
     /// Time range covered
     pub start_time: chrono::DateTime<chrono::Utc>,
     pub end_time: chrono::DateTime<chrono::Utc>,
-    
+
     /// Summary metadata
     pub metadata: HashMap<String, serde_json::Value>,
 }
@@ -115,29 +115,45 @@ pub struct MemorySummary {
 #[async_trait]
 pub trait Memory: Send + Sync {
     /// Add a message to the conversation
-    async fn add_message(&self, conversation_id: &str, role: &str, content: &str) -> RragResult<()>;
-    
+    async fn add_message(&self, conversation_id: &str, role: &str, content: &str)
+        -> RragResult<()>;
+
     /// Add a structured message
-    async fn add_structured_message(&self, conversation_id: &str, message: ConversationMessage) -> RragResult<()>;
-    
+    async fn add_structured_message(
+        &self,
+        conversation_id: &str,
+        message: ConversationMessage,
+    ) -> RragResult<()>;
+
     /// Get conversation history
     async fn get_conversation_history(&self, conversation_id: &str) -> RragResult<Vec<String>>;
-    
+
     /// Get structured conversation history
     async fn get_messages(&self, conversation_id: &str) -> RragResult<Vec<ConversationMessage>>;
-    
+
     /// Get recent messages with limit
-    async fn get_recent_messages(&self, conversation_id: &str, limit: usize) -> RragResult<Vec<ConversationMessage>>;
-    
+    async fn get_recent_messages(
+        &self,
+        conversation_id: &str,
+        limit: usize,
+    ) -> RragResult<Vec<ConversationMessage>>;
+
     /// Clear conversation history
     async fn clear_conversation(&self, conversation_id: &str) -> RragResult<()>;
-    
+
     /// Get memory variables for prompt injection
-    async fn get_memory_variables(&self, conversation_id: &str) -> RragResult<HashMap<String, String>>;
-    
+    async fn get_memory_variables(
+        &self,
+        conversation_id: &str,
+    ) -> RragResult<HashMap<String, String>>;
+
     /// Save arbitrary context
-    async fn save_context(&self, conversation_id: &str, context: HashMap<String, String>) -> RragResult<()>;
-    
+    async fn save_context(
+        &self,
+        conversation_id: &str,
+        context: HashMap<String, String>,
+    ) -> RragResult<()>;
+
     /// Health check
     async fn health_check(&self) -> RragResult<bool>;
 }
@@ -146,7 +162,7 @@ pub trait Memory: Send + Sync {
 pub struct ConversationBufferMemory {
     /// Stored conversations
     conversations: Arc<RwLock<HashMap<String, VecDeque<ConversationMessage>>>>,
-    
+
     /// Configuration
     config: BufferMemoryConfig,
 }
@@ -155,10 +171,10 @@ pub struct ConversationBufferMemory {
 pub struct BufferMemoryConfig {
     /// Maximum messages to keep per conversation
     pub max_messages: Option<usize>,
-    
+
     /// Maximum age of messages in seconds
     pub max_age_seconds: Option<u64>,
-    
+
     /// Memory key for prompt variables
     pub memory_key: String,
 }
@@ -191,7 +207,7 @@ impl ConversationBufferMemory {
     /// Clean up old messages based on configuration
     async fn cleanup_old_messages(&self, conversation_id: &str) {
         let mut conversations = self.conversations.write().await;
-        
+
         if let Some(messages) = conversations.get_mut(conversation_id) {
             // Remove old messages by age
             if let Some(max_age) = self.config.max_age_seconds {
@@ -204,7 +220,7 @@ impl ConversationBufferMemory {
                     }
                 }
             }
-            
+
             // Limit by count
             if let Some(max_messages) = self.config.max_messages {
                 while messages.len() > max_messages {
@@ -223,7 +239,12 @@ impl Default for ConversationBufferMemory {
 
 #[async_trait]
 impl Memory for ConversationBufferMemory {
-    async fn add_message(&self, conversation_id: &str, role: &str, content: &str) -> RragResult<()> {
+    async fn add_message(
+        &self,
+        conversation_id: &str,
+        role: &str,
+        content: &str,
+    ) -> RragResult<()> {
         let role = match role.to_lowercase().as_str() {
             "user" => MessageRole::User,
             "assistant" => MessageRole::Assistant,
@@ -231,32 +252,36 @@ impl Memory for ConversationBufferMemory {
             "tool" => MessageRole::Tool,
             _ => MessageRole::User, // Default fallback
         };
-        
+
         let message = ConversationMessage::new(role, content);
         self.add_structured_message(conversation_id, message).await
     }
 
-    async fn add_structured_message(&self, conversation_id: &str, message: ConversationMessage) -> RragResult<()> {
+    async fn add_structured_message(
+        &self,
+        conversation_id: &str,
+        message: ConversationMessage,
+    ) -> RragResult<()> {
         let mut conversations = self.conversations.write().await;
-        
+
         let messages = conversations
             .entry(conversation_id.to_string())
             .or_insert_with(VecDeque::new);
-        
+
         messages.push_back(message);
-        
+
         // Release the lock before cleanup
         drop(conversations);
-        
+
         // Clean up old messages
         self.cleanup_old_messages(conversation_id).await;
-        
+
         Ok(())
     }
 
     async fn get_conversation_history(&self, conversation_id: &str) -> RragResult<Vec<String>> {
         let conversations = self.conversations.read().await;
-        
+
         if let Some(messages) = conversations.get(conversation_id) {
             let history = messages
                 .iter()
@@ -270,7 +295,7 @@ impl Memory for ConversationBufferMemory {
 
     async fn get_messages(&self, conversation_id: &str) -> RragResult<Vec<ConversationMessage>> {
         let conversations = self.conversations.read().await;
-        
+
         if let Some(messages) = conversations.get(conversation_id) {
             Ok(messages.iter().cloned().collect())
         } else {
@@ -278,17 +303,16 @@ impl Memory for ConversationBufferMemory {
         }
     }
 
-    async fn get_recent_messages(&self, conversation_id: &str, limit: usize) -> RragResult<Vec<ConversationMessage>> {
+    async fn get_recent_messages(
+        &self,
+        conversation_id: &str,
+        limit: usize,
+    ) -> RragResult<Vec<ConversationMessage>> {
         let conversations = self.conversations.read().await;
-        
+
         if let Some(messages) = conversations.get(conversation_id) {
-            let recent: Vec<ConversationMessage> = messages
-                .iter()
-                .rev()
-                .take(limit)
-                .rev()
-                .cloned()
-                .collect();
+            let recent: Vec<ConversationMessage> =
+                messages.iter().rev().take(limit).rev().cloned().collect();
             Ok(recent)
         } else {
             Ok(Vec::new())
@@ -301,16 +325,23 @@ impl Memory for ConversationBufferMemory {
         Ok(())
     }
 
-    async fn get_memory_variables(&self, conversation_id: &str) -> RragResult<HashMap<String, String>> {
+    async fn get_memory_variables(
+        &self,
+        conversation_id: &str,
+    ) -> RragResult<HashMap<String, String>> {
         let history = self.get_conversation_history(conversation_id).await?;
         let mut variables = HashMap::new();
-        
+
         variables.insert(self.config.memory_key.clone(), history.join("\n"));
-        
+
         Ok(variables)
     }
 
-    async fn save_context(&self, _conversation_id: &str, _context: HashMap<String, String>) -> RragResult<()> {
+    async fn save_context(
+        &self,
+        _conversation_id: &str,
+        _context: HashMap<String, String>,
+    ) -> RragResult<()> {
         // Simple buffer memory doesn't persist additional context
         // This could be extended to store context in message metadata
         Ok(())
@@ -325,7 +356,7 @@ impl Memory for ConversationBufferMemory {
 pub struct ConversationTokenBufferMemory {
     /// Base buffer memory
     buffer: ConversationBufferMemory,
-    
+
     /// Token-specific configuration
     token_config: TokenBufferConfig,
 }
@@ -334,10 +365,10 @@ pub struct ConversationTokenBufferMemory {
 pub struct TokenBufferConfig {
     /// Maximum tokens to keep in memory
     pub max_tokens: usize,
-    
+
     /// Buffer size to keep below max (for safety)
     pub buffer_tokens: usize,
-    
+
     /// How to handle token overflow
     pub overflow_strategy: TokenOverflowStrategy,
 }
@@ -346,10 +377,10 @@ pub struct TokenBufferConfig {
 pub enum TokenOverflowStrategy {
     /// Remove oldest messages
     RemoveOldest,
-    
+
     /// Summarize old messages
     Summarize,
-    
+
     /// Truncate message content
     Truncate,
 }
@@ -389,7 +420,7 @@ impl ConversationTokenBufferMemory {
     /// Handle token overflow
     async fn handle_token_overflow(&self, conversation_id: &str) -> RragResult<()> {
         let current_tokens = self.calculate_total_tokens(conversation_id).await?;
-        
+
         if current_tokens <= self.token_config.max_tokens {
             return Ok(());
         }
@@ -397,7 +428,7 @@ impl ConversationTokenBufferMemory {
         match self.token_config.overflow_strategy {
             TokenOverflowStrategy::RemoveOldest => {
                 let mut conversations = self.buffer.conversations.write().await;
-                
+
                 if let Some(messages) = conversations.get_mut(conversation_id) {
                     while !messages.is_empty() {
                         let total: usize = messages.iter().map(|msg| msg.estimated_tokens()).sum();
@@ -412,7 +443,7 @@ impl ConversationTokenBufferMemory {
                 // This would require integration with an LLM for summarization
                 // For now, fall back to removing oldest
                 let mut conversations = self.buffer.conversations.write().await;
-                
+
                 if let Some(messages) = conversations.get_mut(conversation_id) {
                     // Remove half the messages as a simple strategy
                     let remove_count = messages.len() / 2;
@@ -423,7 +454,10 @@ impl ConversationTokenBufferMemory {
             }
             TokenOverflowStrategy::Truncate => {
                 // Truncate message content (not implemented in this example)
-                return Err(RragError::memory("token_overflow", "Truncate strategy not implemented"));
+                return Err(RragError::memory(
+                    "token_overflow",
+                    "Truncate strategy not implemented",
+                ));
             }
         }
 
@@ -439,14 +473,27 @@ impl Default for ConversationTokenBufferMemory {
 
 #[async_trait]
 impl Memory for ConversationTokenBufferMemory {
-    async fn add_message(&self, conversation_id: &str, role: &str, content: &str) -> RragResult<()> {
-        self.buffer.add_message(conversation_id, role, content).await?;
+    async fn add_message(
+        &self,
+        conversation_id: &str,
+        role: &str,
+        content: &str,
+    ) -> RragResult<()> {
+        self.buffer
+            .add_message(conversation_id, role, content)
+            .await?;
         self.handle_token_overflow(conversation_id).await?;
         Ok(())
     }
 
-    async fn add_structured_message(&self, conversation_id: &str, message: ConversationMessage) -> RragResult<()> {
-        self.buffer.add_structured_message(conversation_id, message).await?;
+    async fn add_structured_message(
+        &self,
+        conversation_id: &str,
+        message: ConversationMessage,
+    ) -> RragResult<()> {
+        self.buffer
+            .add_structured_message(conversation_id, message)
+            .await?;
         self.handle_token_overflow(conversation_id).await?;
         Ok(())
     }
@@ -459,26 +506,42 @@ impl Memory for ConversationTokenBufferMemory {
         self.buffer.get_messages(conversation_id).await
     }
 
-    async fn get_recent_messages(&self, conversation_id: &str, limit: usize) -> RragResult<Vec<ConversationMessage>> {
-        self.buffer.get_recent_messages(conversation_id, limit).await
+    async fn get_recent_messages(
+        &self,
+        conversation_id: &str,
+        limit: usize,
+    ) -> RragResult<Vec<ConversationMessage>> {
+        self.buffer
+            .get_recent_messages(conversation_id, limit)
+            .await
     }
 
     async fn clear_conversation(&self, conversation_id: &str) -> RragResult<()> {
         self.buffer.clear_conversation(conversation_id).await
     }
 
-    async fn get_memory_variables(&self, conversation_id: &str) -> RragResult<HashMap<String, String>> {
+    async fn get_memory_variables(
+        &self,
+        conversation_id: &str,
+    ) -> RragResult<HashMap<String, String>> {
         let mut variables = self.buffer.get_memory_variables(conversation_id).await?;
-        
+
         // Add token information
         let token_count = self.calculate_total_tokens(conversation_id).await?;
         variables.insert("token_count".to_string(), token_count.to_string());
-        variables.insert("max_tokens".to_string(), self.token_config.max_tokens.to_string());
-        
+        variables.insert(
+            "max_tokens".to_string(),
+            self.token_config.max_tokens.to_string(),
+        );
+
         Ok(variables)
     }
 
-    async fn save_context(&self, conversation_id: &str, context: HashMap<String, String>) -> RragResult<()> {
+    async fn save_context(
+        &self,
+        conversation_id: &str,
+        context: HashMap<String, String>,
+    ) -> RragResult<()> {
         self.buffer.save_context(conversation_id, context).await
     }
 
@@ -491,10 +554,10 @@ impl Memory for ConversationTokenBufferMemory {
 pub struct ConversationSummaryMemory {
     /// Current conversation buffer
     current_messages: Arc<RwLock<HashMap<String, VecDeque<ConversationMessage>>>>,
-    
+
     /// Stored summaries
     summaries: Arc<RwLock<HashMap<String, Vec<MemorySummary>>>>,
-    
+
     /// Configuration
     config: SummaryMemoryConfig,
 }
@@ -503,16 +566,16 @@ pub struct ConversationSummaryMemory {
 pub struct SummaryMemoryConfig {
     /// Maximum messages before summarization
     pub max_messages_before_summary: usize,
-    
+
     /// Maximum total tokens before summarization
     pub max_tokens_before_summary: usize,
-    
+
     /// Number of recent messages to keep after summarization
     pub keep_recent_messages: usize,
-    
+
     /// Memory key for variables
     pub memory_key: String,
-    
+
     /// Summary key for variables
     pub summary_key: String,
 }
@@ -549,20 +612,20 @@ impl ConversationSummaryMemory {
     /// Check if summarization is needed
     async fn should_summarize(&self, conversation_id: &str) -> RragResult<bool> {
         let messages = self.current_messages.read().await;
-        
+
         if let Some(msg_deque) = messages.get(conversation_id) {
             // Check message count
             if msg_deque.len() > self.config.max_messages_before_summary {
                 return Ok(true);
             }
-            
+
             // Check token count
             let total_tokens: usize = msg_deque.iter().map(|msg| msg.estimated_tokens()).sum();
             if total_tokens > self.config.max_tokens_before_summary {
                 return Ok(true);
             }
         }
-        
+
         Ok(false)
     }
 
@@ -570,15 +633,15 @@ impl ConversationSummaryMemory {
     async fn summarize_conversation(&self, conversation_id: &str) -> RragResult<()> {
         let mut messages = self.current_messages.write().await;
         let mut summaries = self.summaries.write().await;
-        
+
         if let Some(msg_deque) = messages.get_mut(conversation_id) {
             if msg_deque.len() <= self.config.keep_recent_messages {
                 return Ok(());
             }
-            
+
             // Calculate how many messages to summarize
             let to_summarize_count = msg_deque.len() - self.config.keep_recent_messages;
-            
+
             // Extract messages to summarize
             let mut to_summarize = Vec::new();
             for _ in 0..to_summarize_count {
@@ -586,18 +649,26 @@ impl ConversationSummaryMemory {
                     to_summarize.push(msg);
                 }
             }
-            
+
             if !to_summarize.is_empty() {
                 // Create a simple summary (in production, would use LLM)
                 let summary_text = format!(
                     "Summary of {} messages from {} to {}",
                     to_summarize.len(),
-                    to_summarize.first().unwrap().timestamp.format("%Y-%m-%d %H:%M:%S"),
-                    to_summarize.last().unwrap().timestamp.format("%Y-%m-%d %H:%M:%S")
+                    to_summarize
+                        .first()
+                        .unwrap()
+                        .timestamp
+                        .format("%Y-%m-%d %H:%M:%S"),
+                    to_summarize
+                        .last()
+                        .unwrap()
+                        .timestamp
+                        .format("%Y-%m-%d %H:%M:%S")
                 );
-                
+
                 let original_tokens = to_summarize.iter().map(|msg| msg.estimated_tokens()).sum();
-                
+
                 let summary = MemorySummary {
                     summary: summary_text,
                     message_count: to_summarize.len(),
@@ -607,7 +678,7 @@ impl ConversationSummaryMemory {
                     end_time: to_summarize.last().unwrap().timestamp,
                     metadata: HashMap::new(),
                 };
-                
+
                 // Store the summary
                 summaries
                     .entry(conversation_id.to_string())
@@ -615,7 +686,7 @@ impl ConversationSummaryMemory {
                     .push(summary);
             }
         }
-        
+
         Ok(())
     }
 }
@@ -628,7 +699,12 @@ impl Default for ConversationSummaryMemory {
 
 #[async_trait]
 impl Memory for ConversationSummaryMemory {
-    async fn add_message(&self, conversation_id: &str, role: &str, content: &str) -> RragResult<()> {
+    async fn add_message(
+        &self,
+        conversation_id: &str,
+        role: &str,
+        content: &str,
+    ) -> RragResult<()> {
         let role = match role.to_lowercase().as_str() {
             "user" => MessageRole::User,
             "assistant" => MessageRole::Assistant,
@@ -636,12 +712,16 @@ impl Memory for ConversationSummaryMemory {
             "tool" => MessageRole::Tool,
             _ => MessageRole::User,
         };
-        
+
         let message = ConversationMessage::new(role, content);
         self.add_structured_message(conversation_id, message).await
     }
 
-    async fn add_structured_message(&self, conversation_id: &str, message: ConversationMessage) -> RragResult<()> {
+    async fn add_structured_message(
+        &self,
+        conversation_id: &str,
+        message: ConversationMessage,
+    ) -> RragResult<()> {
         // Add the message
         {
             let mut messages = self.current_messages.write().await;
@@ -650,41 +730,41 @@ impl Memory for ConversationSummaryMemory {
                 .or_insert_with(VecDeque::new);
             msg_deque.push_back(message);
         }
-        
+
         // Check if summarization is needed
         if self.should_summarize(conversation_id).await? {
             self.summarize_conversation(conversation_id).await?;
         }
-        
+
         Ok(())
     }
 
     async fn get_conversation_history(&self, conversation_id: &str) -> RragResult<Vec<String>> {
         let messages = self.current_messages.read().await;
         let summaries = self.summaries.read().await;
-        
+
         let mut history = Vec::new();
-        
+
         // Add summaries first
         if let Some(summary_list) = summaries.get(conversation_id) {
             for summary in summary_list {
                 history.push(format!("Summary: {}", summary.summary));
             }
         }
-        
+
         // Add current messages
         if let Some(msg_deque) = messages.get(conversation_id) {
             for msg in msg_deque {
                 history.push(format!("{:?}: {}", msg.role, msg.content));
             }
         }
-        
+
         Ok(history)
     }
 
     async fn get_messages(&self, conversation_id: &str) -> RragResult<Vec<ConversationMessage>> {
         let messages = self.current_messages.read().await;
-        
+
         if let Some(msg_deque) = messages.get(conversation_id) {
             Ok(msg_deque.iter().cloned().collect())
         } else {
@@ -692,17 +772,16 @@ impl Memory for ConversationSummaryMemory {
         }
     }
 
-    async fn get_recent_messages(&self, conversation_id: &str, limit: usize) -> RragResult<Vec<ConversationMessage>> {
+    async fn get_recent_messages(
+        &self,
+        conversation_id: &str,
+        limit: usize,
+    ) -> RragResult<Vec<ConversationMessage>> {
         let messages = self.current_messages.read().await;
-        
+
         if let Some(msg_deque) = messages.get(conversation_id) {
-            let recent: Vec<ConversationMessage> = msg_deque
-                .iter()
-                .rev()
-                .take(limit)
-                .rev()
-                .cloned()
-                .collect();
+            let recent: Vec<ConversationMessage> =
+                msg_deque.iter().rev().take(limit).rev().cloned().collect();
             Ok(recent)
         } else {
             Ok(Vec::new())
@@ -712,20 +791,23 @@ impl Memory for ConversationSummaryMemory {
     async fn clear_conversation(&self, conversation_id: &str) -> RragResult<()> {
         let mut messages = self.current_messages.write().await;
         let mut summaries = self.summaries.write().await;
-        
+
         messages.remove(conversation_id);
         summaries.remove(conversation_id);
-        
+
         Ok(())
     }
 
-    async fn get_memory_variables(&self, conversation_id: &str) -> RragResult<HashMap<String, String>> {
+    async fn get_memory_variables(
+        &self,
+        conversation_id: &str,
+    ) -> RragResult<HashMap<String, String>> {
         let mut variables = HashMap::new();
-        
+
         // Get current conversation
         let history = self.get_conversation_history(conversation_id).await?;
         variables.insert(self.config.memory_key.clone(), history.join("\n"));
-        
+
         // Get summary
         let summaries = self.summaries.read().await;
         if let Some(summary_list) = summaries.get(conversation_id) {
@@ -736,11 +818,15 @@ impl Memory for ConversationSummaryMemory {
                 .join("\n");
             variables.insert(self.config.summary_key.clone(), summary_text);
         }
-        
+
         Ok(variables)
     }
 
-    async fn save_context(&self, _conversation_id: &str, _context: HashMap<String, String>) -> RragResult<()> {
+    async fn save_context(
+        &self,
+        _conversation_id: &str,
+        _context: HashMap<String, String>,
+    ) -> RragResult<()> {
         // Could store context in message metadata or separate storage
         Ok(())
     }
@@ -754,7 +840,7 @@ impl Memory for ConversationSummaryMemory {
 pub struct MemoryService {
     /// Active memory implementation
     memory: Arc<dyn Memory>,
-    
+
     /// Service configuration
     config: MemoryServiceConfig,
 }
@@ -763,10 +849,10 @@ pub struct MemoryService {
 pub struct MemoryServiceConfig {
     /// Default conversation settings
     pub default_conversation_settings: ConversationSettings,
-    
+
     /// Enable memory persistence
     pub enable_persistence: bool,
-    
+
     /// Persistence interval in seconds
     pub persistence_interval_seconds: u64,
 }
@@ -775,10 +861,10 @@ pub struct MemoryServiceConfig {
 pub struct ConversationSettings {
     /// Maximum messages per conversation
     pub max_messages: Option<usize>,
-    
+
     /// Maximum age for messages
     pub max_age_hours: Option<u64>,
-    
+
     /// Auto-summarization threshold
     pub auto_summarize_threshold: Option<usize>,
 }
@@ -817,24 +903,35 @@ impl MemoryService {
 
     /// Add a user message
     pub async fn add_user_message(&self, conversation_id: &str, content: &str) -> RragResult<()> {
-        self.memory.add_message(conversation_id, "user", content).await
+        self.memory
+            .add_message(conversation_id, "user", content)
+            .await
     }
 
     /// Add an assistant message
-    pub async fn add_assistant_message(&self, conversation_id: &str, content: &str) -> RragResult<()> {
-        self.memory.add_message(conversation_id, "assistant", content).await
+    pub async fn add_assistant_message(
+        &self,
+        conversation_id: &str,
+        content: &str,
+    ) -> RragResult<()> {
+        self.memory
+            .add_message(conversation_id, "assistant", content)
+            .await
     }
 
     /// Get formatted conversation for prompts
     pub async fn get_conversation_context(&self, conversation_id: &str) -> RragResult<String> {
         let variables = self.memory.get_memory_variables(conversation_id).await?;
-        
+
         // Return the main history
         Ok(variables.get("history").unwrap_or(&String::new()).clone())
     }
 
     /// Get memory variables for prompt templates
-    pub async fn get_prompt_variables(&self, conversation_id: &str) -> RragResult<HashMap<String, String>> {
+    pub async fn get_prompt_variables(
+        &self,
+        conversation_id: &str,
+    ) -> RragResult<HashMap<String, String>> {
         self.memory.get_memory_variables(conversation_id).await
     }
 
@@ -853,34 +950,40 @@ mod tests {
         let msg = ConversationMessage::user("Hello world")
             .with_metadata("source", serde_json::Value::String("test".to_string()))
             .with_token_count(10);
-        
+
         assert_eq!(msg.role, MessageRole::User);
         assert_eq!(msg.content, "Hello world");
         assert_eq!(msg.estimated_tokens(), 10);
-        assert_eq!(msg.metadata.get("source").unwrap().as_str().unwrap(), "test");
+        assert_eq!(
+            msg.metadata.get("source").unwrap().as_str().unwrap(),
+            "test"
+        );
     }
 
     #[tokio::test]
     async fn test_buffer_memory() {
         let memory = ConversationBufferMemory::new();
         let conv_id = "test_conversation";
-        
+
         // Add messages
         memory.add_message(conv_id, "user", "Hello").await.unwrap();
-        memory.add_message(conv_id, "assistant", "Hi there!").await.unwrap();
-        
+        memory
+            .add_message(conv_id, "assistant", "Hi there!")
+            .await
+            .unwrap();
+
         // Get history
         let history = memory.get_conversation_history(conv_id).await.unwrap();
         assert_eq!(history.len(), 2);
         assert!(history[0].contains("Hello"));
         assert!(history[1].contains("Hi there!"));
-        
+
         // Get messages
         let messages = memory.get_messages(conv_id).await.unwrap();
         assert_eq!(messages.len(), 2);
         assert_eq!(messages[0].role, MessageRole::User);
         assert_eq!(messages[1].role, MessageRole::Assistant);
-        
+
         // Test recent messages
         let recent = memory.get_recent_messages(conv_id, 1).await.unwrap();
         assert_eq!(recent.len(), 1);
@@ -894,43 +997,61 @@ mod tests {
             buffer_tokens: 10,
             overflow_strategy: TokenOverflowStrategy::RemoveOldest,
         };
-        
-        let memory = ConversationTokenBufferMemory::with_config(
-            BufferMemoryConfig::default(),
-            config,
-        );
-        
+
+        let memory =
+            ConversationTokenBufferMemory::with_config(BufferMemoryConfig::default(), config);
+
         let conv_id = "test_token_conversation";
-        
+
         // Add many messages to trigger overflow
         for i in 0..20 {
-            memory.add_message(conv_id, "user", &format!("Message number {} with some content", i)).await.unwrap();
+            memory
+                .add_message(
+                    conv_id,
+                    "user",
+                    &format!("Message number {} with some content", i),
+                )
+                .await
+                .unwrap();
         }
-        
+
         let total_tokens = memory.calculate_total_tokens(conv_id).await.unwrap();
-        assert!(total_tokens <= 100, "Total tokens {} should be <= 100", total_tokens);
-        
+        assert!(
+            total_tokens <= 100,
+            "Total tokens {} should be <= 100",
+            total_tokens
+        );
+
         let messages = memory.get_messages(conv_id).await.unwrap();
-        assert!(messages.len() < 20, "Should have removed some messages due to token limit");
+        assert!(
+            messages.len() < 20,
+            "Should have removed some messages due to token limit"
+        );
     }
 
     #[tokio::test]
     async fn test_memory_service() {
         let memory = Arc::new(ConversationBufferMemory::new());
         let service = MemoryService::new(memory);
-        
+
         let conv_id = "service_test";
-        
-        service.add_user_message(conv_id, "How are you?").await.unwrap();
-        service.add_assistant_message(conv_id, "I'm doing well, thank you!").await.unwrap();
-        
+
+        service
+            .add_user_message(conv_id, "How are you?")
+            .await
+            .unwrap();
+        service
+            .add_assistant_message(conv_id, "I'm doing well, thank you!")
+            .await
+            .unwrap();
+
         let context = service.get_conversation_context(conv_id).await.unwrap();
         assert!(context.contains("How are you?"));
         assert!(context.contains("I'm doing well"));
-        
+
         let variables = service.get_prompt_variables(conv_id).await.unwrap();
         assert!(variables.contains_key("history"));
-        
+
         assert!(service.health_check().await.unwrap());
     }
 
@@ -943,21 +1064,36 @@ mod tests {
             memory_key: "history".to_string(),
             summary_key: "summary".to_string(),
         };
-        
+
         let memory = ConversationSummaryMemory::with_config(config);
         let conv_id = "summary_test";
-        
+
         // Add enough messages to trigger summarization
-        memory.add_message(conv_id, "user", "First message").await.unwrap();
-        memory.add_message(conv_id, "assistant", "First response").await.unwrap();
-        memory.add_message(conv_id, "user", "Second message").await.unwrap();
-        memory.add_message(conv_id, "assistant", "Second response").await.unwrap();
-        
+        memory
+            .add_message(conv_id, "user", "First message")
+            .await
+            .unwrap();
+        memory
+            .add_message(conv_id, "assistant", "First response")
+            .await
+            .unwrap();
+        memory
+            .add_message(conv_id, "user", "Second message")
+            .await
+            .unwrap();
+        memory
+            .add_message(conv_id, "assistant", "Second response")
+            .await
+            .unwrap();
+
         // Should have triggered summarization
         let messages = memory.get_messages(conv_id).await.unwrap();
         assert!(messages.len() <= 1, "Should have summarized old messages");
-        
+
         let variables = memory.get_memory_variables(conv_id).await.unwrap();
-        assert!(variables.contains_key("summary"), "Should have summary in variables");
+        assert!(
+            variables.contains_key("summary"),
+            "Should have summary in variables"
+        );
     }
 }

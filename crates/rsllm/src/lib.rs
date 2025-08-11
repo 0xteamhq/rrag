@@ -1,19 +1,19 @@
 //! # RSLLM - Rust LLM Client Library
-//! 
-//! **RSLLM** is a Rust-native client library for Large Language Models with multi-provider 
+//!
+//! **RSLLM** is a Rust-native client library for Large Language Models with multi-provider
 //! support, streaming capabilities, and type-safe interfaces.
-//! 
+//!
 //! ## Design Philosophy
-//! 
+//!
 //! RSLLM embraces Rust's core principles:
 //! - **Type Safety**: Compile-time guarantees for API contracts
 //! - **Memory Safety**: Zero-copy operations where possible  
 //! - **Async-First**: Built around async/await and streaming
 //! - **Multi-Provider**: Unified interface for OpenAI, Claude, Ollama, etc.
 //! - **Composable**: Easy integration with frameworks like RRAG
-//! 
+//!
 //! ## Architecture
-//! 
+//!
 //! ```text
 //! ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 //! │   Application   │───▶│    RSLLM        │───▶│   LLM Provider  │
@@ -26,12 +26,12 @@
 //! │   Response      │    │   Abstraction   │    │    Transport    │
 //! └─────────────────┘    └─────────────────┘    └─────────────────┘
 //! ```
-//! 
+//!
 //! ## Quick Start
-//! 
+//!
 //! ```rust,no_run
 //! use rsllm::{Client, Provider, ChatMessage, MessageRole};
-//! 
+//!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     // Create client with OpenAI provider
@@ -52,13 +52,13 @@
 //!     Ok(())
 //! }
 //! ```
-//! 
+//!
 //! ## Streaming Example
-//! 
+//!
 //! ```rust,no_run
 //! use rsllm::{Client, Provider, ChatMessage, MessageRole};
 //! use futures_util::StreamExt;
-//! 
+//!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let client = Client::builder()
@@ -91,21 +91,21 @@
 
 // Core modules
 pub mod client;
-pub mod provider;
+pub mod config;
+pub mod error;
 pub mod message;
+pub mod provider;
 pub mod response;
 pub mod streaming;
-pub mod error;
-pub mod config;
 
 // Re-exports for convenience
 pub use client::{Client, ClientBuilder};
-pub use provider::{Provider, ProviderConfig, LLMProvider};
-pub use message::{ChatMessage, MessageRole, MessageContent, ToolCall};
-pub use response::{ChatResponse, CompletionResponse, StreamChunk, EmbeddingResponse, Usage};
-pub use streaming::{ChatStream, CompletionStream};
-pub use error::{RsllmError, RsllmResult};
 pub use config::{ClientConfig, ModelConfig};
+pub use error::{RsllmError, RsllmResult};
+pub use message::{ChatMessage, MessageContent, MessageRole, ToolCall};
+pub use provider::{LLMProvider, Provider, ProviderConfig};
+pub use response::{ChatResponse, CompletionResponse, EmbeddingResponse, StreamChunk, Usage};
+pub use streaming::{ChatStream, CompletionStream};
 
 /// Version information
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -119,14 +119,12 @@ pub const DESCRIPTION: &str = "Rust LLM Client Library";
 /// Prelude module for convenient imports
 pub mod prelude {
     pub use crate::{
-        Client, ClientBuilder, Provider, ProviderConfig, LLMProvider,
-        ChatMessage, MessageRole, MessageContent, ToolCall,
-        ChatResponse, CompletionResponse, StreamChunk, EmbeddingResponse, Usage,
-        ChatStream, CompletionStream,
-        RsllmError, RsllmResult,
-        ClientConfig, ModelConfig,
+        ChatMessage, ChatResponse, ChatStream, Client, ClientBuilder, ClientConfig,
+        CompletionResponse, CompletionStream, EmbeddingResponse, LLMProvider, MessageContent,
+        MessageRole, ModelConfig, Provider, ProviderConfig, RsllmError, RsllmResult, StreamChunk,
+        ToolCall, Usage,
     };
-    
+
     // External dependencies commonly used
     pub use async_trait::async_trait;
     pub use futures_util::{Stream, StreamExt};

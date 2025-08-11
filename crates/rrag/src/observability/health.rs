@@ -1,14 +1,14 @@
 //! # Health Monitoring System
-//! 
+//!
 //! Comprehensive health checking with component status monitoring,
 //! dependency verification, and automated health reporting.
 
 use crate::{RragError, RragResult};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Health monitoring configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -182,8 +182,12 @@ pub struct HealthAlert {
 pub trait HealthChecker: Send + Sync {
     async fn check_health(&self) -> RragResult<ServiceHealth>;
     fn component_name(&self) -> &str;
-    fn dependencies(&self) -> Vec<String> { Vec::new() }
-    fn is_critical(&self) -> bool { false }
+    fn dependencies(&self) -> Vec<String> {
+        Vec::new()
+    }
+    fn is_critical(&self) -> bool {
+        false
+    }
 }
 
 /// Basic component health checker
@@ -194,7 +198,7 @@ pub struct BasicHealthChecker {
 }
 
 impl BasicHealthChecker {
-    pub fn new<F>(name: impl Into<String>, check_fn: F) -> Self 
+    pub fn new<F>(name: impl Into<String>, check_fn: F) -> Self
     where
         F: Fn() -> RragResult<ComponentStatus> + Send + Sync + 'static,
     {
@@ -215,14 +219,14 @@ impl BasicHealthChecker {
 impl HealthChecker for BasicHealthChecker {
     async fn check_health(&self) -> RragResult<ServiceHealth> {
         let start_time = std::time::Instant::now();
-        
+
         match (self.check_fn)() {
             Ok(status) => {
                 let response_time = start_time.elapsed().as_millis() as f64;
                 Ok(ServiceHealth::new(&self.name)
                     .with_status(status)
                     .with_response_time(response_time))
-            },
+            }
             Err(e) => {
                 let response_time = start_time.elapsed().as_millis() as f64;
                 Ok(ServiceHealth::new(&self.name)
@@ -288,14 +292,15 @@ impl HealthChecker for HttpHealthChecker {
         #[cfg(feature = "http")]
         {
             let start_time = std::time::Instant::now();
-            
-            let timeout_duration = std::time::Duration::from_millis(self.timeout.num_milliseconds() as u64);
-            
+
+            let timeout_duration =
+                std::time::Duration::from_millis(self.timeout.num_milliseconds() as u64);
+
             match tokio::time::timeout(timeout_duration, self.client.get(&self.url).send()).await {
                 Ok(Ok(response)) => {
                     let response_time = start_time.elapsed().as_millis() as f64;
                     let status_code = response.status().as_u16();
-                    
+
                     let status = if status_code == self.expected_status {
                         ComponentStatus::Healthy
                     } else {
@@ -307,7 +312,7 @@ impl HealthChecker for HttpHealthChecker {
                         .with_response_time(response_time)
                         .with_detail("status_code", serde_json::json!(status_code))
                         .with_detail("url", serde_json::json!(self.url)))
-                },
+                }
                 Ok(Err(e)) => {
                     let response_time = start_time.elapsed().as_millis() as f64;
                     Ok(ServiceHealth::new(&self.name)
@@ -315,14 +320,17 @@ impl HealthChecker for HttpHealthChecker {
                         .with_response_time(response_time)
                         .with_error(e.to_string())
                         .with_detail("url", serde_json::json!(self.url)))
-                },
+                }
                 Err(_) => {
                     let response_time = start_time.elapsed().as_millis() as f64;
                     Ok(ServiceHealth::new(&self.name)
                         .with_status(ComponentStatus::Unhealthy)
                         .with_response_time(response_time)
                         .with_error("Request timeout")
-                        .with_detail("timeout_ms", serde_json::json!(self.timeout.num_milliseconds()))
+                        .with_detail(
+                            "timeout_ms",
+                            serde_json::json!(self.timeout.num_milliseconds()),
+                        )
                         .with_detail("url", serde_json::json!(self.url)))
                 }
             }
@@ -380,13 +388,13 @@ impl DatabaseHealthChecker {
 impl HealthChecker for DatabaseHealthChecker {
     async fn check_health(&self) -> RragResult<ServiceHealth> {
         let start_time = std::time::Instant::now();
-        
+
         // In a real implementation, this would attempt to connect to the database
         // For now, we'll simulate the check
         tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
-        
+
         let response_time = start_time.elapsed().as_millis() as f64;
-        
+
         // Simulate occasional connection issues
         let status = if rand::random::<f64>() > 0.1 {
             ComponentStatus::Healthy
@@ -442,7 +450,11 @@ impl HealthMonitor {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("health_monitor", "stopped", "already running"));
+            return Err(RragError::config(
+                "health_monitor",
+                "stopped",
+                "already running",
+            ));
         }
 
         let handle = self.start_monitoring_loop().await?;
@@ -486,9 +498,9 @@ impl HealthMonitor {
         let is_running = self.is_running.clone();
 
         let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.check_interval_seconds)
-            );
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.check_interval_seconds,
+            ));
 
             while *is_running.read().await {
                 interval.tick().await;
@@ -500,12 +512,11 @@ impl HealthMonitor {
                 for checker_name in checker_names {
                     let checker_map = checkers.read().await;
                     if let Some(checker) = checker_map.get(&checker_name) {
-                        let timeout_duration = std::time::Duration::from_secs(config.timeout_seconds);
-                        
-                        let health_result = tokio::time::timeout(
-                            timeout_duration,
-                            checker.check_health()
-                        ).await;
+                        let timeout_duration =
+                            std::time::Duration::from_secs(config.timeout_seconds);
+
+                        let health_result =
+                            tokio::time::timeout(timeout_duration, checker.check_health()).await;
 
                         let mut service_health = match health_result {
                             Ok(Ok(health)) => health,
@@ -519,19 +530,22 @@ impl HealthMonitor {
 
                         // Update consecutive counters
                         let mut history = health_history.write().await;
-                        let component_history = history.entry(checker_name.clone()).or_insert_with(Vec::new);
-                        
+                        let component_history =
+                            history.entry(checker_name.clone()).or_insert_with(Vec::new);
+
                         if let Some(last_health) = component_history.last() {
                             if service_health.status == ComponentStatus::Healthy {
                                 if last_health.status == ComponentStatus::Healthy {
-                                    service_health.consecutive_successes = last_health.consecutive_successes + 1;
+                                    service_health.consecutive_successes =
+                                        last_health.consecutive_successes + 1;
                                 } else {
                                     service_health.consecutive_successes = 1;
                                 }
                                 service_health.consecutive_failures = 0;
                             } else {
                                 if last_health.status != ComponentStatus::Healthy {
-                                    service_health.consecutive_failures = last_health.consecutive_failures + 1;
+                                    service_health.consecutive_failures =
+                                        last_health.consecutive_failures + 1;
                                 } else {
                                     service_health.consecutive_failures = 1;
                                 }
@@ -593,11 +607,11 @@ impl HealthMonitor {
     pub async fn remove_checker(&self, name: &str) -> RragResult<()> {
         let mut checkers = self.checkers.write().await;
         checkers.remove(name);
-        
+
         // Also remove health history for this component
         let mut history = self.health_history.write().await;
         history.remove(name);
-        
+
         Ok(())
     }
 
@@ -612,7 +626,7 @@ impl HealthMonitor {
         for (component_name, history) in health_history.iter() {
             if let Some(latest_health) = history.last() {
                 services.insert(component_name.clone(), latest_health.clone());
-                
+
                 // Determine overall system status
                 if latest_health.status > overall_status {
                     overall_status = latest_health.status;
@@ -637,7 +651,11 @@ impl HealthMonitor {
         history.get(component_name)?.last().cloned()
     }
 
-    pub async fn get_component_history(&self, component_name: &str, limit: Option<usize>) -> Vec<ServiceHealth> {
+    pub async fn get_component_history(
+        &self,
+        component_name: &str,
+        limit: Option<usize>,
+    ) -> Vec<ServiceHealth> {
         let history = self.health_history.read().await;
         if let Some(component_history) = history.get(component_name) {
             let limit = limit.unwrap_or(component_history.len());
@@ -651,7 +669,8 @@ impl HealthMonitor {
     pub async fn get_alerts(&self, resolved: Option<bool>) -> Vec<HealthAlert> {
         let alerts = self.alerts.read().await;
         if let Some(resolved_filter) = resolved {
-            alerts.iter()
+            alerts
+                .iter()
                 .filter(|alert| alert.resolved == resolved_filter)
                 .cloned()
                 .collect()
@@ -660,10 +679,16 @@ impl HealthMonitor {
         }
     }
 
-    pub async fn acknowledge_alert(&self, component: &str, timestamp: DateTime<Utc>) -> RragResult<()> {
+    pub async fn acknowledge_alert(
+        &self,
+        component: &str,
+        timestamp: DateTime<Utc>,
+    ) -> RragResult<()> {
         let mut alerts = self.alerts.write().await;
-        if let Some(alert) = alerts.iter_mut()
-            .find(|a| a.component == component && a.timestamp == timestamp) {
+        if let Some(alert) = alerts
+            .iter_mut()
+            .find(|a| a.component == component && a.timestamp == timestamp)
+        {
             alert.resolved = true;
         }
         Ok(())
@@ -671,7 +696,7 @@ impl HealthMonitor {
 
     async fn get_system_info(&self) -> SystemInfo {
         let uptime = (Utc::now() - self.system_start_time).num_seconds();
-        
+
         SystemInfo {
             uptime_seconds: uptime,
             version: env!("CARGO_PKG_VERSION").to_string(),
@@ -680,7 +705,7 @@ impl HealthMonitor {
                 .unwrap_or_else(|_| "unknown".into())
                 .to_string_lossy()
                 .to_string(),
-            total_memory_mb: None,    // Would be populated with actual system info
+            total_memory_mb: None, // Would be populated with actual system info
             available_memory_mb: None,
             cpu_count: Some(num_cpus::get() as u32),
             load_average: None,
@@ -689,11 +714,15 @@ impl HealthMonitor {
 
     pub async fn force_health_check(&self, component_name: &str) -> RragResult<ServiceHealth> {
         let checkers = self.checkers.read().await;
-        let checker = checkers.get(component_name)
-            .ok_or_else(|| RragError::agent("health_monitor", format!("Component not found: {}", component_name)))?;
+        let checker = checkers.get(component_name).ok_or_else(|| {
+            RragError::agent(
+                "health_monitor",
+                format!("Component not found: {}", component_name),
+            )
+        })?;
 
         let timeout_duration = std::time::Duration::from_secs(self.config.timeout_seconds);
-        
+
         let health_result = tokio::time::timeout(timeout_duration, checker.check_health()).await;
 
         match health_result {
@@ -709,24 +738,30 @@ impl HealthMonitor {
 
     pub async fn get_health_summary(&self) -> HealthSummary {
         let report = self.get_health_report().await;
-        
+
         let total_services = report.services.len();
-        let healthy_services = report.services.values()
+        let healthy_services = report
+            .services
+            .values()
             .filter(|s| s.status == ComponentStatus::Healthy)
             .count();
-        let degraded_services = report.services.values()
+        let degraded_services = report
+            .services
+            .values()
             .filter(|s| s.status == ComponentStatus::Degraded)
             .count();
-        let unhealthy_services = report.services.values()
+        let unhealthy_services = report
+            .services
+            .values()
             .filter(|s| s.status == ComponentStatus::Unhealthy)
             .count();
-        let critical_services = report.services.values()
+        let critical_services = report
+            .services
+            .values()
             .filter(|s| s.status == ComponentStatus::Critical)
             .count();
 
-        let active_alerts = report.alerts.iter()
-            .filter(|a| !a.resolved)
-            .count();
+        let active_alerts = report.alerts.iter().filter(|a| !a.resolved).count();
 
         HealthSummary {
             overall_status: report.overall_status,
@@ -778,9 +813,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_basic_health_checker() {
-        let checker = BasicHealthChecker::new("test_component", || {
-            Ok(ComponentStatus::Healthy)
-        }).with_critical(true);
+        let checker = BasicHealthChecker::new("test_component", || Ok(ComponentStatus::Healthy))
+            .with_critical(true);
 
         assert_eq!(checker.component_name(), "test_component");
         assert!(checker.is_critical());
@@ -800,7 +834,11 @@ mod tests {
         let health = checker.check_health().await.unwrap();
         assert_eq!(health.status, ComponentStatus::Unhealthy);
         assert!(health.error_message.is_some());
-        assert!(health.error_message.as_ref().unwrap().contains("Simulated failure"));
+        assert!(health
+            .error_message
+            .as_ref()
+            .unwrap()
+            .contains("Simulated failure"));
     }
 
     #[tokio::test]
@@ -824,7 +862,7 @@ mod tests {
             check_interval_seconds: 1, // Fast interval for testing
             ..Default::default()
         };
-        
+
         let mut monitor = HealthMonitor::new(config).await.unwrap();
 
         // Add a test checker
@@ -858,7 +896,7 @@ mod tests {
             max_consecutive_failures: 2,
             ..Default::default()
         };
-        
+
         let mut monitor = HealthMonitor::new(config).await.unwrap();
 
         // Add a failing checker
@@ -875,7 +913,10 @@ mod tests {
         let alerts = monitor.get_alerts(Some(false)).await; // Get unresolved alerts
         assert!(!alerts.is_empty());
 
-        let service_health = monitor.get_component_health("failing_service").await.unwrap();
+        let service_health = monitor
+            .get_component_health("failing_service")
+            .await
+            .unwrap();
         assert!(service_health.consecutive_failures >= 2);
 
         monitor.stop().await.unwrap();
@@ -900,15 +941,26 @@ mod tests {
         let mut monitor = HealthMonitor::new(config).await.unwrap();
 
         // Add multiple checkers with different statuses
-        let healthy_checker = BasicHealthChecker::new("healthy_service", || Ok(ComponentStatus::Healthy));
-        let degraded_checker = BasicHealthChecker::new("degraded_service", || Ok(ComponentStatus::Degraded));
+        let healthy_checker =
+            BasicHealthChecker::new("healthy_service", || Ok(ComponentStatus::Healthy));
+        let degraded_checker =
+            BasicHealthChecker::new("degraded_service", || Ok(ComponentStatus::Degraded));
         let unhealthy_checker = BasicHealthChecker::new("unhealthy_service", || {
             Err(RragError::agent("test", "Service down"))
         });
 
-        monitor.add_checker(Box::new(healthy_checker)).await.unwrap();
-        monitor.add_checker(Box::new(degraded_checker)).await.unwrap();
-        monitor.add_checker(Box::new(unhealthy_checker)).await.unwrap();
+        monitor
+            .add_checker(Box::new(healthy_checker))
+            .await
+            .unwrap();
+        monitor
+            .add_checker(Box::new(degraded_checker))
+            .await
+            .unwrap();
+        monitor
+            .add_checker(Box::new(unhealthy_checker))
+            .await
+            .unwrap();
 
         monitor.start().await.unwrap();
 

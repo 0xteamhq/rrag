@@ -1,33 +1,36 @@
 //! # Graph Retrieval Builder
-//! 
+//!
 //! Builder pattern implementation for creating and configuring graph-based retrieval systems.
 
 use super::{
-    GraphRetriever, GraphRetrievalConfig, KnowledgeGraph, GraphNode,
-    entity::{EntityExtractor, RuleBasedEntityExtractor, EntityExtractionConfig, entities_to_nodes, relationships_to_edges},
-    storage::{GraphStorage, InMemoryGraphStorage, GraphStorageConfig},
-    query_expansion::{ExpansionConfig, ExpansionStrategy},
     algorithms::PageRankConfig,
+    entity::{
+        entities_to_nodes, relationships_to_edges, EntityExtractionConfig, EntityExtractor,
+        RuleBasedEntityExtractor,
+    },
+    query_expansion::{ExpansionConfig, ExpansionStrategy},
+    storage::{GraphStorage, GraphStorageConfig, InMemoryGraphStorage},
+    GraphNode, GraphRetrievalConfig, GraphRetriever, KnowledgeGraph,
 };
-use crate::{RragResult, Document, DocumentChunk};
+use crate::{Document, DocumentChunk, RragResult};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use async_trait::async_trait;
 
 /// Builder for creating graph-based retrieval systems
 pub struct GraphRetrievalBuilder {
     /// Graph build configuration
     config: GraphBuildConfig,
-    
+
     /// Entity extractor
     entity_extractor: Option<Box<dyn EntityExtractor>>,
-    
+
     /// Graph storage backend
     storage: Option<Box<dyn GraphStorage>>,
-    
+
     /// Placeholder for embedding service (would be trait object)
     _embedding_service: Option<()>,
-    
+
     /// Retrieval configuration
     retrieval_config: GraphRetrievalConfig,
 }
@@ -37,25 +40,25 @@ pub struct GraphRetrievalBuilder {
 pub struct GraphBuildConfig {
     /// Entity extraction configuration
     pub entity_config: EntityExtractionConfig,
-    
+
     /// Graph storage configuration
     pub storage_config: GraphStorageConfig,
-    
+
     /// Query expansion configuration
     pub expansion_config: ExpansionConfig,
-    
+
     /// Whether to generate embeddings for entities
     pub generate_entity_embeddings: bool,
-    
+
     /// Whether to calculate PageRank scores
     pub calculate_pagerank: bool,
-    
+
     /// Batch size for processing documents
     pub batch_size: usize,
-    
+
     /// Enable parallel processing
     pub enable_parallel_processing: bool,
-    
+
     /// Number of worker threads for parallel processing
     pub num_workers: usize,
 }
@@ -80,31 +83,31 @@ impl Default for GraphBuildConfig {
 pub struct GraphBuildProgress {
     /// Current phase of building
     pub phase: BuildPhase,
-    
+
     /// Number of documents processed
     pub documents_processed: usize,
-    
+
     /// Total number of documents
     pub total_documents: usize,
-    
+
     /// Number of entities extracted
     pub entities_extracted: usize,
-    
+
     /// Number of relationships found
     pub relationships_found: usize,
-    
+
     /// Number of nodes in graph
     pub graph_nodes: usize,
-    
+
     /// Number of edges in graph
     pub graph_edges: usize,
-    
+
     /// Current processing speed (documents/second)
     pub processing_speed: f32,
-    
+
     /// Estimated time remaining in seconds
     pub estimated_remaining_seconds: u64,
-    
+
     /// Any errors encountered
     pub errors: Vec<String>,
 }
@@ -114,25 +117,25 @@ pub struct GraphBuildProgress {
 pub enum BuildPhase {
     /// Initializing the builder
     Initializing,
-    
+
     /// Extracting entities from documents
     EntityExtraction,
-    
+
     /// Building graph structure
     GraphConstruction,
-    
+
     /// Generating embeddings
     EmbeddingGeneration,
-    
+
     /// Computing graph metrics (PageRank, etc.)
     MetricComputation,
-    
+
     /// Indexing for fast retrieval
     Indexing,
-    
+
     /// Build completed
     Completed,
-    
+
     /// Build failed
     Failed(String),
 }
@@ -168,7 +171,10 @@ impl GraphRetrievalBuilder {
     }
 
     /// Use rule-based entity extractor with custom config
-    pub fn with_rule_based_entity_extractor(mut self, config: EntityExtractionConfig) -> RragResult<Self> {
+    pub fn with_rule_based_entity_extractor(
+        mut self,
+        config: EntityExtractionConfig,
+    ) -> RragResult<Self> {
         let extractor = RuleBasedEntityExtractor::new(config)?;
         self.entity_extractor = Some(Box::new(extractor));
         Ok(self)
@@ -249,22 +255,20 @@ impl GraphRetrievalBuilder {
         progress_callback: Option<Box<dyn ProgressCallback>>,
     ) -> RragResult<GraphRetriever> {
         // Initialize components
-        let entity_extractor = self.entity_extractor.take()
-            .unwrap_or_else(|| {
-                Box::new(RuleBasedEntityExtractor::new(self.config.entity_config.clone()).unwrap())
-            });
+        let entity_extractor = self.entity_extractor.take().unwrap_or_else(|| {
+            Box::new(RuleBasedEntityExtractor::new(self.config.entity_config.clone()).unwrap())
+        });
 
-        let storage = self.storage.take()
-            .unwrap_or_else(|| {
-                Box::new(InMemoryGraphStorage::with_config(self.config.storage_config.clone()))
-            });
+        let storage = self.storage.take().unwrap_or_else(|| {
+            Box::new(InMemoryGraphStorage::with_config(
+                self.config.storage_config.clone(),
+            ))
+        });
 
         // Build the graph
-        let graph = self.build_graph_from_documents(
-            &documents,
-            &*entity_extractor,
-            progress_callback,
-        ).await?;
+        let graph = self
+            .build_graph_from_documents(&documents, &*entity_extractor, progress_callback)
+            .await?;
 
         // Create and return the retriever
         GraphRetriever::new(graph, storage, self.retrieval_config)
@@ -277,16 +281,26 @@ impl GraphRetrievalBuilder {
         progress_callback: Option<Box<dyn ProgressCallback>>,
     ) -> RragResult<GraphRetriever> {
         // Convert chunks to documents for processing
-        let documents: Vec<Document> = chunks.into_iter().map(|chunk| {
-            Document::with_id(
-                format!("chunk_{}_{}", chunk.document_id, chunk.chunk_index),
-                chunk.content.clone(),
-            )
-            .with_metadata("source_document", serde_json::Value::String(chunk.document_id))
-            .with_metadata("chunk_index", serde_json::Value::Number(chunk.chunk_index.into()))
-        }).collect();
+        let documents: Vec<Document> = chunks
+            .into_iter()
+            .map(|chunk| {
+                Document::with_id(
+                    format!("chunk_{}_{}", chunk.document_id, chunk.chunk_index),
+                    chunk.content.clone(),
+                )
+                .with_metadata(
+                    "source_document",
+                    serde_json::Value::String(chunk.document_id),
+                )
+                .with_metadata(
+                    "chunk_index",
+                    serde_json::Value::Number(chunk.chunk_index.into()),
+                )
+            })
+            .collect();
 
-        self.build_from_documents(documents, progress_callback).await
+        self.build_from_documents(documents, progress_callback)
+            .await
     }
 
     /// Build a knowledge graph from documents
@@ -334,7 +348,10 @@ impl GraphRetrievalBuilder {
 
                 // Process documents in batch
                 for document in batch {
-                    match entity_extractor.extract_all(&document.content_str(), &document.id).await {
+                    match entity_extractor
+                        .extract_all(&document.content_str(), &document.id)
+                        .await
+                    {
                         Ok((entities, relationships)) => {
                             progress.entities_extracted += entities.len();
                             progress.relationships_found += relationships.len();
@@ -342,7 +359,9 @@ impl GraphRetrievalBuilder {
                             batch_relationships.extend(relationships);
                         }
                         Err(e) => {
-                            progress.errors.push(format!("Document {}: {}", document.id, e));
+                            progress
+                                .errors
+                                .push(format!("Document {}: {}", document.id, e));
                         }
                     }
                     progress.documents_processed += 1;
@@ -355,7 +374,8 @@ impl GraphRetrievalBuilder {
                 let batch_time = batch_start.elapsed().as_secs_f32();
                 progress.processing_speed = batch.len() as f32 / batch_time;
                 let remaining_docs = documents.len() - progress.documents_processed;
-                progress.estimated_remaining_seconds = (remaining_docs as f32 / progress.processing_speed.max(0.1)) as u64;
+                progress.estimated_remaining_seconds =
+                    (remaining_docs as f32 / progress.processing_speed.max(0.1)) as u64;
 
                 if let Some(callback) = &progress_callback {
                     callback.on_progress(&progress).await;
@@ -366,7 +386,10 @@ impl GraphRetrievalBuilder {
             for (doc_idx, document) in documents.iter().enumerate() {
                 let _doc_start = std::time::Instant::now();
 
-                match entity_extractor.extract_all(&document.content_str(), &document.id).await {
+                match entity_extractor
+                    .extract_all(&document.content_str(), &document.id)
+                    .await
+                {
                     Ok((entities, relationships)) => {
                         progress.entities_extracted += entities.len();
                         progress.relationships_found += relationships.len();
@@ -374,7 +397,9 @@ impl GraphRetrievalBuilder {
                         all_relationships.extend(relationships);
                     }
                     Err(e) => {
-                        progress.errors.push(format!("Document {}: {}", document.id, e));
+                        progress
+                            .errors
+                            .push(format!("Document {}: {}", document.id, e));
                     }
                 }
 
@@ -385,7 +410,8 @@ impl GraphRetrievalBuilder {
                     let elapsed = start_time.elapsed().as_secs_f32();
                     progress.processing_speed = progress.documents_processed as f32 / elapsed;
                     let remaining_docs = documents.len() - progress.documents_processed;
-                    progress.estimated_remaining_seconds = (remaining_docs as f32 / progress.processing_speed.max(0.1)) as u64;
+                    progress.estimated_remaining_seconds =
+                        (remaining_docs as f32 / progress.processing_speed.max(0.1)) as u64;
 
                     if let Some(callback) = &progress_callback {
                         callback.on_progress(&progress).await;
@@ -434,17 +460,20 @@ impl GraphRetrievalBuilder {
 
         // Add document nodes
         for document in documents {
-            let doc_node = GraphNode::new(
-                format!("doc_{}", document.id),
-                super::NodeType::Document,
-            )
-            .with_source_document(document.id.clone())
-            .with_attribute("title", serde_json::Value::String(
-                document.metadata.get("title")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(&document.id)
-                    .to_string()
-            ));
+            let doc_node =
+                GraphNode::new(format!("doc_{}", document.id), super::NodeType::Document)
+                    .with_source_document(document.id.clone())
+                    .with_attribute(
+                        "title",
+                        serde_json::Value::String(
+                            document
+                                .metadata
+                                .get("title")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or(&document.id)
+                                .to_string(),
+                        ),
+                    );
 
             graph.add_node(doc_node)?;
             progress.graph_nodes += 1;
@@ -481,7 +510,9 @@ impl GraphRetrievalBuilder {
                     }
                 }
                 Err(e) => {
-                    progress.errors.push(format!("PageRank computation failed: {}", e));
+                    progress
+                        .errors
+                        .push(format!("PageRank computation failed: {}", e));
                 }
             }
         }
@@ -497,7 +528,8 @@ impl GraphRetrievalBuilder {
 
         // Phase 6: Completed
         progress.phase = BuildPhase::Completed;
-        progress.processing_speed = progress.documents_processed as f32 / start_time.elapsed().as_secs_f32();
+        progress.processing_speed =
+            progress.documents_processed as f32 / start_time.elapsed().as_secs_f32();
         progress.estimated_remaining_seconds = 0;
 
         if let Some(callback) = &progress_callback {
@@ -509,10 +541,11 @@ impl GraphRetrievalBuilder {
 
     /// Create an empty graph retriever for incremental building
     pub async fn build_empty(mut self) -> RragResult<GraphRetriever> {
-        let storage = self.storage.take()
-            .unwrap_or_else(|| {
-                Box::new(InMemoryGraphStorage::with_config(self.config.storage_config.clone()))
-            });
+        let storage = self.storage.take().unwrap_or_else(|| {
+            Box::new(InMemoryGraphStorage::with_config(
+                self.config.storage_config.clone(),
+            ))
+        });
 
         let graph = KnowledgeGraph::new();
         GraphRetriever::new(graph, storage, self.retrieval_config)
@@ -548,8 +581,7 @@ impl ProgressCallback for PrintProgressCallback {
             BuildPhase::GraphConstruction => {
                 println!(
                     "Building graph: {} nodes, {} edges",
-                    progress.graph_nodes,
-                    progress.graph_edges
+                    progress.graph_nodes, progress.graph_edges
                 );
             }
             BuildPhase::EmbeddingGeneration => {
@@ -568,18 +600,27 @@ impl ProgressCallback for PrintProgressCallback {
                     progress.entities_extracted,
                     progress.relationships_found
                 );
-                println!("Final graph: {} nodes, {} edges", progress.graph_nodes, progress.graph_edges);
+                println!(
+                    "Final graph: {} nodes, {} edges",
+                    progress.graph_nodes, progress.graph_edges
+                );
                 if !progress.errors.is_empty() {
-                    println!("Encountered {} errors during processing", progress.errors.len());
+                    println!(
+                        "Encountered {} errors during processing",
+                        progress.errors.len()
+                    );
                 }
             }
             BuildPhase::Failed(error) => {
                 println!("Graph construction failed: {}", error);
             }
         }
-        
+
         if progress.estimated_remaining_seconds > 0 {
-            println!("Estimated time remaining: {} seconds", progress.estimated_remaining_seconds);
+            println!(
+                "Estimated time remaining: {} seconds",
+                progress.estimated_remaining_seconds
+            );
         }
     }
 }
@@ -591,7 +632,7 @@ mod tests {
     #[tokio::test]
     async fn test_builder_creation() {
         let builder = GraphRetrievalBuilder::new();
-        
+
         // Test building empty retriever
         let retriever = builder.build_empty().await.unwrap();
         assert_eq!(retriever.name(), "graph_retriever");
@@ -606,7 +647,7 @@ mod tests {
             .with_pagerank_scoring(true)
             .with_max_graph_hops(2)
             .with_scoring_weights(0.5, 0.5);
-        
+
         assert_eq!(builder.config.batch_size, 50);
         assert!(!builder.config.enable_parallel_processing);
         assert!(builder.retrieval_config.enable_query_expansion);
@@ -622,19 +663,21 @@ mod tests {
             Document::new("John Smith works at Google. He is a software engineer."),
             Document::new("Google is a technology company in California."),
         ];
-        
+
         let config = GraphBuildConfig {
             calculate_pagerank: false,
             generate_entity_embeddings: false,
             enable_parallel_processing: false,
             ..Default::default()
         };
-        
+
         let builder = GraphRetrievalBuilder::new().with_config(config);
-        
+
         let progress_callback = Box::new(PrintProgressCallback);
-        let result = builder.build_from_documents(documents, Some(progress_callback)).await;
-        
+        let result = builder
+            .build_from_documents(documents, Some(progress_callback))
+            .await;
+
         match result {
             Ok(retriever) => {
                 assert_eq!(retriever.name(), "graph_retriever");

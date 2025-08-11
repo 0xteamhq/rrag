@@ -1,20 +1,20 @@
 //! # Export and Reporting System
-//! 
+//!
 //! Comprehensive data export capabilities with multiple formats,
 //! automated report generation, and scheduled exports for RRAG observability data.
 
-use crate::{RragError, RragResult};
 use super::{
-    metrics::{MetricsCollector, Metric},
-    monitoring::SystemOverview,
     health::HealthReport,
+    metrics::{Metric, MetricsCollector},
+    monitoring::SystemOverview,
     profiling::PerformanceReport,
 };
+use crate::{RragError, RragResult};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, mpsc};
-use chrono::{DateTime, Utc};
+use tokio::sync::{mpsc, RwLock};
 
 /// Export configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -215,7 +215,10 @@ impl Default for ChartConfig {
         Self {
             chart_types: vec![ChartType::Line, ChartType::Bar],
             color_scheme: "default".to_string(),
-            dimensions: ChartDimensions { width: 800, height: 600 },
+            dimensions: ChartDimensions {
+                width: 800,
+                height: 600,
+            },
             include_legends: true,
         }
     }
@@ -273,10 +276,10 @@ pub struct CsvFormatter;
 impl DataFormatter for CsvFormatter {
     async fn format_metrics(&self, metrics: &[Metric]) -> RragResult<Vec<u8>> {
         let mut output = Vec::new();
-        
+
         // CSV header
         output.extend_from_slice(b"timestamp,name,type,value,labels\n");
-        
+
         for metric in metrics {
             let timestamp = metric.timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
             let name = &metric.name;
@@ -286,52 +289,73 @@ impl DataFormatter for CsvFormatter {
                 super::metrics::MetricValue::Gauge(v) => v.to_string(),
                 super::metrics::MetricValue::Timer { duration_ms, .. } => duration_ms.to_string(),
                 super::metrics::MetricValue::Histogram { sum, count, .. } => {
-                    if *count > 0 { (sum / *count as f64).to_string() } else { "0".to_string() }
-                },
+                    if *count > 0 {
+                        (sum / *count as f64).to_string()
+                    } else {
+                        "0".to_string()
+                    }
+                }
                 super::metrics::MetricValue::Summary { sum, count, .. } => {
-                    if *count > 0 { (sum / *count as f64).to_string() } else { "0".to_string() }
-                },
+                    if *count > 0 {
+                        (sum / *count as f64).to_string()
+                    } else {
+                        "0".to_string()
+                    }
+                }
             };
-            let labels = metric.labels.iter()
+            let labels = metric
+                .labels
+                .iter()
                 .map(|(k, v)| format!("{}={}", k, v))
                 .collect::<Vec<_>>()
                 .join(";");
-            
-            let line = format!("{},{},{},{},\"{}\"\n", timestamp, name, metric_type, value, labels);
+
+            let line = format!(
+                "{},{},{},{},\"{}\"\n",
+                timestamp, name, metric_type, value, labels
+            );
             output.extend_from_slice(line.as_bytes());
         }
-        
+
         Ok(output)
     }
 
     async fn format_health_report(&self, report: &HealthReport) -> RragResult<Vec<u8>> {
         let mut output = Vec::new();
-        
+
         // CSV header
         output.extend_from_slice(b"component,status,last_check,response_time_ms,error_message\n");
-        
+
         for (component, health) in &report.services {
             let status = health.status.to_string();
             let last_check = health.last_check.format("%Y-%m-%d %H:%M:%S").to_string();
-            let response_time = health.response_time_ms.map(|t| t.to_string()).unwrap_or_default();
+            let response_time = health
+                .response_time_ms
+                .map(|t| t.to_string())
+                .unwrap_or_default();
             let error_message = health.error_message.as_deref().unwrap_or("");
-            
-            let line = format!("{},{},{},{},\"{}\"\n", 
-                component, status, last_check, response_time, error_message);
+
+            let line = format!(
+                "{},{},{},{},\"{}\"\n",
+                component, status, last_check, response_time, error_message
+            );
             output.extend_from_slice(line.as_bytes());
         }
-        
+
         Ok(output)
     }
 
     async fn format_performance_report(&self, report: &PerformanceReport) -> RragResult<Vec<u8>> {
         let mut output = Vec::new();
-        
+
         // CSV header for component performance
-        output.extend_from_slice(b"component,operation_count,avg_duration_ms,max_duration_ms,std_deviation_ms\n");
-        
+        output.extend_from_slice(
+            b"component,operation_count,avg_duration_ms,max_duration_ms,std_deviation_ms\n",
+        );
+
         for (component, metrics) in &report.component_performance {
-            let line = format!("{},{},{:.2},{:.2},{:.2}\n",
+            let line = format!(
+                "{},{},{:.2},{:.2},{:.2}\n",
                 component,
                 metrics.operation_count,
                 metrics.average_duration_ms,
@@ -340,32 +364,45 @@ impl DataFormatter for CsvFormatter {
             );
             output.extend_from_slice(line.as_bytes());
         }
-        
+
         Ok(output)
     }
 
     async fn format_system_overview(&self, overview: &SystemOverview) -> RragResult<Vec<u8>> {
         let mut output = Vec::new();
-        
+
         // CSV header
-        output.extend_from_slice(b"timestamp,cpu_usage,memory_usage,active_sessions,total_searches\n");
-        
+        output.extend_from_slice(
+            b"timestamp,cpu_usage,memory_usage,active_sessions,total_searches\n",
+        );
+
         let timestamp = overview.timestamp.format("%Y-%m-%d %H:%M:%S").to_string();
-        let cpu_usage = overview.performance_metrics.as_ref()
+        let cpu_usage = overview
+            .performance_metrics
+            .as_ref()
             .map(|p| p.cpu_usage_percent.to_string())
             .unwrap_or_default();
-        let memory_usage = overview.performance_metrics.as_ref()
+        let memory_usage = overview
+            .performance_metrics
+            .as_ref()
             .map(|p| p.memory_usage_percent.to_string())
             .unwrap_or_default();
-        let active_sessions = overview.active_sessions.map(|s| s.to_string()).unwrap_or_default();
-        let total_searches = overview.search_stats.as_ref()
+        let active_sessions = overview
+            .active_sessions
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        let total_searches = overview
+            .search_stats
+            .as_ref()
             .map(|s| s.total_searches.to_string())
             .unwrap_or_default();
-        
-        let line = format!("{},{},{},{},{}\n",
-            timestamp, cpu_usage, memory_usage, active_sessions, total_searches);
+
+        let line = format!(
+            "{},{},{},{},{}\n",
+            timestamp, cpu_usage, memory_usage, active_sessions, total_searches
+        );
         output.extend_from_slice(line.as_bytes());
-        
+
         Ok(output)
     }
 
@@ -381,7 +418,12 @@ impl DataFormatter for CsvFormatter {
 /// Export destination trait
 #[async_trait::async_trait]
 pub trait ExportDestination: Send + Sync {
-    async fn export_data(&self, data: &[u8], filename: &str, content_type: &str) -> RragResult<DestinationResult>;
+    async fn export_data(
+        &self,
+        data: &[u8],
+        filename: &str,
+        content_type: &str,
+    ) -> RragResult<DestinationResult>;
     fn destination_name(&self) -> &str;
     async fn test_connection(&self) -> RragResult<bool>;
 }
@@ -403,19 +445,26 @@ impl LocalFileDestination {
 
 #[async_trait::async_trait]
 impl ExportDestination for LocalFileDestination {
-    async fn export_data(&self, data: &[u8], filename: &str, _content_type: &str) -> RragResult<DestinationResult> {
+    async fn export_data(
+        &self,
+        data: &[u8],
+        filename: &str,
+        _content_type: &str,
+    ) -> RragResult<DestinationResult> {
         let full_path = format!("{}/{}", self.base_path, filename);
-        
+
         // Create directory if it doesn't exist
         if let Some(parent) = std::path::Path::new(&full_path).parent() {
-            tokio::fs::create_dir_all(parent).await
+            tokio::fs::create_dir_all(parent)
+                .await
                 .map_err(|e| RragError::storage("create_directory", e))?;
         }
-        
+
         // Write file
-        tokio::fs::write(&full_path, data).await
+        tokio::fs::write(&full_path, data)
+            .await
             .map_err(|e| RragError::storage("write_file", e))?;
-        
+
         Ok(DestinationResult {
             destination_name: self.name.clone(),
             status: ExportStatus::Completed,
@@ -475,10 +524,17 @@ impl WebhookDestination {
 
 #[async_trait::async_trait]
 impl ExportDestination for WebhookDestination {
-    async fn export_data(&self, data: &[u8], filename: &str, content_type: &str) -> RragResult<DestinationResult> {
+    async fn export_data(
+        &self,
+        data: &[u8],
+        filename: &str,
+        content_type: &str,
+    ) -> RragResult<DestinationResult> {
         #[cfg(feature = "http")]
         {
-            let mut request = self.client.post(&self.url)
+            let mut request = self
+                .client
+                .post(&self.url)
                 .header("Content-Type", content_type)
                 .header("X-Filename", filename)
                 .body(data.to_vec());
@@ -506,20 +562,25 @@ impl ExportDestination for WebhookDestination {
                             destination_name: self.name.clone(),
                             status: ExportStatus::Failed,
                             delivered_at: None,
-                            error_message: Some(format!("HTTP {}: {}", status_code, response.status())),
-                            delivery_info: HashMap::from([
-                                ("status_code".to_string(), status_code.to_string()),
-                            ]),
+                            error_message: Some(format!(
+                                "HTTP {}: {}",
+                                status_code,
+                                response.status()
+                            )),
+                            delivery_info: HashMap::from([(
+                                "status_code".to_string(),
+                                status_code.to_string(),
+                            )]),
                         })
                     }
-                },
+                }
                 Err(e) => Ok(DestinationResult {
                     destination_name: self.name.clone(),
                     status: ExportStatus::Failed,
                     delivered_at: None,
                     error_message: Some(e.to_string()),
                     delivery_info: HashMap::new(),
-                })
+                }),
             }
         }
         #[cfg(not(feature = "http"))]
@@ -604,7 +665,10 @@ impl ReportGenerator {
             .map_err(|e| RragError::agent("report_generator", e.to_string()))
     }
 
-    async fn generate_performance_summary_report(&self, data: &SystemOverview) -> RragResult<Vec<u8>> {
+    async fn generate_performance_summary_report(
+        &self,
+        data: &SystemOverview,
+    ) -> RragResult<Vec<u8>> {
         let report = serde_json::json!({
             "title": "Performance Summary Report",
             "generated_at": Utc::now(),
@@ -630,7 +694,11 @@ impl ReportGenerator {
             .map_err(|e| RragError::agent("report_generator", e.to_string()))
     }
 
-    async fn generate_generic_report(&self, config: &ReportConfig, data: &SystemOverview) -> RragResult<Vec<u8>> {
+    async fn generate_generic_report(
+        &self,
+        config: &ReportConfig,
+        data: &SystemOverview,
+    ) -> RragResult<Vec<u8>> {
         let report = serde_json::json!({
             "title": config.name,
             "description": config.description,
@@ -681,19 +749,33 @@ pub struct MetricsExporter {
 }
 
 impl MetricsExporter {
-    pub fn new(export_manager: Arc<ExportManager>, metrics_collector: Arc<MetricsCollector>) -> Self {
+    pub fn new(
+        export_manager: Arc<ExportManager>,
+        metrics_collector: Arc<MetricsCollector>,
+    ) -> Self {
         Self {
             export_manager,
             metrics_collector,
         }
     }
 
-    pub async fn export_current_metrics(&self, format: ExportFormat, destinations: Vec<String>) -> RragResult<ExportResult> {
+    pub async fn export_current_metrics(
+        &self,
+        format: ExportFormat,
+        destinations: Vec<String>,
+    ) -> RragResult<ExportResult> {
         let metrics = self.metrics_collector.get_all_metrics().await;
-        self.export_manager.export_metrics(metrics, format, destinations, ExportFilters::default()).await
+        self.export_manager
+            .export_metrics(metrics, format, destinations, ExportFilters::default())
+            .await
     }
 
-    pub async fn schedule_periodic_export(&self, interval_minutes: u32, format: ExportFormat, destinations: Vec<String>) -> RragResult<()> {
+    pub async fn schedule_periodic_export(
+        &self,
+        interval_minutes: u32,
+        format: ExportFormat,
+        destinations: Vec<String>,
+    ) -> RragResult<()> {
         // This would set up a periodic export job
         // For now, just log the setup
         tracing::info!(
@@ -708,11 +790,13 @@ impl MetricsExporter {
 
 impl ExportManager {
     pub async fn new(config: ExportConfig) -> RragResult<Self> {
-        let formatters: Arc<RwLock<HashMap<ExportFormat, Box<dyn DataFormatter>>>> = Arc::new(RwLock::new(HashMap::new()));
-        let destinations: Arc<RwLock<HashMap<String, Box<dyn ExportDestination>>>> = Arc::new(RwLock::new(HashMap::new()));
+        let formatters: Arc<RwLock<HashMap<ExportFormat, Box<dyn DataFormatter>>>> =
+            Arc::new(RwLock::new(HashMap::new()));
+        let destinations: Arc<RwLock<HashMap<String, Box<dyn ExportDestination>>>> =
+            Arc::new(RwLock::new(HashMap::new()));
         let report_generator = Arc::new(ReportGenerator::new());
         let export_history = Arc::new(RwLock::new(Vec::new()));
-        
+
         let (export_queue, queue_receiver) = mpsc::unbounded_channel();
 
         // Initialize default formatters
@@ -732,17 +816,19 @@ impl ExportManager {
 
                 match dest_config.destination_type {
                     DestinationType::LocalFile => {
-                        let base_path = dest_config.config.get("path")
+                        let base_path = dest_config
+                            .config
+                            .get("path")
                             .unwrap_or(&config.output_directory);
                         dest.insert(
                             dest_config.name.clone(),
-                            Box::new(LocalFileDestination::new(&dest_config.name, base_path))
+                            Box::new(LocalFileDestination::new(&dest_config.name, base_path)),
                         );
-                    },
+                    }
                     DestinationType::Webhook | DestinationType::HTTP => {
                         if let Some(url) = dest_config.config.get("url") {
                             let mut webhook = WebhookDestination::new(&dest_config.name, url);
-                            
+
                             // Add custom headers
                             for (key, value) in &dest_config.config {
                                 if key.starts_with("header_") {
@@ -750,12 +836,15 @@ impl ExportManager {
                                     webhook = webhook.with_header(header_name, value);
                                 }
                             }
-                            
+
                             dest.insert(dest_config.name.clone(), Box::new(webhook));
                         }
-                    },
+                    }
                     _ => {
-                        tracing::warn!("Destination type {:?} not yet implemented", dest_config.destination_type);
+                        tracing::warn!(
+                            "Destination type {:?} not yet implemented",
+                            dest_config.destination_type
+                        );
                     }
                 }
             }
@@ -777,7 +866,11 @@ impl ExportManager {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("export_manager", "stopped", "already running"));
+            return Err(RragError::config(
+                "export_manager",
+                "stopped",
+                "already running",
+            ));
         }
 
         // Start export processing loop would go here
@@ -817,15 +910,16 @@ impl ExportManager {
     ) -> RragResult<ExportResult> {
         let export_id = uuid::Uuid::new_v4().to_string();
         let started_at = Utc::now();
-        
+
         // Apply filters
         let filtered_metrics = self.apply_metric_filters(metrics, &filters);
-        
+
         // Format data
         let formatters = self.formatters.read().await;
-        let formatter = formatters.get(&format)
-            .ok_or_else(|| RragError::config("export_format", "supported", &format!("{:?}", format)))?;
-        
+        let formatter = formatters.get(&format).ok_or_else(|| {
+            RragError::config("export_format", "supported", &format!("{:?}", format))
+        })?;
+
         let formatted_data = formatter.format_metrics(&filtered_metrics).await?;
         // formatters will be automatically dropped when it goes out of scope
 
@@ -846,11 +940,9 @@ impl ExportManager {
 
         for dest_name in destinations {
             if let Some(destination) = destinations_map.get(&dest_name) {
-                let result = destination.export_data(
-                    &formatted_data,
-                    &filename,
-                    formatter.content_type()
-                ).await?;
+                let result = destination
+                    .export_data(&formatted_data, &filename, formatter.content_type())
+                    .await?;
                 destination_results.push(result);
             }
         }
@@ -864,7 +956,10 @@ impl ExportManager {
             record_count: filtered_metrics.len(),
             started_at,
             completed_at: Some(Utc::now()),
-            status: if destination_results.iter().all(|r| r.status == ExportStatus::Completed) {
+            status: if destination_results
+                .iter()
+                .all(|r| r.status == ExportStatus::Completed)
+            {
                 ExportStatus::Completed
             } else {
                 ExportStatus::PartiallyCompleted
@@ -887,7 +982,8 @@ impl ExportManager {
     }
 
     fn apply_metric_filters(&self, metrics: Vec<Metric>, filters: &ExportFilters) -> Vec<Metric> {
-        metrics.into_iter()
+        metrics
+            .into_iter()
             .filter(|metric| {
                 // Time range filter
                 if let Some(ref time_range) = filters.time_range {
@@ -920,7 +1016,10 @@ impl ExportManager {
         let started_at = Utc::now();
 
         // Generate report
-        let report_data = self.report_generator.generate_report(&config, &data).await?;
+        let report_data = self
+            .report_generator
+            .generate_report(&config, &data)
+            .await?;
 
         // Generate filename
         let filename = format!(
@@ -941,11 +1040,13 @@ impl ExportManager {
 
         for dest_name in destinations {
             if let Some(destination) = destinations_map.get(&dest_name) {
-                let result = destination.export_data(
-                    &report_data,
-                    &filename,
-                    "application/json" // Default content type
-                ).await?;
+                let result = destination
+                    .export_data(
+                        &report_data,
+                        &filename,
+                        "application/json", // Default content type
+                    )
+                    .await?;
                 destination_results.push(result);
             }
         }
@@ -959,7 +1060,10 @@ impl ExportManager {
             record_count: 1,
             started_at,
             completed_at: Some(Utc::now()),
-            status: if destination_results.iter().all(|r| r.status == ExportStatus::Completed) {
+            status: if destination_results
+                .iter()
+                .all(|r| r.status == ExportStatus::Completed)
+            {
                 ExportStatus::Completed
             } else {
                 ExportStatus::PartiallyCompleted
@@ -1013,30 +1117,28 @@ impl ExportManager {
 
     pub async fn get_export_stats(&self) -> ExportStats {
         let history = self.export_history.read().await;
-        
+
         let total_exports = history.len();
-        let successful_exports = history.iter()
+        let successful_exports = history
+            .iter()
             .filter(|r| r.status == ExportStatus::Completed)
             .count();
-        let failed_exports = history.iter()
+        let failed_exports = history
+            .iter()
             .filter(|r| r.status == ExportStatus::Failed)
             .count();
-        
-        let total_data_exported = history.iter()
-            .map(|r| r.file_size_bytes)
-            .sum::<u64>();
 
-        let exports_by_type = history.iter()
-            .fold(HashMap::new(), |mut acc, result| {
-                *acc.entry(result.export_type.clone()).or_insert(0) += 1;
-                acc
-            });
+        let total_data_exported = history.iter().map(|r| r.file_size_bytes).sum::<u64>();
 
-        let exports_by_format = history.iter()
-            .fold(HashMap::new(), |mut acc, result| {
-                *acc.entry(result.format.clone()).or_insert(0) += 1;
-                acc
-            });
+        let exports_by_type = history.iter().fold(HashMap::new(), |mut acc, result| {
+            *acc.entry(result.export_type.clone()).or_insert(0) += 1;
+            acc
+        });
+
+        let exports_by_format = history.iter().fold(HashMap::new(), |mut acc, result| {
+            *acc.entry(result.format.clone()).or_insert(0) += 1;
+            acc
+        });
 
         ExportStats {
             total_exports,
@@ -1075,7 +1177,7 @@ mod tests {
 
         let result = formatter.format_metrics(&metrics).await.unwrap();
         let json_str = String::from_utf8(result).unwrap();
-        
+
         assert!(json_str.contains("test_counter"));
         assert!(json_str.contains("test_gauge"));
         assert_eq!(formatter.content_type(), "application/json");
@@ -1085,14 +1187,11 @@ mod tests {
     #[tokio::test]
     async fn test_csv_formatter() {
         let formatter = CsvFormatter;
-        let metrics = vec![
-            Metric::counter("requests_total", 100)
-                .with_label("method", "GET"),
-        ];
+        let metrics = vec![Metric::counter("requests_total", 100).with_label("method", "GET")];
 
         let result = formatter.format_metrics(&metrics).await.unwrap();
         let csv_str = String::from_utf8(result).unwrap();
-        
+
         assert!(csv_str.contains("timestamp,name,type,value,labels"));
         assert!(csv_str.contains("requests_total"));
         assert!(csv_str.contains("Counter"));
@@ -1103,16 +1202,17 @@ mod tests {
     #[tokio::test]
     async fn test_local_file_destination() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let destination = LocalFileDestination::new(
-            "test_local",
-            temp_dir.path().to_string_lossy().to_string()
-        );
+        let destination =
+            LocalFileDestination::new("test_local", temp_dir.path().to_string_lossy().to_string());
 
         assert!(destination.test_connection().await.unwrap());
-        
+
         let test_data = b"test export data";
-        let result = destination.export_data(test_data, "test.json", "application/json").await.unwrap();
-        
+        let result = destination
+            .export_data(test_data, "test.json", "application/json")
+            .await
+            .unwrap();
+
         assert_eq!(result.status, ExportStatus::Completed);
         assert_eq!(result.destination_name, "test_local");
         assert!(result.delivered_at.is_some());
@@ -1121,15 +1221,17 @@ mod tests {
     #[tokio::test]
     async fn test_export_manager() {
         let config = ExportConfig {
-            output_directory: tempfile::tempdir().unwrap().path().to_string_lossy().to_string(),
-            destinations: vec![
-                ExportDestinationConfig {
-                    name: "local_test".to_string(),
-                    destination_type: DestinationType::LocalFile,
-                    config: HashMap::new(),
-                    enabled: true,
-                }
-            ],
+            output_directory: tempfile::tempdir()
+                .unwrap()
+                .path()
+                .to_string_lossy()
+                .to_string(),
+            destinations: vec![ExportDestinationConfig {
+                name: "local_test".to_string(),
+                destination_type: DestinationType::LocalFile,
+                config: HashMap::new(),
+                enabled: true,
+            }],
             ..Default::default()
         };
 
@@ -1141,12 +1243,15 @@ mod tests {
             Metric::gauge("test_gauge", 45.6),
         ];
 
-        let result = manager.export_metrics(
-            metrics,
-            ExportFormat::Json,
-            vec!["local_test".to_string()],
-            ExportFilters::default()
-        ).await.unwrap();
+        let result = manager
+            .export_metrics(
+                metrics,
+                ExportFormat::Json,
+                vec!["local_test".to_string()],
+                ExportFilters::default(),
+            )
+            .await
+            .unwrap();
 
         assert_eq!(result.export_type, ExportType::Metrics);
         assert_eq!(result.format, ExportFormat::Json);
@@ -1188,7 +1293,7 @@ mod tests {
 
         let report_data = generator.generate_report(&config, &overview).await.unwrap();
         let report_str = String::from_utf8(report_data).unwrap();
-        
+
         assert!(report_str.contains("System Health Report"));
         assert!(report_str.contains("generated_at"));
     }

@@ -1,5 +1,5 @@
 //! # RRAG Tools System
-//! 
+//!
 //! Type-safe tool system leveraging Rust's trait system for zero-cost abstractions.
 //! Designed for async execution with proper error handling and resource management.
 
@@ -15,16 +15,16 @@ use std::time::Instant;
 pub struct ToolResult {
     /// Whether the tool executed successfully
     pub success: bool,
-    
+
     /// Tool output content
     pub output: String,
-    
+
     /// Execution metadata
     pub metadata: HashMap<String, serde_json::Value>,
-    
+
     /// Execution time in milliseconds
     pub execution_time_ms: u64,
-    
+
     /// Resource usage information
     pub resource_usage: Option<ResourceUsage>,
 }
@@ -76,13 +76,13 @@ impl ToolResult {
 pub struct ResourceUsage {
     /// Memory allocated in bytes
     pub memory_bytes: Option<u64>,
-    
+
     /// CPU time used in microseconds
     pub cpu_time_us: Option<u64>,
-    
+
     /// Network requests made
     pub network_requests: Option<u32>,
-    
+
     /// Files accessed
     pub files_accessed: Option<u32>,
 }
@@ -92,18 +92,18 @@ pub struct ResourceUsage {
 pub trait Tool: Send + Sync {
     /// Tool identifier (used for registration and calling)
     fn name(&self) -> &str;
-    
+
     /// Human-readable description for LLM context
     fn description(&self) -> &str;
-    
+
     /// JSON schema for parameter validation (optional)
     fn schema(&self) -> Option<serde_json::Value> {
         None
     }
-    
+
     /// Execute the tool with string input
     async fn execute(&self, input: &str) -> RragResult<ToolResult>;
-    
+
     /// Execute with structured parameters (default delegates to execute)
     async fn execute_with_params(&self, params: serde_json::Value) -> RragResult<ToolResult> {
         let input = match params {
@@ -112,27 +112,27 @@ pub trait Tool: Send + Sync {
         };
         self.execute(&input).await
     }
-    
+
     /// Tool capabilities for filtering and discovery
     fn capabilities(&self) -> Vec<&'static str> {
         vec![]
     }
-    
+
     /// Whether this tool requires authentication
     fn requires_auth(&self) -> bool {
         false
     }
-    
+
     /// Tool category for organization
     fn category(&self) -> &'static str {
         "general"
     }
-    
+
     /// Whether this tool can be cached
     fn is_cacheable(&self) -> bool {
         false
     }
-    
+
     /// Cost estimate for execution (arbitrary units)
     fn cost_estimate(&self) -> u32 {
         1
@@ -149,22 +149,22 @@ macro_rules! rrag_tool {
     ) => {
         #[derive(Debug)]
         pub struct GeneratedTool;
-        
+
         #[async_trait::async_trait]
         impl Tool for GeneratedTool {
             fn name(&self) -> &str {
                 $name
             }
-            
+
             fn description(&self) -> &str {
                 $desc
             }
-            
+
             async fn execute(&self, input: &str) -> RragResult<ToolResult> {
                 let start = std::time::Instant::now();
                 let result = ($exec)(input).await;
                 let execution_time = start.elapsed().as_millis() as u64;
-                
+
                 match result {
                     Ok(output) => Ok(ToolResult::success(output).with_timing(execution_time)),
                     Err(e) => Ok(ToolResult::error(e.to_string()).with_timing(execution_time)),
@@ -172,7 +172,7 @@ macro_rules! rrag_tool {
             }
         }
     };
-    
+
     (
         name: $name:expr,
         description: $desc:expr,
@@ -181,26 +181,26 @@ macro_rules! rrag_tool {
     ) => {
         #[derive(Debug)]
         pub struct GeneratedTool;
-        
+
         #[async_trait::async_trait]
         impl Tool for GeneratedTool {
             fn name(&self) -> &str {
                 $name
             }
-            
+
             fn description(&self) -> &str {
                 $desc
             }
-            
+
             fn category(&self) -> &'static str {
                 $category
             }
-            
+
             async fn execute(&self, input: &str) -> RragResult<ToolResult> {
                 let start = std::time::Instant::now();
                 let result = ($exec)(input).await;
                 let execution_time = start.elapsed().as_millis() as u64;
-                
+
                 match result {
                     Ok(output) => Ok(ToolResult::success(output).with_timing(execution_time)),
                     Err(e) => Ok(ToolResult::error(e.to_string()).with_timing(execution_time)),
@@ -230,14 +230,14 @@ impl ToolRegistry {
         for tool in tools {
             registry.insert(tool.name().to_string(), tool);
         }
-        
+
         Self { tools: registry }
     }
 
     /// Register a new tool
     pub fn register(&mut self, tool: Arc<dyn Tool>) -> RragResult<()> {
         let name = tool.name().to_string();
-        
+
         if self.tools.contains_key(&name) {
             return Err(RragError::config(
                 "tool_name",
@@ -245,7 +245,7 @@ impl ToolRegistry {
                 format!("duplicate: {}", name),
             ));
         }
-        
+
         self.tools.insert(name, tool);
         Ok(())
     }
@@ -280,9 +280,10 @@ impl ToolRegistry {
 
     /// Execute a tool by name
     pub async fn execute(&self, tool_name: &str, input: &str) -> RragResult<ToolResult> {
-        let tool = self.get(tool_name)
+        let tool = self
+            .get(tool_name)
             .ok_or_else(|| RragError::tool_execution(tool_name, "Tool not found"))?;
-        
+
         tool.execute(input).await
     }
 
@@ -290,9 +291,7 @@ impl ToolRegistry {
     pub fn get_tool_schemas(&self) -> HashMap<String, serde_json::Value> {
         self.tools
             .iter()
-            .filter_map(|(name, tool)| {
-                tool.schema().map(|schema| (name.clone(), schema))
-            })
+            .filter_map(|(name, tool)| tool.schema().map(|schema| (name.clone(), schema)))
             .collect()
     }
 
@@ -320,33 +319,36 @@ impl Tool for Calculator {
     fn name(&self) -> &str {
         "calculator"
     }
-    
+
     fn description(&self) -> &str {
         "Performs mathematical calculations. Input should be a mathematical expression like '2+2', '10*5', or '15/3'."
     }
-    
+
     fn category(&self) -> &'static str {
         "math"
     }
-    
+
     fn capabilities(&self) -> Vec<&'static str> {
         vec!["math", "calculation", "arithmetic"]
     }
-    
+
     fn is_cacheable(&self) -> bool {
         true // Math results are deterministic
     }
-    
+
     async fn execute(&self, input: &str) -> RragResult<ToolResult> {
         let start = Instant::now();
-        
+
         match calculate(input) {
             Ok(result) => {
                 let execution_time = start.elapsed().as_millis() as u64;
                 Ok(ToolResult::success(result.to_string())
                     .with_timing(execution_time)
                     .with_metadata("expression", serde_json::Value::String(input.to_string()))
-                    .with_metadata("result_type", serde_json::Value::String("number".to_string())))
+                    .with_metadata(
+                        "result_type",
+                        serde_json::Value::String("number".to_string()),
+                    ))
             }
             Err(e) => {
                 let execution_time = start.elapsed().as_millis() as u64;
@@ -355,7 +357,7 @@ impl Tool for Calculator {
             }
         }
     }
-    
+
     fn schema(&self) -> Option<serde_json::Value> {
         Some(serde_json::json!({
             "type": "object",
@@ -374,34 +376,35 @@ impl Tool for Calculator {
 /// Simple calculator implementation
 fn calculate(expr: &str) -> RragResult<f64> {
     let expr = expr.trim().replace(" ", "");
-    
+
     // Handle basic operations in order of precedence
     if let Some(result) = try_parse_number(&expr) {
         return Ok(result);
     }
-    
+
     // Addition and subtraction (lowest precedence)
     if let Some(pos) = expr.rfind('+') {
         let (left, right) = expr.split_at(pos);
         let right = &right[1..];
         return Ok(calculate(left)? + calculate(right)?);
     }
-    
+
     if let Some(pos) = expr.rfind('-') {
-        if pos > 0 { // Avoid treating negative numbers as subtraction
+        if pos > 0 {
+            // Avoid treating negative numbers as subtraction
             let (left, right) = expr.split_at(pos);
             let right = &right[1..];
             return Ok(calculate(left)? - calculate(right)?);
         }
     }
-    
+
     // Multiplication and division
     if let Some(pos) = expr.rfind('*') {
         let (left, right) = expr.split_at(pos);
         let right = &right[1..];
         return Ok(calculate(left)? * calculate(right)?);
     }
-    
+
     if let Some(pos) = expr.rfind('/') {
         let (left, right) = expr.split_at(pos);
         let right = &right[1..];
@@ -411,41 +414,47 @@ fn calculate(expr: &str) -> RragResult<f64> {
         }
         return Ok(calculate(left)? / right_val);
     }
-    
+
     // Power operation
     if let Some(pos) = expr.find('^') {
         let (left, right) = expr.split_at(pos);
         let right = &right[1..];
         return Ok(calculate(left)?.powf(calculate(right)?));
     }
-    
+
     // Functions
     if expr.starts_with("sqrt(") && expr.ends_with(')') {
-        let inner = &expr[5..expr.len()-1];
+        let inner = &expr[5..expr.len() - 1];
         let value = calculate(inner)?;
         if value < 0.0 {
-            return Err(RragError::tool_execution("calculator", "Square root of negative number"));
+            return Err(RragError::tool_execution(
+                "calculator",
+                "Square root of negative number",
+            ));
         }
         return Ok(value.sqrt());
     }
-    
+
     if expr.starts_with("sin(") && expr.ends_with(')') {
-        let inner = &expr[4..expr.len()-1];
+        let inner = &expr[4..expr.len() - 1];
         return Ok(calculate(inner)?.sin());
     }
-    
+
     if expr.starts_with("cos(") && expr.ends_with(')') {
-        let inner = &expr[4..expr.len()-1];
+        let inner = &expr[4..expr.len() - 1];
         return Ok(calculate(inner)?.cos());
     }
-    
+
     // Parentheses
     if expr.starts_with('(') && expr.ends_with(')') {
-        let inner = &expr[1..expr.len()-1];
+        let inner = &expr[1..expr.len() - 1];
         return calculate(inner);
     }
-    
-    Err(RragError::tool_execution("calculator", format!("Invalid expression: {}", expr)))
+
+    Err(RragError::tool_execution(
+        "calculator",
+        format!("Invalid expression: {}", expr),
+    ))
 }
 
 fn try_parse_number(s: &str) -> Option<f64> {
@@ -461,27 +470,30 @@ impl Tool for EchoTool {
     fn name(&self) -> &str {
         "echo"
     }
-    
+
     fn description(&self) -> &str {
         "Echoes back the input text. Useful for testing and debugging."
     }
-    
+
     fn category(&self) -> &'static str {
         "utility"
     }
-    
+
     fn capabilities(&self) -> Vec<&'static str> {
         vec!["test", "debug", "echo"]
     }
-    
+
     async fn execute(&self, input: &str) -> RragResult<ToolResult> {
         let start = Instant::now();
         let output = format!("Echo: {}", input);
         let execution_time = start.elapsed().as_millis() as u64;
-        
+
         Ok(ToolResult::success(output)
             .with_timing(execution_time)
-            .with_metadata("input_length", serde_json::Value::Number(input.len().into())))
+            .with_metadata(
+                "input_length",
+                serde_json::Value::Number(input.len().into()),
+            ))
     }
 }
 
@@ -510,53 +522,65 @@ impl Tool for HttpTool {
     fn name(&self) -> &str {
         "http"
     }
-    
+
     fn description(&self) -> &str {
         "Makes HTTP GET requests to fetch web content. Input should be a valid URL."
     }
-    
+
     fn category(&self) -> &'static str {
         "web"
     }
-    
+
     fn capabilities(&self) -> Vec<&'static str> {
         vec!["web", "http", "fetch", "scraping"]
     }
-    
+
     async fn execute(&self, input: &str) -> RragResult<ToolResult> {
         let start = Instant::now();
-        
+
         let url = input.trim();
         if !url.starts_with("http://") && !url.starts_with("https://") {
             let execution_time = start.elapsed().as_millis() as u64;
             return Ok(ToolResult::error("URL must start with http:// or https://")
                 .with_timing(execution_time));
         }
-        
+
         match self.client.get(url).send().await {
             Ok(response) => {
                 let status = response.status();
                 let headers_count = response.headers().len();
-                
+
                 match response.text().await {
                     Ok(body) => {
                         let execution_time = start.elapsed().as_millis() as u64;
                         let truncated_body = if body.len() > 10000 {
-                            format!("{}... [truncated from {} chars]", &body[..10000], body.len())
+                            format!(
+                                "{}... [truncated from {} chars]",
+                                &body[..10000],
+                                body.len()
+                            )
                         } else {
                             body
                         };
-                        
+
                         Ok(ToolResult::success(truncated_body)
                             .with_timing(execution_time)
-                            .with_metadata("status_code", serde_json::Value::Number(status.as_u16().into()))
-                            .with_metadata("headers_count", serde_json::Value::Number(headers_count.into()))
+                            .with_metadata(
+                                "status_code",
+                                serde_json::Value::Number(status.as_u16().into()),
+                            )
+                            .with_metadata(
+                                "headers_count",
+                                serde_json::Value::Number(headers_count.into()),
+                            )
                             .with_metadata("url", serde_json::Value::String(url.to_string())))
                     }
                     Err(e) => {
                         let execution_time = start.elapsed().as_millis() as u64;
-                        Ok(ToolResult::error(format!("Failed to read response body: {}", e))
-                            .with_timing(execution_time))
+                        Ok(
+                            ToolResult::error(format!("Failed to read response body: {}", e))
+                                .with_timing(execution_time),
+                        )
                     }
                 }
             }
@@ -567,7 +591,7 @@ impl Tool for HttpTool {
             }
         }
     }
-    
+
     fn schema(&self) -> Option<serde_json::Value> {
         Some(serde_json::json!({
             "type": "object",
@@ -590,15 +614,15 @@ mod tests {
     #[tokio::test]
     async fn test_calculator_tool() {
         let calc = Calculator;
-        
+
         let result = calc.execute("2+2").await.unwrap();
         assert!(result.success);
         assert_eq!(result.output, "4");
-        
+
         let result = calc.execute("10*5").await.unwrap();
         assert!(result.success);
         assert_eq!(result.output, "50");
-        
+
         let result = calc.execute("sqrt(16)").await.unwrap();
         assert!(result.success);
         assert_eq!(result.output, "4");
@@ -608,7 +632,7 @@ mod tests {
     async fn test_echo_tool() {
         let echo = EchoTool;
         let result = echo.execute("hello world").await.unwrap();
-        
+
         assert!(result.success);
         assert_eq!(result.output, "Echo: hello world");
         assert!(result.execution_time_ms > 0);
@@ -617,14 +641,14 @@ mod tests {
     #[tokio::test]
     async fn test_tool_registry() {
         let mut registry = ToolRegistry::new();
-        
+
         registry.register(Arc::new(Calculator)).unwrap();
         registry.register(Arc::new(EchoTool)).unwrap();
-        
+
         assert_eq!(registry.list_tools().len(), 2);
         assert!(registry.list_tools().contains(&"calculator".to_string()));
         assert!(registry.list_tools().contains(&"echo".to_string()));
-        
+
         let result = registry.execute("calculator", "5*5").await.unwrap();
         assert!(result.success);
         assert_eq!(result.output, "25");
@@ -654,7 +678,7 @@ mod tests {
         assert_eq!(calc.category(), "math");
         assert!(calc.capabilities().contains(&"math"));
         assert!(calc.is_cacheable());
-        
+
         let echo = EchoTool;
         assert_eq!(echo.category(), "utility");
         assert!(echo.capabilities().contains(&"test"));

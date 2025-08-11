@@ -1,37 +1,38 @@
 //! # Graph-Based Retriever
-//! 
+//!
 //! Main retriever implementation that integrates graph-based algorithms with traditional retrieval methods.
 
 use super::{
-    KnowledgeGraph, GraphNode, algorithms::GraphAlgorithms, 
-    query_expansion::{QueryExpander, GraphQueryExpander, ExpansionOptions, ExpansionStrategy},
+    algorithms::GraphAlgorithms,
+    query_expansion::{ExpansionOptions, ExpansionStrategy, GraphQueryExpander, QueryExpander},
     storage::GraphStorage,
+    GraphNode, KnowledgeGraph,
 };
 use crate::{
-    RragResult, SearchResult, SearchQuery, Retriever, Embedding, 
-    Document, DocumentChunk, retrieval_core::{IndexStats, QueryType}
+    retrieval_core::{IndexStats, QueryType},
+    Document, DocumentChunk, Embedding, Retriever, RragResult, SearchQuery, SearchResult,
 };
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use async_trait::async_trait;
 
 /// Graph-based retriever that combines traditional and graph-based search
 pub struct GraphRetriever {
     /// Knowledge graph (using RwLock for interior mutability)
     graph: tokio::sync::RwLock<KnowledgeGraph>,
-    
+
     /// Graph storage backend
     storage: tokio::sync::RwLock<Box<dyn GraphStorage>>,
-    
+
     /// Query expander (using RwLock for interior mutability)
     query_expander: tokio::sync::RwLock<GraphQueryExpander>,
-    
+
     /// Configuration
     config: GraphRetrievalConfig,
-    
+
     /// PageRank scores cache
     pagerank_cache: tokio::sync::RwLock<Option<HashMap<String, f32>>>,
-    
+
     /// Entity to document mapping (using RwLock for interior mutability)
     entity_document_map: tokio::sync::RwLock<HashMap<String, HashSet<String>>>,
 }
@@ -41,34 +42,34 @@ pub struct GraphRetriever {
 pub struct GraphRetrievalConfig {
     /// Enable query expansion
     pub enable_query_expansion: bool,
-    
+
     /// Enable PageRank scoring
     pub enable_pagerank_scoring: bool,
-    
+
     /// Enable path-based retrieval
     pub enable_path_based_retrieval: bool,
-    
+
     /// Weight for graph-based scores vs traditional similarity
     pub graph_weight: f32,
-    
+
     /// Weight for traditional similarity scores
     pub similarity_weight: f32,
-    
+
     /// Maximum number of graph hops for retrieval
     pub max_graph_hops: usize,
-    
+
     /// Minimum graph score threshold
     pub min_graph_score: f32,
-    
+
     /// Query expansion configuration
     pub expansion_options: ExpansionOptions,
-    
+
     /// PageRank configuration
     pub pagerank_config: super::algorithms::PageRankConfig,
-    
+
     /// Enable result diversification
     pub enable_diversification: bool,
-    
+
     /// Diversification factor (0.0 to 1.0)
     pub diversification_factor: f32,
 }
@@ -105,19 +106,19 @@ impl Default for GraphRetrievalConfig {
 pub struct GraphSearchResult {
     /// Base search result
     pub search_result: SearchResult,
-    
+
     /// Graph-based score
     pub graph_score: f32,
-    
+
     /// PageRank score of associated entities
     pub pagerank_score: f32,
-    
+
     /// Related entities found in the content
     pub related_entities: Vec<String>,
-    
+
     /// Graph paths that led to this result
     pub graph_paths: Vec<GraphPath>,
-    
+
     /// Expanded query terms that matched
     pub matched_expansions: Vec<String>,
 }
@@ -127,13 +128,13 @@ pub struct GraphSearchResult {
 pub struct GraphPath {
     /// Node IDs in the path
     pub nodes: Vec<String>,
-    
+
     /// Path score
     pub score: f32,
-    
+
     /// Path type/description
     pub path_type: String,
-    
+
     /// Path length
     pub length: usize,
 }
@@ -149,9 +150,9 @@ impl GraphRetriever {
             graph.clone(),
             super::query_expansion::ExpansionConfig::default(),
         );
-        
+
         let mut entity_document_map = HashMap::new();
-        
+
         // Build entity-document mapping
         for (_, node) in &graph.nodes {
             for doc_id in &node.source_documents {
@@ -161,7 +162,7 @@ impl GraphRetriever {
                     .insert(doc_id.clone());
             }
         }
-        
+
         let retriever = Self {
             graph: tokio::sync::RwLock::new(graph),
             storage: tokio::sync::RwLock::new(storage),
@@ -170,15 +171,19 @@ impl GraphRetriever {
             pagerank_cache: tokio::sync::RwLock::new(None),
             entity_document_map: tokio::sync::RwLock::new(entity_document_map),
         };
-        
+
         Ok(retriever)
     }
 
     /// Update the knowledge graph
     pub async fn update_graph(&self, graph: KnowledgeGraph) -> RragResult<()> {
         *self.graph.write().await = graph.clone();
-        self.query_expander.write().await.update_graph(graph.clone()).await;
-        
+        self.query_expander
+            .write()
+            .await
+            .update_graph(graph.clone())
+            .await;
+
         // Rebuild entity-document mapping
         let mut entity_map = self.entity_document_map.write().await;
         entity_map.clear();
@@ -190,26 +195,26 @@ impl GraphRetriever {
                     .insert(doc_id.clone());
             }
         }
-        
+
         // Clear PageRank cache
         *self.pagerank_cache.write().await = None;
-        
+
         // Update storage
         self.storage.write().await.store_graph(&graph).await?;
-        
+
         Ok(())
     }
 
     /// Get or compute PageRank scores
     async fn get_pagerank_scores(&self) -> RragResult<HashMap<String, f32>> {
         let mut cache = self.pagerank_cache.write().await;
-        
+
         if cache.is_none() {
             let graph = self.graph.read().await;
             let scores = GraphAlgorithms::pagerank(&*graph, &self.config.pagerank_config)?;
             *cache = Some(scores);
         }
-        
+
         Ok(cache.clone().unwrap())
     }
 
@@ -218,14 +223,17 @@ impl GraphRetriever {
         if !self.config.enable_query_expansion {
             return Ok(vec![query.to_string()]);
         }
-        
-        let expansion_result = self.query_expander.read().await
+
+        let expansion_result = self
+            .query_expander
+            .read()
+            .await
             .expand_query(query, &self.config.expansion_options)
             .await?;
-        
+
         let mut terms = vec![query.to_string()];
         terms.extend(expansion_result.expanded_terms.into_iter().map(|t| t.term));
-        
+
         Ok(terms)
     }
 
@@ -233,9 +241,9 @@ impl GraphRetriever {
     async fn find_query_entities(&self, query: &str) -> Vec<String> {
         let query_lower = query.to_lowercase();
         let mut entities = Vec::new();
-        
+
         let graph = self.graph.read().await;
-        
+
         // Find entities that match query terms
         for (entity_id, node) in &graph.nodes {
             let label_lower = node.label.to_lowercase();
@@ -243,7 +251,7 @@ impl GraphRetriever {
                 entities.push(entity_id.clone());
             }
         }
-        
+
         entities
     }
 
@@ -255,27 +263,29 @@ impl GraphRetriever {
         relationships: Vec<super::GraphEdge>,
     ) -> RragResult<()> {
         let mut graph = self.graph.write().await;
-        
+
         // Add document node
-        let doc_node = GraphNode::new(
-            format!("doc_{}", document.id),
-            super::NodeType::Document,
-        )
-        .with_source_document(document.id.clone())
-        .with_attribute("title", serde_json::Value::String(
-            document.metadata.get("title")
-                .and_then(|v| v.as_str())
-                .unwrap_or(&document.id)
-                .to_string()
-        ));
-        
+        let doc_node = GraphNode::new(format!("doc_{}", document.id), super::NodeType::Document)
+            .with_source_document(document.id.clone())
+            .with_attribute(
+                "title",
+                serde_json::Value::String(
+                    document
+                        .metadata
+                        .get("title")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or(&document.id)
+                        .to_string(),
+                ),
+            );
+
         graph.add_node(doc_node.clone())?;
-        
+
         // Add entities and connect them to the document
         for entity in entities {
             let entity_id = entity.id.clone();
             graph.add_node(entity)?;
-            
+
             // Create containment edge from document to entity
             let containment_edge = super::GraphEdge::new(
                 doc_node.id.clone(),
@@ -284,25 +294,27 @@ impl GraphRetriever {
                 super::EdgeType::Contains,
             );
             graph.add_edge(containment_edge)?;
-            
+
             // Update entity-document mapping
-            self.entity_document_map.write().await
+            self.entity_document_map
+                .write()
+                .await
                 .entry(entity_id)
                 .or_insert_with(HashSet::new)
                 .insert(document.id.clone());
         }
-        
+
         // Add relationships
         for relationship in relationships {
             graph.add_edge(relationship)?;
         }
-        
+
         // Clear PageRank cache
         *self.pagerank_cache.write().await = None;
-        
+
         // Update storage
         self.storage.write().await.store_graph(&*graph).await?;
-        
+
         Ok(())
     }
 }
@@ -322,24 +334,24 @@ impl Retriever for GraphRetriever {
                 return Ok(Vec::new());
             }
         };
-        
+
         // Expand query if enabled
         let expanded_terms = self.expand_query(query_text).await?;
         let expanded_query = expanded_terms.join(" ");
-        
+
         // Find entities in the (expanded) query
         let query_entities = self.find_query_entities(&expanded_query).await;
-        
+
         // For simplicity, return basic results based on entity matching
         let mut results = Vec::new();
-        
+
         let entity_map = self.entity_document_map.read().await;
         let pagerank_scores = if self.config.enable_pagerank_scoring {
             self.get_pagerank_scores().await?
         } else {
             HashMap::new()
         };
-        
+
         // Find documents connected to query entities
         let mut candidate_docs = HashSet::new();
         for entity_id in &query_entities {
@@ -347,12 +359,12 @@ impl Retriever for GraphRetriever {
                 candidate_docs.extend(doc_ids.clone());
             }
         }
-        
+
         // Create search results for candidate documents
         for (rank, doc_id) in candidate_docs.iter().enumerate() {
             // Calculate graph-based score
             let mut graph_score = 0.5; // Base score
-            
+
             // Add PageRank contribution
             for entity_id in &query_entities {
                 if let Some(doc_ids) = entity_map.get(entity_id) {
@@ -362,7 +374,7 @@ impl Retriever for GraphRetriever {
                     }
                 }
             }
-            
+
             if graph_score >= self.config.min_graph_score {
                 let result = SearchResult {
                     id: doc_id.clone(),
@@ -371,27 +383,30 @@ impl Retriever for GraphRetriever {
                     rank,
                     metadata: {
                         let mut metadata = HashMap::new();
-                        metadata.insert("graph_score".to_string(), 
-                                       serde_json::json!(graph_score));
+                        metadata.insert("graph_score".to_string(), serde_json::json!(graph_score));
                         metadata
                     },
                     embedding: None,
                 };
-                
+
                 results.push(result);
             }
         }
-        
+
         // Sort by score and apply limits
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         results.retain(|result| result.score >= query.min_score);
         results.truncate(query.limit);
-        
+
         // Update ranks
         for (i, result) in results.iter_mut().enumerate() {
             result.rank = i;
         }
-        
+
         Ok(results)
     }
 
@@ -401,23 +416,21 @@ impl Retriever for GraphRetriever {
         // 2. Adding them to the graph
         // 3. Updating storage
         // For now, just add document nodes
-        
+
         let mut graph = self.graph.write().await;
         let mut nodes = Vec::new();
-        
+
         for (document, _embedding) in documents {
-            let doc_node = GraphNode::new(
-                format!("doc_{}", document.id),
-                super::NodeType::Document,
-            )
-            .with_source_document(document.id.clone());
-            
+            let doc_node =
+                GraphNode::new(format!("doc_{}", document.id), super::NodeType::Document)
+                    .with_source_document(document.id.clone());
+
             nodes.push(doc_node.clone());
             graph.add_node(doc_node)?;
         }
-        
+
         self.storage.write().await.store_nodes(&nodes).await?;
-        
+
         Ok(())
     }
 
@@ -425,35 +438,36 @@ impl Retriever for GraphRetriever {
         // Similar to add_documents but for chunks
         let mut graph = self.graph.write().await;
         let mut nodes = Vec::new();
-        
+
         for (chunk, _embedding) in chunks {
             let chunk_node = GraphNode::new(
                 format!("chunk_{}_{}", chunk.document_id, chunk.chunk_index),
                 super::NodeType::DocumentChunk,
             )
             .with_source_document(chunk.document_id.clone());
-            
+
             nodes.push(chunk_node.clone());
             graph.add_node(chunk_node)?;
         }
-        
+
         self.storage.write().await.store_nodes(&nodes).await?;
-        
+
         Ok(())
     }
 
     async fn remove_documents(&self, document_ids: &[String]) -> RragResult<()> {
         let mut graph = self.graph.write().await;
-        
+
         // Remove document nodes and update entity mappings
-        let doc_node_ids: Vec<_> = document_ids.iter()
+        let doc_node_ids: Vec<_> = document_ids
+            .iter()
             .map(|doc_id| format!("doc_{}", doc_id))
             .collect();
-        
+
         for node_id in &doc_node_ids {
             graph.remove_node(node_id)?;
         }
-        
+
         // Update entity-document mapping
         let mut entity_map = self.entity_document_map.write().await;
         for doc_id in document_ids {
@@ -461,9 +475,13 @@ impl Retriever for GraphRetriever {
                 entity_docs.remove(doc_id);
             }
         }
-        
-        self.storage.write().await.delete_nodes(&doc_node_ids).await?;
-        
+
+        self.storage
+            .write()
+            .await
+            .delete_nodes(&doc_node_ids)
+            .await?;
+
         Ok(())
     }
 
@@ -479,7 +497,7 @@ impl Retriever for GraphRetriever {
         let storage_stats = self.storage.read().await.get_stats().await?;
         let graph = self.graph.read().await;
         let _graph_metrics = graph.calculate_metrics();
-        
+
         Ok(IndexStats {
             total_items: storage_stats.total_nodes,
             size_bytes: storage_stats.storage_size_bytes,
@@ -499,14 +517,14 @@ impl Retriever for GraphRetriever {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph_retrieval::{storage::InMemoryGraphStorage, GraphEdge, NodeType, EdgeType};
+    use crate::graph_retrieval::{storage::InMemoryGraphStorage, EdgeType, GraphEdge, NodeType};
 
     #[tokio::test]
     async fn test_graph_retriever_creation() {
         let graph = KnowledgeGraph::new();
         let storage = Box::new(InMemoryGraphStorage::new());
         let config = GraphRetrievalConfig::default();
-        
+
         let retriever = GraphRetriever::new(graph, storage, config).unwrap();
         assert_eq!(retriever.name(), "graph_retriever");
     }
@@ -514,28 +532,33 @@ mod tests {
     #[tokio::test]
     async fn test_query_expansion() {
         let mut graph = KnowledgeGraph::new();
-        
+
         // Create test graph with related entities
         let node1 = GraphNode::new("machine learning", NodeType::Concept);
         let node2 = GraphNode::new("artificial intelligence", NodeType::Concept);
         let node1_id = node1.id.clone();
         let node2_id = node2.id.clone();
-        
+
         graph.add_node(node1).unwrap();
         graph.add_node(node2).unwrap();
-        
-        graph.add_edge(GraphEdge::new(
-            node1_id.clone(),
-            node2_id.clone(),
-            "part_of",
-            EdgeType::Semantic("part_of".to_string())
-        ).with_confidence(0.8)).unwrap();
-        
+
+        graph
+            .add_edge(
+                GraphEdge::new(
+                    node1_id.clone(),
+                    node2_id.clone(),
+                    "part_of",
+                    EdgeType::Semantic("part_of".to_string()),
+                )
+                .with_confidence(0.8),
+            )
+            .unwrap();
+
         let storage = Box::new(InMemoryGraphStorage::new());
         let config = GraphRetrievalConfig::default();
-        
+
         let retriever = GraphRetriever::new(graph, storage, config).unwrap();
-        
+
         // Test query expansion
         let expanded = retriever.expand_query("machine learning").await.unwrap();
         assert!(!expanded.is_empty());
@@ -545,17 +568,19 @@ mod tests {
     #[tokio::test]
     async fn test_find_query_entities() {
         let mut graph = KnowledgeGraph::new();
-        
+
         let node = GraphNode::new("neural networks", NodeType::Concept);
         let node_id = node.id.clone();
         graph.add_node(node).unwrap();
-        
+
         let storage = Box::new(InMemoryGraphStorage::new());
         let config = GraphRetrievalConfig::default();
-        
+
         let retriever = GraphRetriever::new(graph, storage, config).unwrap();
-        
-        let entities = retriever.find_query_entities("neural networks deep learning").await;
+
+        let entities = retriever
+            .find_query_entities("neural networks deep learning")
+            .await;
         assert!(!entities.is_empty());
         assert!(entities.contains(&node_id));
     }
@@ -565,7 +590,7 @@ mod tests {
         let graph = KnowledgeGraph::new();
         let storage = Box::new(InMemoryGraphStorage::new());
         let config = GraphRetrievalConfig::default();
-        
+
         let retriever = GraphRetriever::new(graph, storage, config).unwrap();
         let is_healthy = retriever.health_check().await.unwrap();
         assert!(is_healthy);

@@ -1,14 +1,14 @@
 //! # RRAG Integration
-//! 
+//!
 //! Integration layer between RGraph and RRAG for RAG-powered agent workflows.
 //! This module provides nodes that can leverage RRAG's retrieval and generation capabilities.
 
-use crate::core::{Node, NodeId, ExecutionContext, ExecutionResult};
+use crate::core::{ExecutionContext, ExecutionResult, Node, NodeId};
 use crate::state::{GraphState, StateValue};
 use crate::{RGraphError, RGraphResult};
 use async_trait::async_trait;
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -92,11 +92,7 @@ pub struct RagRetrievalNode {
 }
 
 impl RagRetrievalNode {
-    pub fn new(
-        id: impl Into<NodeId>,
-        name: impl Into<String>,
-        config: RagRetrievalConfig,
-    ) -> Self {
+    pub fn new(id: impl Into<NodeId>, name: impl Into<String>, config: RagRetrievalConfig) -> Self {
         Self {
             id: id.into(),
             name: name.into(),
@@ -114,9 +110,9 @@ impl Node for RagRetrievalNode {
     ) -> RGraphResult<ExecutionResult> {
         // Get the query from state
         let query = state.get(&self.config.query_key)?;
-        let query_text = query.as_string().ok_or_else(|| {
-            RGraphError::node(self.id.as_str(), "Query must be a string")
-        })?;
+        let query_text = query
+            .as_string()
+            .ok_or_else(|| RGraphError::node(self.id.as_str(), "Query must be a string"))?;
 
         // Simulate document retrieval (in real implementation, this would use RRAG)
         let mock_documents = vec![
@@ -126,24 +122,25 @@ impl Node for RagRetrievalNode {
         ];
 
         // Filter based on similarity threshold if provided
-        let filtered_docs: Vec<StateValue> = if let Some(threshold) = self.config.similarity_threshold {
-            mock_documents
-                .into_iter()
-                .filter(|doc| {
-                    if let Some(obj) = doc.as_object() {
-                        if let Some(score_val) = obj.get("score") {
-                            if let Some(score) = score_val.as_float() {
-                                return score >= threshold as f64;
+        let filtered_docs: Vec<StateValue> =
+            if let Some(threshold) = self.config.similarity_threshold {
+                mock_documents
+                    .into_iter()
+                    .filter(|doc| {
+                        if let Some(obj) = doc.as_object() {
+                            if let Some(score_val) = obj.get("score") {
+                                if let Some(score) = score_val.as_float() {
+                                    return score >= threshold as f64;
+                                }
                             }
                         }
-                    }
-                    false
-                })
-                .take(self.config.top_k)
-                .collect()
-        } else {
-            mock_documents.into_iter().take(self.config.top_k).collect()
-        };
+                        false
+                    })
+                    .take(self.config.top_k)
+                    .collect()
+            } else {
+                mock_documents.into_iter().take(self.config.top_k).collect()
+            };
 
         // Store retrieval context
         state.set_with_context(
@@ -213,9 +210,9 @@ impl Node for RagGenerationNode {
     ) -> RGraphResult<ExecutionResult> {
         // Get query and context from state
         let query = state.get(&self.config.query_key)?;
-        let query_text = query.as_string().ok_or_else(|| {
-            RGraphError::node(self.id.as_str(), "Query must be a string")
-        })?;
+        let query_text = query
+            .as_string()
+            .ok_or_else(|| RGraphError::node(self.id.as_str(), "Query must be a string"))?;
 
         let context_value = state.get(&self.config.context_key)?;
         let context_docs = if let Some(array) = context_value.as_array() {
@@ -324,10 +321,10 @@ impl Node for ContextEvaluationNode {
         // Get context and query from state
         let context_value = state.get(&self.config.context_key)?;
         let query_value = state.get(&self.config.query_key)?;
-        
-        let query_text = query_value.as_string().ok_or_else(|| {
-            RGraphError::node(self.id.as_str(), "Query must be a string")
-        })?;
+
+        let query_text = query_value
+            .as_string()
+            .ok_or_else(|| RGraphError::node(self.id.as_str(), "Query must be a string"))?;
 
         let context_docs = if let Some(array) = context_value.as_array() {
             array
@@ -349,17 +346,17 @@ impl Node for ContextEvaluationNode {
                     if let Some(content) = content_val.as_string() {
                         // Simple relevance scoring based on keyword overlap
                         let relevance_score = self.calculate_relevance_score(query_text, content);
-                        
+
                         if relevance_score >= self.config.min_relevance_score {
                             let mut relevant_doc_map = obj.clone();
                             relevant_doc_map.insert(
                                 "relevance_score".to_string(),
-                                StateValue::Float(relevance_score as f64)
+                                StateValue::Float(relevance_score as f64),
                             );
                             let relevant_doc = StateValue::Object(relevant_doc_map);
                             relevant_docs.push(relevant_doc);
                         }
-                        
+
                         total_score += relevance_score;
                         evaluated_count += 1;
                     }
@@ -494,7 +491,10 @@ impl Default for RagWorkflowBuilder {
 /// Helper function to create mock documents for demonstration
 fn create_mock_document(content: &str, score: f64) -> StateValue {
     let mut doc = HashMap::new();
-    doc.insert("content".to_string(), StateValue::String(content.to_string()));
+    doc.insert(
+        "content".to_string(),
+        StateValue::String(content.to_string()),
+    );
     doc.insert("score".to_string(), StateValue::Float(score));
     doc.insert("metadata".to_string(), StateValue::Object(HashMap::new()));
     StateValue::Object(doc)

@@ -1,20 +1,15 @@
 //! # Data Retention and Historical Analysis
-//! 
+//!
 //! Automated data lifecycle management with configurable retention policies,
 //! historical analysis capabilities, and efficient archiving for RRAG observability data.
 
+use super::{health::ServiceHealth, logging::LogEntry, metrics::Metric, profiling::ProfileData};
 use crate::{RragError, RragResult};
-use super::{
-    metrics::Metric,
-    logging::LogEntry,
-    health::ServiceHealth,
-    profiling::ProfileData,
-};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use chrono::{DateTime, Utc, Duration};
 
 /// Data retention configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -136,10 +131,10 @@ pub enum RetentionPriority {
 /// Retention condition for selective data retention
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum RetentionCondition {
-    SeverityLevel(String, u32), // level, retention_days
-    ComponentName(String, u32), // component, retention_days
+    SeverityLevel(String, u32),       // level, retention_days
+    ComponentName(String, u32),       // component, retention_days
     UserDefined(String, String, u32), // field, value, retention_days
-    DataSize(u64, u32), // max_size_bytes, retention_days
+    DataSize(u64, u32),               // max_size_bytes, retention_days
 }
 
 /// Retention policy for specific data types
@@ -190,26 +185,26 @@ impl RetentionPolicy {
                             return Some(*days);
                         }
                     }
-                },
+                }
                 RetentionCondition::ComponentName(component, days) => {
                     if let Some(comp) = data.component_name() {
                         if comp == *component {
                             return Some(*days);
                         }
                     }
-                },
+                }
                 RetentionCondition::UserDefined(field, value, days) => {
                     if let Some(field_value) = data.custom_field(field) {
                         if field_value == *value {
                             return Some(*days);
                         }
                     }
-                },
+                }
                 RetentionCondition::DataSize(max_size, days) => {
                     if data.data_size() > *max_size {
                         return Some(*days);
                     }
-                },
+                }
             }
         }
         None
@@ -250,9 +245,15 @@ pub enum RetentionAction {
 pub trait RetentionData {
     fn timestamp(&self) -> DateTime<Utc>;
     fn data_size(&self) -> u64;
-    fn severity_level(&self) -> Option<String> { None }
-    fn component_name(&self) -> Option<String> { None }
-    fn custom_field(&self, _field: &str) -> Option<String> { None }
+    fn severity_level(&self) -> Option<String> {
+        None
+    }
+    fn component_name(&self) -> Option<String> {
+        None
+    }
+    fn custom_field(&self, _field: &str) -> Option<String> {
+        None
+    }
     fn data_type(&self) -> DataType;
 }
 
@@ -263,9 +264,13 @@ impl RetentionData for Metric {
 
     fn data_size(&self) -> u64 {
         // Rough estimate of metric size
-        std::mem::size_of::<Metric>() as u64 + 
-        self.name.len() as u64 + 
-        self.labels.iter().map(|(k, v)| k.len() + v.len()).sum::<usize>() as u64
+        std::mem::size_of::<Metric>() as u64
+            + self.name.len() as u64
+            + self
+                .labels
+                .iter()
+                .map(|(k, v)| k.len() + v.len())
+                .sum::<usize>() as u64
     }
 
     fn component_name(&self) -> Option<String> {
@@ -287,10 +292,14 @@ impl RetentionData for LogEntry {
     }
 
     fn data_size(&self) -> u64 {
-        std::mem::size_of::<LogEntry>() as u64 + 
-        self.message.len() as u64 + 
-        self.component.len() as u64 +
-        self.fields.iter().map(|(k, v)| k.len() + v.to_string().len()).sum::<usize>() as u64
+        std::mem::size_of::<LogEntry>() as u64
+            + self.message.len() as u64
+            + self.component.len() as u64
+            + self
+                .fields
+                .iter()
+                .map(|(k, v)| k.len() + v.to_string().len())
+                .sum::<usize>() as u64
     }
 
     fn severity_level(&self) -> Option<String> {
@@ -302,7 +311,9 @@ impl RetentionData for LogEntry {
     }
 
     fn custom_field(&self, field: &str) -> Option<String> {
-        self.fields.get(field).and_then(|v| v.as_str().map(|s| s.to_string()))
+        self.fields
+            .get(field)
+            .and_then(|v| v.as_str().map(|s| s.to_string()))
     }
 
     fn data_type(&self) -> DataType {
@@ -316,9 +327,9 @@ impl RetentionData for ServiceHealth {
     }
 
     fn data_size(&self) -> u64 {
-        std::mem::size_of::<ServiceHealth>() as u64 + 
-        self.component_name.len() as u64 +
-        self.error_message.as_ref().map(|s| s.len()).unwrap_or(0) as u64
+        std::mem::size_of::<ServiceHealth>() as u64
+            + self.component_name.len() as u64
+            + self.error_message.as_ref().map(|s| s.len()).unwrap_or(0) as u64
     }
 
     fn component_name(&self) -> Option<String> {
@@ -340,10 +351,14 @@ impl RetentionData for ProfileData {
     }
 
     fn data_size(&self) -> u64 {
-        std::mem::size_of::<ProfileData>() as u64 + 
-        self.operation.len() as u64 + 
-        self.component.len() as u64 +
-        self.custom_metrics.iter().map(|(k, _)| k.len()).sum::<usize>() as u64
+        std::mem::size_of::<ProfileData>() as u64
+            + self.operation.len() as u64
+            + self.component.len() as u64
+            + self
+                .custom_metrics
+                .iter()
+                .map(|(k, _)| k.len())
+                .sum::<usize>() as u64
     }
 
     fn component_name(&self) -> Option<String> {
@@ -377,10 +392,11 @@ impl ArchiveManager {
 
     pub async fn archive_data(&self, data: &[u8], filename: &str) -> RragResult<ArchiveResult> {
         let full_path = format!("{}/{}", self.archive_path, filename);
-        
+
         // Create directory if it doesn't exist
         if let Some(parent) = std::path::Path::new(&full_path).parent() {
-            tokio::fs::create_dir_all(parent).await
+            tokio::fs::create_dir_all(parent)
+                .await
                 .map_err(|e| RragError::storage("create_archive_directory", e))?;
         }
 
@@ -394,7 +410,8 @@ impl ArchiveManager {
         };
 
         // Write archived data
-        tokio::fs::write(&full_path, &final_data).await
+        tokio::fs::write(&full_path, &final_data)
+            .await
             .map_err(|e| RragError::storage("write_archive", e))?;
 
         Ok(ArchiveResult {
@@ -412,8 +429,9 @@ impl ArchiveManager {
 
     pub async fn restore_data(&self, filename: &str) -> RragResult<Vec<u8>> {
         let full_path = format!("{}/{}", self.archive_path, filename);
-        
-        let archived_data = tokio::fs::read(&full_path).await
+
+        let archived_data = tokio::fs::read(&full_path)
+            .await
             .map_err(|e| RragError::storage("read_archive", e))?;
 
         // If compression was enabled, decompress here
@@ -423,24 +441,30 @@ impl ArchiveManager {
 
     pub async fn delete_archive(&self, filename: &str) -> RragResult<()> {
         let full_path = format!("{}/{}", self.archive_path, filename);
-        tokio::fs::remove_file(&full_path).await
+        tokio::fs::remove_file(&full_path)
+            .await
             .map_err(|e| RragError::storage("delete_archive", e))
     }
 
     pub async fn list_archives(&self) -> RragResult<Vec<ArchiveInfo>> {
         let mut archives = Vec::new();
-        let mut dir = tokio::fs::read_dir(&self.archive_path).await
+        let mut dir = tokio::fs::read_dir(&self.archive_path)
+            .await
             .map_err(|e| RragError::storage("read_archive_directory", e))?;
 
-        while let Some(entry) = dir.next_entry().await
-            .map_err(|e| RragError::storage("read_directory_entry", e))? {
-            
+        while let Some(entry) = dir
+            .next_entry()
+            .await
+            .map_err(|e| RragError::storage("read_directory_entry", e))?
+        {
             if let Ok(metadata) = entry.metadata().await {
                 if metadata.is_file() {
                     archives.push(ArchiveInfo {
                         filename: entry.file_name().to_string_lossy().to_string(),
                         size_bytes: metadata.len(),
-                        created_at: metadata.created().ok()
+                        created_at: metadata
+                            .created()
+                            .ok()
                             .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                             .map(|d| Utc::now() - Duration::seconds(d.as_secs() as i64))
                             .unwrap_or(Utc::now()),
@@ -476,12 +500,15 @@ pub struct HistoricalAnalyzer {
 
 impl HistoricalAnalyzer {
     pub fn new(analysis_window_days: u32) -> Self {
-        Self { analysis_window_days }
+        Self {
+            analysis_window_days,
+        }
     }
 
     pub async fn analyze_trends<T: RetentionData>(&self, data: &[T]) -> TrendAnalysis {
         let cutoff_time = Utc::now() - Duration::days(self.analysis_window_days as i64);
-        let recent_data: Vec<_> = data.iter()
+        let recent_data: Vec<_> = data
+            .iter()
             .filter(|item| item.timestamp() >= cutoff_time)
             .collect();
 
@@ -491,10 +518,10 @@ impl HistoricalAnalyzer {
 
         // Analyze data volume trends
         let volume_trend = self.analyze_volume_trend(&recent_data).await;
-        
+
         // Analyze component trends
         let component_trends = self.analyze_component_trends(&recent_data).await;
-        
+
         // Analyze severity trends (for logs/alerts)
         let severity_trends = self.analyze_severity_trends(&recent_data).await;
 
@@ -505,7 +532,9 @@ impl HistoricalAnalyzer {
             volume_trend: volume_trend.clone(),
             component_trends: component_trends.clone(),
             severity_trends,
-            recommendations: self.generate_recommendations(&volume_trend, &component_trends).await,
+            recommendations: self
+                .generate_recommendations(&volume_trend, &component_trends)
+                .await,
         }
     }
 
@@ -536,15 +565,15 @@ impl HistoricalAnalyzer {
         };
 
         // Calculate trend direction
-        let recent_half = &daily_counts[days/2..];
-        let older_half = &daily_counts[..days/2];
-        
+        let recent_half = &daily_counts[days / 2..];
+        let older_half = &daily_counts[..days / 2];
+
         let recent_avg = if recent_half.len() > 0 {
             recent_half.iter().sum::<usize>() as f64 / recent_half.len() as f64
         } else {
             0.0
         };
-        
+
         let older_avg = if older_half.len() > 0 {
             older_half.iter().sum::<usize>() as f64 / older_half.len() as f64
         } else {
@@ -573,7 +602,10 @@ impl HistoricalAnalyzer {
         }
     }
 
-    async fn analyze_component_trends<T: RetentionData>(&self, data: &[&T]) -> HashMap<String, ComponentTrend> {
+    async fn analyze_component_trends<T: RetentionData>(
+        &self,
+        data: &[&T],
+    ) -> HashMap<String, ComponentTrend> {
         let mut component_data: HashMap<String, Vec<&T>> = HashMap::new();
 
         for item in data {
@@ -585,17 +617,23 @@ impl HistoricalAnalyzer {
         let mut trends = HashMap::new();
         for (component, items) in component_data {
             let volume_trend = self.analyze_volume_trend(&items).await;
-            trends.insert(component.clone(), ComponentTrend {
-                component_name: component,
-                data_count: items.len(),
-                volume_trend,
-            });
+            trends.insert(
+                component.clone(),
+                ComponentTrend {
+                    component_name: component,
+                    data_count: items.len(),
+                    volume_trend,
+                },
+            );
         }
 
         trends
     }
 
-    async fn analyze_severity_trends<T: RetentionData>(&self, data: &[&T]) -> HashMap<String, SeverityTrend> {
+    async fn analyze_severity_trends<T: RetentionData>(
+        &self,
+        data: &[&T],
+    ) -> HashMap<String, SeverityTrend> {
         let mut severity_data: HashMap<String, Vec<&T>> = HashMap::new();
 
         for item in data {
@@ -607,17 +645,24 @@ impl HistoricalAnalyzer {
         let mut trends = HashMap::new();
         for (severity, items) in severity_data {
             let volume_trend = self.analyze_volume_trend(&items).await;
-            trends.insert(severity.clone(), SeverityTrend {
-                severity_level: severity,
-                occurrence_count: items.len(),
-                volume_trend,
-            });
+            trends.insert(
+                severity.clone(),
+                SeverityTrend {
+                    severity_level: severity,
+                    occurrence_count: items.len(),
+                    volume_trend,
+                },
+            );
         }
 
         trends
     }
 
-    async fn generate_recommendations(&self, volume_trend: &VolumeTrend, component_trends: &HashMap<String, ComponentTrend>) -> Vec<RetentionRecommendation> {
+    async fn generate_recommendations(
+        &self,
+        volume_trend: &VolumeTrend,
+        component_trends: &HashMap<String, ComponentTrend>,
+    ) -> Vec<RetentionRecommendation> {
         let mut recommendations = Vec::new();
 
         // Volume-based recommendations
@@ -630,11 +675,14 @@ impl HistoricalAnalyzer {
             });
         }
 
-        if volume_trend.average_daily_size_bytes > 1_000_000_000.0 { // > 1GB daily
+        if volume_trend.average_daily_size_bytes > 1_000_000_000.0 {
+            // > 1GB daily
             recommendations.push(RetentionRecommendation {
                 category: RecommendationCategory::Compression,
                 priority: RecommendationPriority::Medium,
-                message: "Large daily data volume detected. Enable compression to reduce storage costs.".to_string(),
+                message:
+                    "Large daily data volume detected. Enable compression to reduce storage costs."
+                        .to_string(),
                 estimated_savings_percent: 60.0,
             });
         }
@@ -756,7 +804,7 @@ pub struct DataRetention {
 impl DataRetention {
     pub async fn new(config: RetentionConfig) -> RragResult<Self> {
         let policies = Arc::new(RwLock::new(HashMap::new()));
-        
+
         // Initialize policies from config
         {
             let mut policy_map = policies.write().await;
@@ -768,12 +816,10 @@ impl DataRetention {
 
         let archive_manager = Arc::new(ArchiveManager::new(
             "./archives",
-            config.archive_compression
+            config.archive_compression,
         ));
 
-        let historical_analyzer = Arc::new(HistoricalAnalyzer::new(
-            config.trend_analysis_days
-        ));
+        let historical_analyzer = Arc::new(HistoricalAnalyzer::new(config.trend_analysis_days));
 
         Ok(Self {
             config,
@@ -788,7 +834,11 @@ impl DataRetention {
     pub async fn start(&self) -> RragResult<()> {
         let mut running = self.is_running.write().await;
         if *running {
-            return Err(RragError::config("data_retention", "stopped", "already running"));
+            return Err(RragError::config(
+                "data_retention",
+                "stopped",
+                "already running",
+            ));
         }
 
         if self.config.enabled {
@@ -830,21 +880,21 @@ impl DataRetention {
         let is_running = self.is_running.clone();
 
         let handle = tokio::spawn(async move {
-            let mut interval = tokio::time::interval(
-                tokio::time::Duration::from_secs(config.cleanup_interval_hours as u64 * 3600)
-            );
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(
+                config.cleanup_interval_hours as u64 * 3600,
+            ));
 
             while *is_running.read().await {
                 interval.tick().await;
-                
+
                 tracing::info!("Running data retention cleanup");
-                
+
                 // In a real implementation, this would:
                 // 1. Query the data stores for items to process
                 // 2. Apply retention policies
                 // 3. Archive or delete data as needed
                 // 4. Update policy statistics
-                
+
                 let mut policy_map = policies.write().await;
                 for (name, policy) in policy_map.iter_mut() {
                     tracing::debug!("Processing retention policy: {}", name);
@@ -858,13 +908,20 @@ impl DataRetention {
         Ok(handle)
     }
 
-    pub async fn apply_retention_policy<T: RetentionData + Clone>(&self, data: Vec<T>, data_type: DataType) -> RragResult<RetentionResult> {
+    pub async fn apply_retention_policy<T: RetentionData + Clone>(
+        &self,
+        data: Vec<T>,
+        data_type: DataType,
+    ) -> RragResult<RetentionResult> {
         let policies = self.policies.read().await;
-        
+
         // Find applicable policy for this data type
-        let policy = policies.values()
+        let policy = policies
+            .values()
             .find(|p| p.config.data_type == data_type)
-            .ok_or_else(|| RragError::config("retention_policy", "exists", &format!("{:?}", data_type)))?;
+            .ok_or_else(|| {
+                RragError::config("retention_policy", "exists", &format!("{:?}", data_type))
+            })?;
 
         let mut result = RetentionResult {
             processed_count: 0,
@@ -878,7 +935,8 @@ impl DataRetention {
             result.processed_count += 1;
 
             // Check custom conditions first
-            let retention_days = policy.apply_conditions(&item)
+            let retention_days = policy
+                .apply_conditions(&item)
                 .unwrap_or(policy.config.retention_days);
 
             let age = Utc::now() - item.timestamp();
@@ -913,7 +971,8 @@ impl DataRetention {
             "size": item.data_size(),
             "component": item.component_name(),
             "severity": item.severity_level(),
-        })).map_err(|e| RragError::agent("serialization", e.to_string()))?;
+        }))
+        .map_err(|e| RragError::agent("serialization", e.to_string()))?;
 
         let filename = format!(
             "{}_{}.json",
@@ -921,7 +980,9 @@ impl DataRetention {
             item.timestamp().format("%Y%m%d_%H%M%S")
         );
 
-        self.archive_manager.archive_data(&serialized_data, &filename).await
+        self.archive_manager
+            .archive_data(&serialized_data, &filename)
+            .await
     }
 
     pub async fn analyze_historical_data<T: RetentionData>(&self, data: &[T]) -> TrendAnalysis {
@@ -978,13 +1039,13 @@ pub struct RetentionResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::observability::{metrics::MetricType, logging::LogLevel};
+    use crate::observability::{logging::LogLevel, metrics::MetricType};
 
     #[test]
     fn test_retention_policy_creation() {
         let config = RetentionPolicyConfig::default_logs();
         let policy = RetentionPolicy::new(config);
-        
+
         assert_eq!(policy.config.data_type, DataType::Logs);
         assert_eq!(policy.config.retention_days, 30);
         assert!(policy.config.archive_after_days.is_some());
@@ -1002,17 +1063,17 @@ mod tests {
             priority: RetentionPriority::Medium,
             conditions: vec![],
         };
-        
+
         let policy = RetentionPolicy::new(config);
-        
+
         // Test recent data (should keep)
         let recent_time = Utc::now() - Duration::days(5);
         assert_eq!(policy.should_retain(recent_time), RetentionAction::Keep);
-        
+
         // Test old data for archiving
         let archive_time = Utc::now() - Duration::days(10);
         assert_eq!(policy.should_retain(archive_time), RetentionAction::Archive);
-        
+
         // Test very old data (should delete)
         let delete_time = Utc::now() - Duration::days(40);
         assert_eq!(policy.should_retain(delete_time), RetentionAction::Delete);
@@ -1021,15 +1082,16 @@ mod tests {
     #[tokio::test]
     async fn test_archive_manager() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let archive_manager = ArchiveManager::new(
-            temp_dir.path().to_string_lossy().to_string(),
-            true
-        );
+        let archive_manager =
+            ArchiveManager::new(temp_dir.path().to_string_lossy().to_string(), true);
 
         let test_data = b"test archive data";
         let filename = "test_archive.json";
 
-        let result = archive_manager.archive_data(test_data, filename).await.unwrap();
+        let result = archive_manager
+            .archive_data(test_data, filename)
+            .await
+            .unwrap();
         assert_eq!(result.original_size, test_data.len() as u64);
         assert!(!result.file_path.is_empty());
 
@@ -1100,18 +1162,21 @@ mod tests {
     #[tokio::test]
     async fn test_retention_data_trait() {
         // Test Metric implementation
-        let metric = Metric::counter("test_metric", 100)
-            .with_label("component", "test_component");
-        
+        let metric = Metric::counter("test_metric", 100).with_label("component", "test_component");
+
         assert_eq!(metric.data_type(), DataType::Metrics);
         assert!(metric.data_size() > 0);
         assert_eq!(metric.component_name(), Some("test_component".to_string()));
 
         // Test LogEntry implementation
-        let log_entry = super::super::logging::LogEntry::new(LogLevel::Error, "Test error", "test_component");
+        let log_entry =
+            super::super::logging::LogEntry::new(LogLevel::Error, "Test error", "test_component");
         assert_eq!(log_entry.data_type(), DataType::Logs);
         assert_eq!(log_entry.severity_level(), Some("ERROR".to_string()));
-        assert_eq!(log_entry.component_name(), Some("test_component".to_string()));
+        assert_eq!(
+            log_entry.component_name(),
+            Some("test_component".to_string())
+        );
     }
 
     #[test]
@@ -1130,14 +1195,26 @@ mod tests {
         };
 
         let policy = RetentionPolicy::new(config);
-        
-        let error_log = super::super::logging::LogEntry::new(LogLevel::Error, "Error message", "normal_component");
+
+        let error_log = super::super::logging::LogEntry::new(
+            LogLevel::Error,
+            "Error message",
+            "normal_component",
+        );
         assert_eq!(policy.apply_conditions(&error_log), Some(90));
 
-        let critical_log = super::super::logging::LogEntry::new(LogLevel::Info, "Info message", "critical_component");
+        let critical_log = super::super::logging::LogEntry::new(
+            LogLevel::Info,
+            "Info message",
+            "critical_component",
+        );
         assert_eq!(policy.apply_conditions(&critical_log), Some(180));
 
-        let normal_log = super::super::logging::LogEntry::new(LogLevel::Info, "Info message", "normal_component");
+        let normal_log = super::super::logging::LogEntry::new(
+            LogLevel::Info,
+            "Info message",
+            "normal_component",
+        );
         assert_eq!(policy.apply_conditions(&normal_log), None);
     }
 }

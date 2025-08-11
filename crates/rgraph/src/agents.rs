@@ -1,10 +1,10 @@
 //! # Agent System
-//! 
+//!
 //! High-level agent abstractions and configurations.
 
 use crate::tools::Tool;
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -50,22 +50,22 @@ impl AgentBuilder {
             tools: HashMap::new(),
         }
     }
-    
+
     pub fn with_description(mut self, description: impl Into<String>) -> Self {
         self.config.description = description.into();
         self
     }
-    
+
     pub fn with_system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.config.system_prompt = prompt.into();
         self
     }
-    
+
     pub fn with_temperature(mut self, temperature: f32) -> Self {
         self.config.temperature = temperature.clamp(0.0, 2.0);
         self
     }
-    
+
     pub fn with_tool(mut self, name: String, tool: Arc<dyn Tool>) -> Self {
         self.config.tools.push(name.clone());
         self.tools.insert(name, tool);
@@ -77,10 +77,10 @@ impl AgentBuilder {
 pub trait Agent: Send + Sync {
     /// Get agent name
     fn name(&self) -> &str;
-    
+
     /// Get agent description
     fn description(&self) -> &str;
-    
+
     /// Get agent configuration
     fn config(&self) -> &AgentConfig;
 }

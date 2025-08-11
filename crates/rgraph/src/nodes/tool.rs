@@ -1,8 +1,8 @@
 //! # Tool Node Implementation
-//! 
+//!
 //! Tool nodes directly execute tools without agent reasoning.
 
-use crate::core::{Node, NodeId, ExecutionContext, ExecutionResult};
+use crate::core::{ExecutionContext, ExecutionResult, Node, NodeId};
 use crate::state::{GraphState, StateValue};
 use crate::tools::Tool;
 use crate::{RGraphError, RGraphResult};
@@ -54,16 +54,16 @@ impl Node for ToolNode {
     ) -> RGraphResult<ExecutionResult> {
         // Build arguments from state using mappings
         let mut arguments = serde_json::Map::new();
-        
+
         for (state_key, arg_key) in &self.config.argument_mappings {
             if let Ok(value) = state.get(state_key) {
                 let json_value: serde_json::Value = value.into();
                 arguments.insert(arg_key.clone(), json_value);
             }
         }
-        
+
         let arguments_json = serde_json::Value::Object(arguments);
-        
+
         // Execute the tool
         match self.tool.execute(&arguments_json, state).await {
             Ok(result) => {
@@ -78,19 +78,23 @@ impl Node for ToolNode {
             Err(e) => Err(RGraphError::tool(e.to_string())),
         }
     }
-    
+
     fn id(&self) -> &NodeId {
         &self.id
     }
-    
+
     fn name(&self) -> &str {
         &self.name
     }
-    
+
     fn input_keys(&self) -> Vec<&str> {
-        self.config.argument_mappings.keys().map(|s| s.as_str()).collect()
+        self.config
+            .argument_mappings
+            .keys()
+            .map(|s| s.as_str())
+            .collect()
     }
-    
+
     fn output_keys(&self) -> Vec<&str> {
         vec![&self.config.output_key]
     }
