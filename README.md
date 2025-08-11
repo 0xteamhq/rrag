@@ -168,7 +168,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### **Building the Workspace**
 ```bash
 # Clone the repository
-git clone https://github.com/leval-team/leval-rag-workspace
+git clone https://github.com/leval-ai/rrag
 cd leval-rag-workspace
 
 # Build all crates
