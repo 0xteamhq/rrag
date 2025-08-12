@@ -3207,30 +3207,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rgraph"
-version = "0.1.0-alpha.1"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "criterion",
- "dashmap",
- "futures",
- "metrics",
- "parking_lot",
- "petgraph",
- "rrag",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 1.0.69",
- "tokio",
- "tokio-test",
- "tracing",
- "uuid",
-]
-
-[[package]]
 name = "ring"
 version = "0.17.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3342,14 +3318,38 @@ dependencies = [
  "chrono",
  "futures",
  "rand 0.8.5",
- "rgraph",
  "rrag",
+ "rrag-graph",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "rrag-graph"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "criterion",
+ "dashmap",
+ "futures",
+ "metrics",
+ "parking_lot",
+ "petgraph",
+ "rrag",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "tracing",
  "uuid",
 ]
 
