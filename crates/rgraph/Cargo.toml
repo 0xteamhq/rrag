@@ -1,5 +1,5 @@
 [package]
-name = "rgraph"
+name = "rrag-graph"
 version = "0.1.0-alpha.1"
 edition = "2021"
 authors = ["RRAG Team <team@rrag.dev>"]
@@ -7,7 +7,7 @@ license = "MIT"
 description = "Graph-based agent orchestration system built on RRAG framework"
 homepage = "https://github.com/leval-ai/rrag"
 repository = "https://github.com/leval-ai/rrag"
-documentation = "https://docs.rs/rgraph"
+documentation = "https://docs.rs/rrag-graph"
 keywords = ["rag", "ai", "agents", "graph", "workflow"]
 categories = ["algorithms", "data-structures", "development-tools"]
 readme = "README.md"

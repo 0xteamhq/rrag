@@ -1,4 +1,4 @@
-# RGraph
+# RRAG Graph
 
 Graph-based agent orchestration system built on the RRAG framework.
 
@@ -19,7 +19,7 @@ RGraph provides a powerful graph-based orchestration layer for building complex 
 ## Quick Start
 
 ```rust
-use rgraph::prelude::*;
+use rrag_graph::prelude::*;
 
 // Create a graph with agents
 let graph = GraphBuilder::new()
@@ -38,12 +38,12 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rgraph = "0.1.0"
+rrag-graph = "0.1.0-alpha.1"
 ```
 
 ## Documentation
 
-For detailed documentation, visit [docs.rs/rgraph](https://docs.rs/rgraph).
+For detailed documentation, visit [docs.rs/rrag-graph](https://docs.rs/rrag-graph).
 
 ## License
 

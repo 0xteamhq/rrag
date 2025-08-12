@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to RGraph will be documented in this file.
+All notable changes to RRAG Graph will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0-alpha.1] - 2025-08-12
 
 ### Added
-- Initial release of RGraph orchestration framework
+- Initial release of RRAG Graph orchestration framework
 - Graph-based agent workflow system
 - Core graph execution engine
 - Agent node implementation with RRAG integration
