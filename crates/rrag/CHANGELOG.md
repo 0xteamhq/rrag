@@ -7,20 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2025-08-12
+
 ### Added
-- Comprehensive documentation system with examples and guides
-- Enhanced module-level documentation with detailed examples
-- docs.rs integration with feature flags and platform targets
-- Performance benchmarks and optimization guidelines
-- Migration guide for users upgrading between versions
+- Comprehensive documentation for all public APIs
+- Documentation for error module struct fields
+- Documentation for memory module types and functions
+- Documentation for pipeline module components
+- Documentation for agent and tool systems
+
+### Fixed
+- Compilation warnings reduced significantly
+- Documentation warnings for core modules resolved
+- Module import paths corrected in examples
+- Lifetime issues in demo files fixed
 
 ### Improved
 - API documentation with extensive examples and cross-references
 - Error handling documentation with recovery strategies
-- Configuration examples for production deployments
-- Code examples throughout the documentation
+- Memory management documentation enhanced
+- Pipeline step documentation improved
 
-## [0.1.0] - 2024-01-XX
+## [0.1.0-alpha.1] - 2025-08-11
 
 ### Added
 - Core RRAG framework with modular architecture

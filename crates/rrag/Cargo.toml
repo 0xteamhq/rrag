@@ -1,6 +1,6 @@
 [package]
 name = "rrag"
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 rust-version = "1.70.0"
 description = "High-performance Rust framework for Retrieval-Augmented Generation with pluggable components, async-first design, and comprehensive observability"
