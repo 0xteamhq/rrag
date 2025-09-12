@@ -158,7 +158,7 @@ Legend: ✅ Supported | 🚧 In Progress | 📝 Planned
 
 - [API Documentation](https://docs.rs/rsllm) - Complete API reference
 - [Examples](examples/) - Working code examples
-- [RRAG Integration](https://github.com/leval-ai/rrag) - RAG framework integration
+- [RRAG Integration](https://github.com/levalhq/rrag) - RAG framework integration
 
 ## 🔧 Feature Flags
 
@@ -176,7 +176,7 @@ features = [
 
 ## 🤝 Integration with RRAG
 
-RSLLM is designed to work seamlessly with the [RRAG framework](https://github.com/leval-ai/rrag):
+RSLLM is designed to work seamlessly with the [RRAG framework](https://github.com/levalhq/rrag):
 
 ```rust
 use rrag::prelude::*;
@@ -203,4 +203,4 @@ Contributions are welcome! Please see our [Contributing Guidelines](../../CONTRI
 
 ---
 
-**Part of the [RRAG](https://github.com/leval-ai/rrag) ecosystem - Build powerful RAG applications with Rust.**
+**Part of the [RRAG](https://github.com/levalhq/rrag) ecosystem - Build powerful RAG applications with Rust.**

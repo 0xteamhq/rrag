@@ -196,7 +196,7 @@ pub const NAME: &str = "RRAG";
 pub const DESCRIPTION: &str = "Rust RAG Framework - High-performance Retrieval-Augmented Generation";
 
 /// Framework repository URL
-pub const REPOSITORY: &str = "https://github.com/leval-ai/rrag";
+pub const REPOSITORY: &str = "https://github.com/levalhq/rrag";
 
 /// Framework license
 pub const LICENSE: &str = "MIT";

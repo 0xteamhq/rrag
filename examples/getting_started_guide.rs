@@ -448,7 +448,7 @@ fn next_steps_guide() {
 
     println!("📚 Documentation:");
     println!("  • API Documentation: docs.rs/rrag");
-    println!("  • GitHub Repository: github.com/leval-ai/rrag");
+    println!("  • GitHub Repository: github.com/levalhq/rrag");
     println!("  • Examples Directory: ./examples/");
     println!("  • Architecture Guide: ./ARCHITECTURE.md");
     println!();

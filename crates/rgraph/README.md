@@ -51,4 +51,4 @@ MIT License - see LICENSE file for details.
 
 ## Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](https://github.com/leval-ai/rrag/blob/main/CONTRIBUTING.md).
+Contributions are welcome! Please see our [Contributing Guide](https://github.com/levalhq/rrag/blob/main/CONTRIBUTING.md).

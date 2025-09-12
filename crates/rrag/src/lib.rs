@@ -428,7 +428,7 @@ pub const DESCRIPTION: &str =
 /// Framework repository URL
 ///
 /// The primary repository location for source code, issues, and documentation.
-pub const REPOSITORY: &str = "https://github.com/leval-ai/rrag";
+pub const REPOSITORY: &str = "https://github.com/levalhq/rrag";
 
 /// Framework license
 ///
