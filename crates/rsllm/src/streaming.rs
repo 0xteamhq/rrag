@@ -13,11 +13,11 @@ use std::task::{Context, Poll};
 /// Type alias for chat streaming responses
 pub type ChatStream = Pin<Box<dyn Stream<Item = RsllmResult<StreamChunk>> + Send>>;
 
-/// Type alias for completion streaming responses  
+/// Type alias for completion streaming responses
 pub type CompletionStream = Pin<Box<dyn Stream<Item = RsllmResult<StreamChunk>> + Send>>;
 
-/// Stream collector for assembling complete responses from chunks
 pin_project! {
+    /// Stream collector for assembling complete responses from chunks
     pub struct StreamCollector<S> {
         #[pin]
         stream: S,
@@ -172,8 +172,8 @@ where
     }
 }
 
-/// Stream adapter for rate limiting
 pin_project! {
+    /// Stream adapter for rate limiting
     pub struct RateLimitedStream<S> {
         #[pin]
         stream: S,
@@ -229,8 +229,8 @@ where
     }
 }
 
-/// Stream adapter for filtering chunks
 pin_project! {
+    /// Stream adapter for filtering chunks
     pub struct FilteredStream<S, F> {
         #[pin]
         stream: S,
@@ -272,8 +272,8 @@ where
     }
 }
 
-/// Stream adapter for mapping chunks
 pin_project! {
+    /// Stream adapter for mapping chunks
     pub struct MappedStream<S, F> {
         #[pin]
         stream: S,

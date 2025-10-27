@@ -10,6 +10,18 @@ use std::fmt;
 use std::str::FromStr;
 use url::Url;
 
+/// Normalize URL to ensure it has a trailing slash for proper path joining
+/// This allows users to provide URLs with or without trailing slashes
+fn normalize_base_url(url: &Url) -> Url {
+    let url_str = url.as_str();
+    if url_str.ends_with('/') {
+        url.clone()
+    } else {
+        // Add trailing slash
+        format!("{}/", url_str).parse().unwrap_or_else(|_| url.clone())
+    }
+}
+
 /// Supported LLM providers
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Provider {
@@ -25,9 +37,9 @@ impl Provider {
     /// Get the default base URL for this provider
     pub fn default_base_url(&self) -> Url {
         match self {
-            Provider::OpenAI => "https://api.openai.com/v1".parse().unwrap(),
-            Provider::Claude => "https://api.anthropic.com/v1".parse().unwrap(),
-            Provider::Ollama => "http://localhost:11434/api".parse().unwrap(),
+            Provider::OpenAI => "https://api.openai.com/v1/".parse().unwrap(),
+            Provider::Claude => "https://api.anthropic.com/v1/".parse().unwrap(),
+            Provider::Ollama => "http://localhost:11434/api/".parse().unwrap(),
         }
     }
 
@@ -199,10 +211,13 @@ impl OpenAIProvider {
                 RsllmError::configuration_with_source("Failed to create HTTP client", e)
             })?;
 
+        let base = base_url.unwrap_or_else(|| Provider::OpenAI.default_base_url());
+        let normalized_base_url = normalize_base_url(&base);
+
         Ok(Self {
             client,
             api_key,
-            base_url: base_url.unwrap_or_else(|| Provider::OpenAI.default_base_url()),
+            base_url: normalized_base_url,
             organization_id,
         })
     }
@@ -249,7 +264,7 @@ impl LLMProvider for OpenAIProvider {
     }
 
     async fn health_check(&self) -> RsllmResult<bool> {
-        let url = self.base_url.join("/models")?;
+        let url = self.base_url.join("models")?;
         let response = self
             .client
             .get(url)
@@ -267,7 +282,7 @@ impl LLMProvider for OpenAIProvider {
         temperature: Option<f32>,
         max_tokens: Option<u32>,
     ) -> RsllmResult<ChatResponse> {
-        let url = self.base_url.join("/chat/completions")?;
+        let url = self.base_url.join("chat/completions")?;
 
         let mut request_body = serde_json::json!({
             "model": model.unwrap_or(Provider::OpenAI.default_model()),
@@ -329,7 +344,7 @@ impl LLMProvider for OpenAIProvider {
 
         // For now, implement a simple mock stream
         // In production, this would handle Server-Sent Events (SSE) from OpenAI
-        let _url = self.base_url.join("/chat/completions")?;
+        let _url = self.base_url.join("chat/completions")?;
 
         let model_name = model.unwrap_or_else(|| Provider::OpenAI.default_model().to_string());
         let mut _request_body = serde_json::json!({
@@ -392,9 +407,12 @@ impl OllamaProvider {
                 RsllmError::configuration_with_source("Failed to create HTTP client", e)
             })?;
 
+        let base = base_url.unwrap_or_else(|| Provider::Ollama.default_base_url());
+        let normalized_base_url = normalize_base_url(&base);
+
         Ok(Self {
             client,
-            base_url: base_url.unwrap_or_else(|| Provider::Ollama.default_base_url()),
+            base_url: normalized_base_url,
         })
     }
 }
@@ -419,7 +437,7 @@ impl LLMProvider for OllamaProvider {
     }
 
     async fn health_check(&self) -> RsllmResult<bool> {
-        let url = self.base_url.join("/tags")?;
+        let url = self.base_url.join("tags")?;
         let response = self.client.get(url).send().await?;
         Ok(response.status().is_success())
     }
@@ -431,7 +449,7 @@ impl LLMProvider for OllamaProvider {
         temperature: Option<f32>,
         _max_tokens: Option<u32>,
     ) -> RsllmResult<ChatResponse> {
-        let url = self.base_url.join("/chat")?;
+        let url = self.base_url.join("chat")?;
 
         let mut request_body = serde_json::json!({
             "model": model.unwrap_or(Provider::Ollama.default_model()),
@@ -484,7 +502,7 @@ impl LLMProvider for OllamaProvider {
         use futures_util::stream;
 
         // Mock streaming response for Ollama
-        let _url = self.base_url.join("/chat")?;
+        let _url = self.base_url.join("chat")?;
 
         let model_name = model.unwrap_or_else(|| Provider::Ollama.default_model().to_string());
         let mut _request_body = serde_json::json!({
@@ -512,7 +530,7 @@ impl LLMProvider for OllamaProvider {
         ];
 
         let stream = stream::iter(chunks.into_iter().enumerate().map(move |(i, chunk)| {
-            tokio::time::sleep(std::time::Duration::from_millis(150));
+            let _ = tokio::time::sleep(std::time::Duration::from_millis(150));
 
             if i == 7 {
                 // Last chunk
@@ -523,5 +541,45 @@ impl LLMProvider for OllamaProvider {
         }));
 
         Ok(Box::new(stream))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_base_url_without_trailing_slash() {
+        let url = Url::parse("http://localhost:11434/api").unwrap();
+        let normalized = normalize_base_url(&url);
+        assert_eq!(normalized.as_str(), "http://localhost:11434/api/");
+    }
+
+    #[test]
+    fn test_normalize_base_url_with_trailing_slash() {
+        let url = Url::parse("http://localhost:11434/api/").unwrap();
+        let normalized = normalize_base_url(&url);
+        assert_eq!(normalized.as_str(), "http://localhost:11434/api/");
+    }
+
+    #[test]
+    fn test_normalize_base_url_complex() {
+        let url = Url::parse("https://api.openai.com/v1").unwrap();
+        let normalized = normalize_base_url(&url);
+        assert_eq!(normalized.as_str(), "https://api.openai.com/v1/");
+    }
+
+    #[test]
+    fn test_url_join_after_normalization() {
+        // Test that after normalization, joining works correctly
+        let url_without_slash = Url::parse("http://localhost:11434/api").unwrap();
+        let normalized = normalize_base_url(&url_without_slash);
+        let joined = normalized.join("chat").unwrap();
+        assert_eq!(joined.as_str(), "http://localhost:11434/api/chat");
+
+        let url_with_slash = Url::parse("http://localhost:11434/api/").unwrap();
+        let normalized2 = normalize_base_url(&url_with_slash);
+        let joined2 = normalized2.join("chat").unwrap();
+        assert_eq!(joined2.as_str(), "http://localhost:11434/api/chat");
     }
 }
