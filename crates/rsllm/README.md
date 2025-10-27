@@ -141,6 +141,62 @@ let client = Client::builder()
     .build()?;
 ```
 
+### Environment Variables
+
+RSLLM supports configuration through environment variables, perfect for CI/CD pipelines, different deployment environments, and custom/self-hosted endpoints:
+
+```rust
+use rsllm::Client;
+
+// Load configuration from environment variables
+let client = Client::from_env()?;
+```
+
+#### Supported Environment Variables
+
+**Provider Configuration:**
+- `RSLLM_PROVIDER` - Provider name (openai, claude, ollama)
+- `RSLLM_API_KEY` - API key for the provider
+
+**Base URL Configuration (supports custom/self-hosted endpoints):**
+- `RSLLM_BASE_URL` - Generic base URL (works for any provider)
+- `RSLLM_OPENAI_BASE_URL` - OpenAI-specific base URL (overrides generic)
+- `RSLLM_OLLAMA_BASE_URL` - Ollama-specific base URL (overrides generic)
+- `RSLLM_CLAUDE_BASE_URL` - Claude-specific base URL (overrides generic)
+
+**Model Configuration (supports custom models and fine-tuned models):**
+- `RSLLM_MODEL` - Generic model name
+- `RSLLM_OPENAI_MODEL` - OpenAI-specific model (overrides generic)
+- `RSLLM_OLLAMA_MODEL` - Ollama-specific model (overrides generic)
+- `RSLLM_CLAUDE_MODEL` - Claude-specific model (overrides generic)
+
+**Other Settings:**
+- `RSLLM_TEMPERATURE` - Temperature setting (0.0 to 2.0)
+- `RSLLM_MAX_TOKENS` - Maximum tokens to generate
+- `RSLLM_TIMEOUT` - Request timeout in seconds
+
+**Example `.env` file:**
+
+```bash
+# Using Ollama with custom model
+RSLLM_PROVIDER=ollama
+RSLLM_OLLAMA_BASE_URL=http://localhost:11434/api
+RSLLM_OLLAMA_MODEL=llama3.2:3b
+RSLLM_TEMPERATURE=0.7
+
+# Or using a self-hosted OpenAI-compatible endpoint
+RSLLM_PROVIDER=openai
+RSLLM_OPENAI_BASE_URL=https://my-custom-llm.example.com/v1
+RSLLM_OPENAI_MODEL=my-fine-tuned-gpt-4
+RSLLM_API_KEY=my-custom-api-key
+```
+
+**Key Features:**
+- ✅ **Custom Models Supported**: Use any model name, not limited to predefined lists
+- ✅ **Custom Endpoints**: Point to self-hosted or custom LLM endpoints
+- ✅ **URL Flexibility**: Base URLs work with or without trailing slashes
+- ✅ **Provider-Specific Priority**: Provider-specific env vars override generic ones
+
 ## 🌟 Supported Providers
 
 | Provider | Status | Models | Streaming |

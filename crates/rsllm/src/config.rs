@@ -47,6 +47,16 @@ impl ClientConfig {
     }
 
     /// Load configuration from environment variables
+    ///
+    /// Supports both generic and provider-specific environment variables:
+    /// - RSLLM_BASE_URL: Generic base URL (overridden by provider-specific)
+    /// - RSLLM_OPENAI_BASE_URL: OpenAI-specific base URL
+    /// - RSLLM_OLLAMA_BASE_URL: Ollama-specific base URL
+    /// - RSLLM_CLAUDE_BASE_URL: Claude-specific base URL
+    /// - RSLLM_MODEL: Generic model name
+    /// - RSLLM_OPENAI_MODEL: OpenAI-specific model
+    /// - RSLLM_OLLAMA_MODEL: Ollama-specific model
+    /// - RSLLM_CLAUDE_MODEL: Claude-specific model
     pub fn from_env() -> RsllmResult<Self> {
         dotenv::dotenv().ok(); // Load .env file if present
 
@@ -61,12 +71,22 @@ impl ClientConfig {
             config.provider.api_key = Some(api_key);
         }
 
-        if let Ok(base_url) = std::env::var("RSLLM_BASE_URL") {
+        // Base URL: Try provider-specific first, then generic
+        let provider_name = config.provider.provider.to_string().to_uppercase();
+        let provider_specific_url_key = format!("RSLLM_{}_BASE_URL", provider_name);
+
+        if let Ok(base_url) = std::env::var(&provider_specific_url_key) {
+            config.provider.base_url = Some(base_url.parse()?);
+        } else if let Ok(base_url) = std::env::var("RSLLM_BASE_URL") {
             config.provider.base_url = Some(base_url.parse()?);
         }
 
-        // Model configuration
-        if let Ok(model) = std::env::var("RSLLM_MODEL") {
+        // Model configuration: Try provider-specific first, then generic
+        let provider_specific_model_key = format!("RSLLM_{}_MODEL", provider_name);
+
+        if let Ok(model) = std::env::var(&provider_specific_model_key) {
+            config.model.model = model;
+        } else if let Ok(model) = std::env::var("RSLLM_MODEL") {
             config.model.model = model;
         }
 
@@ -147,11 +167,14 @@ impl ProviderConfig {
     /// Validate provider configuration
     pub fn validate(&self) -> RsllmResult<()> {
         // Check if API key is required and present
+        // For custom base URLs, we allow flexibility - the user may have
+        // their own authentication mechanism
         match self.provider {
             Provider::OpenAI | Provider::Claude => {
-                if self.api_key.is_none() {
+                // Only require API key if using default endpoints
+                if self.api_key.is_none() && self.base_url.is_none() {
                     return Err(RsllmError::configuration(format!(
-                        "API key required for provider: {:?}",
+                        "API key required for provider: {:?} (or provide a custom base_url)",
                         self.provider
                     )));
                 }
@@ -228,6 +251,13 @@ impl Default for ModelConfig {
 
 impl ModelConfig {
     /// Validate model configuration
+    ///
+    /// Note: This validation intentionally does NOT restrict model names to a predefined list.
+    /// Users can specify custom models for:
+    /// - Custom fine-tuned models
+    /// - Self-hosted LLM endpoints
+    /// - Future models not yet in the library
+    /// - Alternative model naming schemes
     pub fn validate(&self) -> RsllmResult<()> {
         if self.model.is_empty() {
             return Err(RsllmError::validation(
