@@ -97,6 +97,7 @@ pub mod message;
 pub mod provider;
 pub mod response;
 pub mod streaming;
+pub mod tools;
 
 // Re-exports for convenience
 pub use client::{Client, ClientBuilder};

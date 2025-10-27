@@ -89,6 +89,14 @@ pub enum RsllmError {
     /// Invalid state errors
     #[error("Invalid state: {message}")]
     InvalidState { message: String },
+
+    /// Tool-related errors
+    #[error("Tool error: {message}")]
+    Tool {
+        message: String,
+        #[source]
+        source: Option<Box<dyn std::error::Error + Send + Sync>>,
+    },
 }
 
 impl RsllmError {
@@ -244,6 +252,7 @@ impl RsllmError {
             Self::Validation { .. } => "validation",
             Self::NotFound { .. } => "not_found",
             Self::InvalidState { .. } => "invalid_state",
+            Self::Tool { .. } => "tool",
         }
     }
 
@@ -301,5 +310,14 @@ impl From<reqwest::Error> for RsllmError {
 impl From<tokio::time::error::Elapsed> for RsllmError {
     fn from(_err: tokio::time::error::Elapsed) -> Self {
         Self::timeout("operation", 0)
+    }
+}
+
+impl From<crate::tools::ToolRegistryError> for RsllmError {
+    fn from(err: crate::tools::ToolRegistryError) -> Self {
+        Self::Tool {
+            message: err.to_string(),
+            source: Some(Box::new(err)),
+        }
     }
 }
