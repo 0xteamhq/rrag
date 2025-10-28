@@ -90,7 +90,7 @@ impl SchemaSettings {
                 Box::new(RemoveRefSiblings),
                 Box::new(ReplacePrefixItems),
             ],
-            inline_subschemas: false,
+            inline_subschemas: true,  // Inline all schemas for OpenAI compatibility (no $ref)
             contract: Contract::Deserialize,
             untagged_enum_variant_titles: false,
         }
