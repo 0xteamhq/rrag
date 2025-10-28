@@ -6,11 +6,11 @@ use rsllm::prelude::*;
 
 #[tokio::main]
 async fn main() -> RsllmResult<()> {
-    println!("🦀 RSLLM + Ollama Direct Test");
-    println!("==============================\n");
+    tracing::debug!("🦀 RSLLM + Ollama Direct Test");
+    tracing::debug!("==============================\n");
 
     // Create client pointing to Ollama
-    println!("🔧 Creating RSLLM client for Ollama...");
+    tracing::debug!("🔧 Creating RSLLM client for Ollama...");
 
     let client = Client::builder()
         .provider(Provider::Ollama)
@@ -19,11 +19,11 @@ async fn main() -> RsllmResult<()> {
         .temperature(0.7)
         .build()?;
 
-    println!("✅ Client created successfully!\n");
+    tracing::debug!("✅ Client created successfully!\n");
 
     // Test 1: Simple completion
-    println!("💬 Test 1: Simple Chat Completion");
-    println!("Question: What is Rust?");
+    tracing::debug!("💬 Test 1: Simple Chat Completion");
+    tracing::debug!("Question: What is Rust?");
 
     let messages = vec![ChatMessage::user(
         "What is Rust programming language? Answer in one sentence.",
@@ -31,26 +31,26 @@ async fn main() -> RsllmResult<()> {
 
     match client.chat_completion(messages).await {
         Ok(response) => {
-            println!("✅ Response received!");
-            println!("🤖 Answer: {}", response.content);
-            println!("📊 Model: {}", response.model);
+            tracing::debug!("✅ Response received!");
+            tracing::debug!("🤖 Answer: {}", response.content);
+            tracing::debug!("📊 Model: {}", response.model);
             if let Some(reason) = &response.finish_reason {
-                println!("🏁 Finish reason: {}", reason);
+                tracing::debug!("🏁 Finish reason: {}", reason);
             }
-            println!();
+            tracing::debug!();
         }
         Err(e) => {
-            println!("❌ Test failed: {}", e);
-            println!("⚠️  Make sure Ollama is running and the model is available");
-            println!("   Run: ollama serve");
-            println!("   Run: ollama pull llama3.2:3b");
+            error!(" Test failed: {}", e);
+            warn!("  Make sure Ollama is running and the model is available");
+            tracing::debug!("   Run: ollama serve");
+            tracing::debug!("   Run: ollama pull llama3.2:3b");
             return Ok(());
         }
     }
 
     // Test 2: Streaming
-    println!("💬 Test 2: Streaming Chat Completion");
-    println!("Question: Explain ownership in Rust");
+    tracing::debug!("💬 Test 2: Streaming Chat Completion");
+    tracing::debug!("Question: Explain ownership in Rust");
 
     let stream_messages = vec![ChatMessage::user(
         "Explain Rust's ownership concept in 2 sentences.",
@@ -71,26 +71,26 @@ async fn main() -> RsllmResult<()> {
                         std::io::Write::flush(&mut std::io::stdout()).unwrap();
                     }
                     Ok(chunk) if chunk.is_done => {
-                        println!("\n✅ Streaming completed!");
+                        tracing::debug!("\n✅ Streaming completed!");
                         break;
                     }
                     Ok(_) => {}
                     Err(e) => {
-                        println!("\n❌ Stream error: {}", e);
+                        tracing::debug!("\n❌ Stream error: {}", e);
                         break;
                     }
                 }
             }
-            println!();
+            tracing::debug!();
         }
         Err(e) => {
-            println!("❌ Streaming test failed: {}", e);
-            println!();
+            error!(" Streaming test failed: {}", e);
+            tracing::debug!();
         }
     }
 
     // Test 3: Multi-turn conversation
-    println!("💬 Test 3: Multi-turn Conversation");
+    tracing::debug!("💬 Test 3: Multi-turn Conversation");
 
     let conversation = vec![
         ChatMessage::system("You are a helpful Rust programming assistant."),
@@ -101,26 +101,26 @@ async fn main() -> RsllmResult<()> {
 
     match client.chat_completion(conversation).await {
         Ok(response) => {
-            println!("✅ Multi-turn conversation works!");
-            println!("🤖 Response: {}", response.content);
-            println!();
+            tracing::debug!("✅ Multi-turn conversation works!");
+            tracing::debug!("🤖 Response: {}", response.content);
+            tracing::debug!();
         }
         Err(e) => {
-            println!("❌ Multi-turn test failed: {}", e);
-            println!();
+            error!(" Multi-turn test failed: {}", e);
+            tracing::debug!();
         }
     }
 
     // Test 4: Health check
-    println!("💬 Test 4: Health Check");
+    tracing::debug!("💬 Test 4: Health Check");
     match client.health_check().await {
-        Ok(true) => println!("✅ Ollama is healthy!\n"),
-        Ok(false) => println!("⚠️  Ollama health check returned false\n"),
-        Err(e) => println!("❌ Health check failed: {}\n", e),
+        Ok(true) => tracing::debug!("✅ Ollama is healthy!\n"),
+        Ok(false) => warn!("  Ollama health check returned false\n"),
+        Err(e) => error!(" Health check failed: {}\n", e),
     }
 
-    println!("🎉 All tests completed!");
-    println!("✨ RSLLM successfully connects to Ollama!");
+    tracing::debug!("🎉 All tests completed!");
+    tracing::debug!("✨ RSLLM successfully connects to Ollama!");
 
     Ok(())
 }

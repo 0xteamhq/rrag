@@ -40,7 +40,7 @@ impl GraphObserver for LoggingObserver {
         #[cfg(not(feature = "observability"))]
         {
             let _ = (graph_id, _context);
-            eprintln!("Graph execution started: {}", graph_id);
+            tracing::debug!("Graph execution started: {}", graph_id);
         }
     }
 
@@ -53,7 +53,7 @@ impl GraphObserver for LoggingObserver {
             duration
         );
         #[cfg(not(feature = "observability"))]
-        eprintln!(
+        tracing::debug!(
             "Graph execution ended: {} (success: {}, duration: {:?})",
             graph_id, success, duration
         );
@@ -65,7 +65,7 @@ impl GraphObserver for LoggingObserver {
         #[cfg(not(feature = "observability"))]
         {
             let _ = _context;
-            eprintln!("Node execution started: {}", node_id.as_str());
+            tracing::debug!("Node execution started: {}", node_id.as_str());
         }
     }
 
@@ -78,7 +78,7 @@ impl GraphObserver for LoggingObserver {
             duration
         );
         #[cfg(not(feature = "observability"))]
-        eprintln!(
+        tracing::debug!(
             "Node execution ended: {} (success: {}, duration: {:?})",
             node_id.as_str(),
             success,
@@ -95,7 +95,7 @@ impl GraphObserver for LoggingObserver {
             old_value
         );
         #[cfg(not(feature = "observability"))]
-        eprintln!(
+        tracing::debug!(
             "State change: {} = {} (was: {:?})",
             key, new_value, old_value
         );

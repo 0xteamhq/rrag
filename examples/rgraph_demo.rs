@@ -19,28 +19,28 @@ async fn main() -> RragResult<()> {
     // Initialize logging
     tracing_subscriber::fmt::init();
 
-    println!("🤖 RRAG Agent System Demo");
-    println!("==========================\n");
+    tracing::debug!("🤖 RRAG Agent System Demo");
+    tracing::debug!("==========================\n");
 
     // Demo 1: Simple Agent Workflow
-    println!("📋 Demo 1: Simple Agent with Tools");
-    println!("----------------------------------");
+    tracing::debug!("📋 Demo 1: Simple Agent with Tools");
+    tracing::debug!("----------------------------------");
     simple_agent_workflow().await?;
-    println!();
+    tracing::debug!();
 
     // Demo 2: Calculator Integration
-    println!("🔢 Demo 2: Calculator Tool Integration");
-    println!("--------------------------------------");
+    tracing::debug!("🔢 Demo 2: Calculator Tool Integration");
+    tracing::debug!("--------------------------------------");
     calculator_integration_demo().await?;
-    println!();
+    tracing::debug!();
 
     // Demo 3: Multi-step Reasoning
-    println!("🧠 Demo 3: Multi-step Reasoning");
-    println!("--------------------------------");
+    tracing::debug!("🧠 Demo 3: Multi-step Reasoning");
+    tracing::debug!("--------------------------------");
     multi_step_reasoning_demo().await?;
-    println!();
+    tracing::debug!();
 
-    println!("🎉 All RRAG agent demos completed successfully!");
+    tracing::debug!("🎉 All RRAG agent demos completed successfully!");
     Ok(())
 }
 
@@ -58,11 +58,11 @@ async fn simple_agent_workflow() -> RragResult<()> {
         .process_message("What are the benefits of using Rust for RAG systems?", None)
         .await?;
 
-    println!(
+    tracing::debug!(
         "✅ Agent Response: {}",
         response.text.chars().take(100).collect::<String>() + "..."
     );
-    println!("📊 Response completed: {}", response.is_final);
+    tracing::debug!("📊 Response completed: {}", response.is_final);
 
     Ok(())
 }
@@ -84,13 +84,13 @@ async fn calculator_integration_demo() -> RragResult<()> {
         .process_message("Please calculate 15 * 23 + 45 and explain the result", None)
         .await?;
 
-    println!(
+    tracing::debug!(
         "🔢 Calculator Response: {}",
         response.text.chars().take(150).collect::<String>() + "..."
     );
 
     if !response.tool_calls.is_empty() {
-        println!("🔧 Tools used: {} tool calls", response.tool_calls.len());
+        tracing::debug!("🔧 Tools used: {} tool calls", response.tool_calls.len());
     }
 
     Ok(())
@@ -112,12 +112,12 @@ async fn multi_step_reasoning_demo() -> RragResult<()> {
         )
         .await?;
 
-    println!(
+    tracing::debug!(
         "🧠 Reasoning Response: {}",
         response.text.chars().take(200).collect::<String>() + "..."
     );
-    println!("📊 Response is final: {}", response.is_final);
-    println!("⏱️  Tool calls: {} calls", response.tool_calls.len());
+    tracing::debug!("📊 Response is final: {}", response.is_final);
+    tracing::debug!("⏱️  Tool calls: {} calls", response.tool_calls.len());
 
     Ok(())
 }

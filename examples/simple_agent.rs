@@ -106,7 +106,7 @@ impl Agent {
     /// Run the agent with a user query (main entry point)
     async fn run(&mut self, user_input: &str) -> Result<String, Box<dyn Error>> {
         if self.config.verbose {
-            println!("\n🤔 User: {}", user_input);
+            tracing::debug!("\n🤔 User: {}", user_input);
         }
 
         // Add user message to conversation
@@ -123,7 +123,7 @@ impl Agent {
             }
 
             if self.config.verbose {
-                println!("\n🔄 Agent iteration {}", iteration);
+                tracing::debug!("\n🔄 Agent iteration {}", iteration);
             }
 
             // Call LLM with conversation history and available tools
@@ -133,7 +133,7 @@ impl Agent {
             if let Some(tool_calls) = &response.tool_calls {
                 if !tool_calls.is_empty() {
                     if self.config.verbose {
-                        println!("🛠️  Agent wants to use {} tool(s)", tool_calls.len());
+                        tracing::debug!("🛠️  Agent wants to use {} tool(s)", tool_calls.len());
                     }
 
                     // Execute all requested tools
@@ -148,7 +148,7 @@ impl Agent {
 
             // No tool calls - this is the final answer
             if self.config.verbose {
-                println!("✅ Agent: {}", response.content);
+                tracing::debug!("✅ Agent: {}", response.content);
             }
 
             // Add assistant response to conversation
@@ -164,7 +164,7 @@ impl Agent {
         let tools = self.tool_registry.tool_definitions();
 
         if self.config.verbose {
-            println!("   🔧 Calling LLM with {} tools", tools.len());
+            tracing::debug!("   🔧 Calling LLM with {} tools", tools.len());
         }
 
         // Call LLM with conversation history and available tools
@@ -174,7 +174,7 @@ impl Agent {
             .await?;
 
         if self.config.verbose {
-            println!("   📥 LLM Response: content='{}', tool_calls={:?}",
+            tracing::debug!("   📥 LLM Response: content='{}', tool_calls={:?}",
                 response.content,
                 response.tool_calls.as_ref().map(|t| t.len()));
         }
@@ -185,8 +185,8 @@ impl Agent {
     /// Execute a tool call and add result to conversation
     fn execute_tool_call(&mut self, tool_call: &ToolCall) -> Result<(), Box<dyn Error>> {
         if self.config.verbose {
-            println!("   📞 Calling tool: {}", tool_call.function.name);
-            println!("      Arguments: {}", tool_call.function.arguments);
+            tracing::debug!("   📞 Calling tool: {}", tool_call.function.name);
+            tracing::debug!("      Arguments: {}", tool_call.function.arguments);
         }
 
         // Execute the tool
@@ -200,9 +200,9 @@ impl Agent {
 
         if self.config.verbose {
             if result.success {
-                println!("      ✅ Result: {}", result.content);
+                tracing::debug!("      ✅ Result: {}", result.content);
             } else {
-                println!("      ❌ Error: {}", result.error.as_ref().unwrap());
+                tracing::debug!("      ❌ Error: {}", result.error.as_ref().unwrap());
             }
         }
 
@@ -332,16 +332,16 @@ fn search(params: SearchParams) -> Result<SearchResult, Box<dyn Error + Send + S
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    println!("╔══════════════════════════════════════════════════════╗");
-    println!("║  🤖 Simple Agent Framework with RSLLM              ║");
-    println!("╚══════════════════════════════════════════════════════╝\n");
+    tracing::debug!("╔══════════════════════════════════════════════════════╗");
+    tracing::debug!("║  🤖 Simple Agent Framework with RSLLM              ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════╝\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 1: Create LLM Client (using Ollama for local testing)
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("📦 STEP 1: Initialize LLM Client");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("📦 STEP 1: Initialize LLM Client");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
     let llm_client = Client::builder()
         .provider(Provider::Ollama)
@@ -350,14 +350,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .temperature(0.7)
         .build()?;
 
-    println!("   ✅ Connected to Ollama (llama3.2:3b)\n");
+    tracing::debug!("   ✅ Connected to Ollama (llama3.2:3b)\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 2: Create Agent with Tools
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("📦 STEP 2: Create Agent with Tools");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("📦 STEP 2: Create Agent with Tools");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
     let system_prompt = "You are a helpful AI assistant with access to tools. \
         Use the calculator for math, get_weather for weather info, and search for general queries. \
@@ -370,32 +370,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
     agent.register_tool(Box::new(GetWeatherTool))?;
     agent.register_tool(Box::new(SearchTool))?;
 
-    println!("   ✅ Registered 3 tools:");
+    tracing::debug!("   ✅ Registered 3 tools:");
     for tool_name in agent.tool_registry.tool_names() {
-        println!("      - {}", tool_name);
+        tracing::debug!("      - {}", tool_name);
     }
-    println!();
+    tracing::debug!();
 
     // Show available tools in LLM format
-    println!("   📋 Tools available to agent:");
+    tracing::debug!("   📋 Tools available to agent:");
     let tools = agent.get_tools_for_llm();
     for tool in &tools {
-        println!("      • {}: {}",
+        tracing::debug!("      • {}: {}",
             tool["function"]["name"].as_str().unwrap(),
             tool["function"]["description"].as_str().unwrap()
         );
     }
-    println!();
+    tracing::debug!();
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 3: Test Direct Tool Execution
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("📦 STEP 3: Test Direct Tool Execution");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("📦 STEP 3: Test Direct Tool Execution");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
     // Simulate what the LLM would do - request tool calls
-    println!("   Simulating LLM tool call requests:\n");
+    tracing::debug!("   Simulating LLM tool call requests:\n");
 
     // Tool call 1: Calculator
     let tool_call_1 = ToolCall {
@@ -437,10 +437,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // STEP 4: Show Conversation History
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("\n📦 STEP 4: Conversation History");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("\n📦 STEP 4: Conversation History");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
-    println!("   Conversation has {} messages:", agent.get_conversation().len());
+    tracing::debug!("   Conversation has {} messages:", agent.get_conversation().len());
     for (i, msg) in agent.get_conversation().iter().enumerate() {
         let role = format!("{:?}", msg.role);
         let preview = match &msg.content {
@@ -453,122 +453,122 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             _ => "Multi-modal content".to_string(),
         };
-        println!("   {}. {} - {}", i + 1, role, preview);
+        tracing::debug!("   {}. {} - {}", i + 1, role, preview);
     }
-    println!();
+    tracing::debug!();
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 5: Agent Patterns Demonstrated
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("📦 STEP 5: Agent Patterns Demonstrated");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("📦 STEP 5: Agent Patterns Demonstrated");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
-    println!("✅ Pattern 1: Tool Integration");
-    println!("   • Agent has access to multiple tools");
-    println!("   • Tools are registered dynamically");
-    println!("   • Tool schemas auto-generated\n");
+    tracing::debug!("✅ Pattern 1: Tool Integration");
+    tracing::debug!("   • Agent has access to multiple tools");
+    tracing::debug!("   • Tools are registered dynamically");
+    tracing::debug!("   • Tool schemas auto-generated\n");
 
-    println!("✅ Pattern 2: Conversation Memory");
-    println!("   • Full conversation history maintained");
-    println!("   • System prompt persisted");
-    println!("   • Tool calls and results tracked\n");
+    tracing::debug!("✅ Pattern 2: Conversation Memory");
+    tracing::debug!("   • Full conversation history maintained");
+    tracing::debug!("   • System prompt persisted");
+    tracing::debug!("   • Tool calls and results tracked\n");
 
-    println!("✅ Pattern 3: Multi-Turn Interaction");
-    println!("   • Agent can iterate multiple times");
-    println!("   • Tool results fed back to LLM");
-    println!("   • Prevents infinite loops\n");
+    tracing::debug!("✅ Pattern 3: Multi-Turn Interaction");
+    tracing::debug!("   • Agent can iterate multiple times");
+    tracing::debug!("   • Tool results fed back to LLM");
+    tracing::debug!("   • Prevents infinite loops\n");
 
-    println!("✅ Pattern 4: Structured Tool Calling");
-    println!("   • Type-safe tool parameters");
-    println!("   • Automatic validation");
-    println!("   • Error handling\n");
+    tracing::debug!("✅ Pattern 4: Structured Tool Calling");
+    tracing::debug!("   • Type-safe tool parameters");
+    tracing::debug!("   • Automatic validation");
+    tracing::debug!("   • Error handling\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 6: Agent Architecture Summary
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("📦 STEP 6: Agent Architecture");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("📦 STEP 6: Agent Architecture");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
-    println!("┌─────────────────────────────────────────────────────┐");
-    println!("│                  Agent Architecture                 │");
-    println!("├─────────────────────────────────────────────────────┤");
-    println!("│                                                     │");
-    println!("│  User Input                                         │");
-    println!("│      ↓                                              │");
-    println!("│  ┌──────────┐                                       │");
-    println!("│  │  Agent   │                                       │");
-    println!("│  └──────────┘                                       │");
-    println!("│      ↓                                              │");
-    println!("│  ┌──────────────────────┐                          │");
-    println!("│  │  Conversation        │                          │");
-    println!("│  │  Memory              │                          │");
-    println!("│  └──────────────────────┘                          │");
-    println!("│      ↓                                              │");
-    println!("│  ┌──────────────────────┐                          │");
-    println!("│  │  LLM (RSLLM)         │                          │");
-    println!("│  │  + Tool Schemas      │                          │");
-    println!("│  └──────────────────────┘                          │");
-    println!("│      ↓                                              │");
-    println!("│  Tool Calls? ──Yes──> Execute Tools ──┐            │");
-    println!("│      │                                 │            │");
-    println!("│      No                                │            │");
-    println!("│      ↓                                 │            │");
-    println!("│  Final Answer <────────────────────────┘            │");
-    println!("│                                                     │");
-    println!("└─────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────┐");
+    tracing::debug!("│                  Agent Architecture                 │");
+    tracing::debug!("├─────────────────────────────────────────────────────┤");
+    tracing::debug!("│                                                     │");
+    tracing::debug!("│  User Input                                         │");
+    tracing::debug!("│      ↓                                              │");
+    tracing::debug!("│  ┌──────────┐                                       │");
+    tracing::debug!("│  │  Agent   │                                       │");
+    tracing::debug!("│  └──────────┘                                       │");
+    tracing::debug!("│      ↓                                              │");
+    tracing::debug!("│  ┌──────────────────────┐                          │");
+    tracing::debug!("│  │  Conversation        │                          │");
+    tracing::debug!("│  │  Memory              │                          │");
+    tracing::debug!("│  └──────────────────────┘                          │");
+    tracing::debug!("│      ↓                                              │");
+    tracing::debug!("│  ┌──────────────────────┐                          │");
+    tracing::debug!("│  │  LLM (RSLLM)         │                          │");
+    tracing::debug!("│  │  + Tool Schemas      │                          │");
+    tracing::debug!("│  └──────────────────────┘                          │");
+    tracing::debug!("│      ↓                                              │");
+    tracing::debug!("│  Tool Calls? ──Yes──> Execute Tools ──┐            │");
+    tracing::debug!("│      │                                 │            │");
+    tracing::debug!("│      No                                │            │");
+    tracing::debug!("│      ↓                                 │            │");
+    tracing::debug!("│  Final Answer <────────────────────────┘            │");
+    tracing::debug!("│                                                     │");
+    tracing::debug!("└─────────────────────────────────────────────────────┘\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 7: REAL AGENT EXECUTION WITH OLLAMA!
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("\n📦 STEP 7: REAL Agent Execution with Ollama");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("\n📦 STEP 7: REAL Agent Execution with Ollama");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
-    println!("⚠️  Note: Make sure Ollama is running with:");
-    println!("   ollama serve");
-    println!("   ollama pull llama3.2:3b\n");
+    warn!("  Note: Make sure Ollama is running with:");
+    tracing::debug!("   ollama serve");
+    tracing::debug!("   ollama pull llama3.2:3b\n");
 
     // Test 1: Simple query (should not need tools)
-    println!("🧪 Test 1: Simple Query (No Tools Needed)");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("🧪 Test 1: Simple Query (No Tools Needed)");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
     match agent.run("Hello, what can you help me with?").await {
         Ok(response) => {
-            println!("✅ Agent Response: {}\n", response);
+            tracing::debug!("✅ Agent Response: {}\n", response);
         }
         Err(e) => {
-            println!("❌ Error: {}", e);
-            println!("   (Make sure Ollama is running)\n");
+            error!(" Error: {}", e);
+            tracing::debug!("   (Make sure Ollama is running)\n");
         }
     }
 
     // Test 2: Query that needs calculator tool
     agent.reset(); // Start fresh
-    println!("🧪 Test 2: Math Query (Should Use Calculator Tool)");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("🧪 Test 2: Math Query (Should Use Calculator Tool)");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
     match agent.run("What is 156 multiplied by 23?").await {
         Ok(response) => {
-            println!("✅ Agent Response: {}\n", response);
+            tracing::debug!("✅ Agent Response: {}\n", response);
         }
         Err(e) => {
-            println!("❌ Error: {}\n", e);
+            error!(" Error: {}\n", e);
         }
     }
 
     // Test 3: Query that needs weather tool
     agent.reset();
-    println!("🧪 Test 3: Weather Query (Should Use Weather Tool)");
-    println!("─────────────────────────────────────────────────────\n");
+    tracing::debug!("🧪 Test 3: Weather Query (Should Use Weather Tool)");
+    tracing::debug!("─────────────────────────────────────────────────────\n");
 
     match agent.run("What's the weather like in Tokyo?").await {
         Ok(response) => {
-            println!("✅ Agent Response: {}\n", response);
+            tracing::debug!("✅ Agent Response: {}\n", response);
         }
         Err(e) => {
-            println!("❌ Error: {}\n", e);
+            error!(" Error: {}\n", e);
         }
     }
 
@@ -576,27 +576,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // SUMMARY
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("\n╔══════════════════════════════════════════════════════╗");
-    println!("║  🎉 Agent Framework Complete!                       ║");
-    println!("╚══════════════════════════════════════════════════════╝\n");
+    tracing::debug!("\n╔══════════════════════════════════════════════════════╗");
+    tracing::debug!("║  🎉 Agent Framework Complete!                       ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════╝\n");
 
-    println!("✅ Implemented:");
-    println!("   1. ✅ Tool registry");
-    println!("   2. ✅ Conversation memory");
-    println!("   3. ✅ Agent structure");
-    println!("   4. ✅ LLM tool calling integration");
-    println!("   5. ✅ Response parsing for tool calls");
-    println!("   6. ✅ Agent loop with real LLM\n");
+    tracing::debug!("✅ Implemented:");
+    tracing::debug!("   1. ✅ Tool registry");
+    tracing::debug!("   2. ✅ Conversation memory");
+    tracing::debug!("   3. ✅ Agent structure");
+    tracing::debug!("   4. ✅ LLM tool calling integration");
+    tracing::debug!("   5. ✅ Response parsing for tool calls");
+    tracing::debug!("   6. ✅ Agent loop with real LLM\n");
 
-    println!("💡 Agent = LLM Client + Tools + Memory + Loop");
-    println!();
-    println!("🎯 Next Steps:");
-    println!("   - Move to crates/rrag/src/agent/");
-    println!("   - Add stateful conversation mode");
-    println!("   - Add streaming support");
-    println!("   - Add more agent strategies (ReAct, Plan-and-Execute)");
-    println!();
-    println!("🚀 Ready for production agent implementation!");
+    tracing::debug!("💡 Agent = LLM Client + Tools + Memory + Loop");
+    tracing::debug!();
+    tracing::debug!("🎯 Next Steps:");
+    tracing::debug!("   - Move to crates/rrag/src/agent/");
+    tracing::debug!("   - Add stateful conversation mode");
+    tracing::debug!("   - Add streaming support");
+    tracing::debug!("   - Add more agent strategies (ReAct, Plan-and-Execute)");
+    tracing::debug!();
+    tracing::debug!("🚀 Ready for production agent implementation!");
 
     Ok(())
 }

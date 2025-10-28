@@ -39,7 +39,7 @@
 //!     .with_input("user_query", "What is machine learning?");
 //!
 //! let result = graph.execute(initial_state).await?;
-//! println!("Response: {}", result.get_output("final_response")?);
+//! tracing::debug!("Response: {}", result.get_output("final_response")?);
 //! # Ok(())
 //! # }
 //! ```

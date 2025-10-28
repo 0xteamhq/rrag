@@ -47,7 +47,7 @@
 //!     ];
 //!     
 //!     let response = client.chat_completion(messages).await?;
-//!     println!("Response: {}", response.content);
+//!     tracing::debug!("Response: {}", response.content);
 //!     
 //!     Ok(())
 //! }
@@ -78,7 +78,7 @@
 //!                 print!("{}", chunk.content);
 //!             }
 //!             chunk if chunk.is_done() => {
-//!                 println!("\n[DONE]");
+//!                 tracing::debug!("\n[DONE]");
 //!                 break;
 //!             }
 //!             _ => {}

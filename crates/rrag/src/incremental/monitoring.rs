@@ -1007,10 +1007,10 @@ impl MetricsCollector {
                     match serde_json::to_string_pretty(&*metrics) {
                         Ok(json) => {
                             // Would export to configured endpoint
-                            println!("Exported metrics: {} chars", json.len());
+                            tracing::debug!("Exported metrics: {} chars", json.len());
                         }
                         Err(e) => {
-                            eprintln!("Failed to serialize metrics: {}", e);
+                            tracing::debug!("Failed to serialize metrics: {}", e);
                         }
                     }
                 }

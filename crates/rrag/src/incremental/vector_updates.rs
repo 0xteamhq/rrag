@@ -736,7 +736,7 @@ impl VectorUpdateManager {
                 // Trigger optimization for eligible indexes
                 for index_name in indexes_to_optimize {
                     // Would trigger optimization here
-                    println!("Triggering optimization for index: {}", index_name);
+                    tracing::debug!("Triggering optimization for index: {}", index_name);
                 }
             }
         })

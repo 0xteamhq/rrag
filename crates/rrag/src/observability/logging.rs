@@ -715,7 +715,7 @@ impl LogAggregator {
 
                                 let mut file = writer.write().await;
                                 if writeln!(file, "{}", log_line).is_err() {
-                                    eprintln!("Failed to write to log file");
+                                    tracing::debug!("Failed to write to log file");
                                 }
                             }
 

@@ -15,40 +15,40 @@ async fn main() -> RGraphResult<()> {
     // Initialize logging
     tracing_subscriber::init();
     
-    println!("🔗 RRAG Integration Demo - RAG-Powered Agent Workflows");
-    println!("=====================================================\n");
+    tracing::debug!("🔗 RRAG Integration Demo - RAG-Powered Agent Workflows");
+    tracing::debug!("=====================================================\n");
 
     // Demo 1: Basic RAG Workflow
-    println!("📚 Demo 1: Basic RAG Question Answering");
-    println!("---------------------------------------");
+    tracing::debug!("📚 Demo 1: Basic RAG Question Answering");
+    tracing::debug!("---------------------------------------");
     basic_rag_workflow().await?;
-    println!();
+    tracing::debug!();
 
     // Demo 2: Multi-stage RAG Pipeline
-    println!("🔬 Demo 2: Multi-stage RAG Pipeline");
-    println!("-----------------------------------");
+    tracing::debug!("🔬 Demo 2: Multi-stage RAG Pipeline");
+    tracing::debug!("-----------------------------------");
     multi_stage_rag_pipeline().await?;
-    println!();
+    tracing::debug!();
 
     // Demo 3: Adaptive RAG with Context Evaluation
-    println!("🎯 Demo 3: Adaptive RAG with Context Evaluation");
-    println!("-----------------------------------------------");
+    tracing::debug!("🎯 Demo 3: Adaptive RAG with Context Evaluation");
+    tracing::debug!("-----------------------------------------------");
     adaptive_rag_workflow().await?;
-    println!();
+    tracing::debug!();
 
     // Demo 4: RAG-powered Multi-Agent System
-    println!("👥 Demo 4: RAG-powered Multi-Agent System");
-    println!("-----------------------------------------");
+    tracing::debug!("👥 Demo 4: RAG-powered Multi-Agent System");
+    tracing::debug!("-----------------------------------------");
     rag_multi_agent_system().await?;
-    println!();
+    tracing::debug!();
 
     // Demo 5: Knowledge-Aware Agent Orchestration
-    println!("🧠 Demo 5: Knowledge-Aware Agent Orchestration");
-    println!("----------------------------------------------");
+    tracing::debug!("🧠 Demo 5: Knowledge-Aware Agent Orchestration");
+    tracing::debug!("----------------------------------------------");
     knowledge_aware_orchestration().await?;
-    println!();
+    tracing::debug!();
 
-    println!("🎉 All RRAG integration demos completed successfully!");
+    tracing::debug!("🎉 All RRAG integration demos completed successfully!");
     Ok(())
 }
 
@@ -102,18 +102,18 @@ async fn basic_rag_workflow() -> RGraphResult<()> {
     // Display results
     if let Ok(answer) = result.final_state.get("rag_answer") {
         if let Some(text) = answer.as_string() {
-            println!("❓ Question: What are the benefits of machine learning?");
-            println!("✅ RAG Answer: {}", text);
+            tracing::debug!("❓ Question: What are the benefits of machine learning?");
+            tracing::debug!("✅ RAG Answer: {}", text);
         }
     }
 
     if let Ok(metadata) = result.final_state.get("retrieval_metadata") {
         if let Some(meta) = metadata.as_object() {
-            println!("📊 Retrieved {} documents", meta.get("retrieved_count").unwrap_or(&serde_json::Value::Number(serde_json::Number::from(0))));
+            tracing::debug!("📊 Retrieved {} documents", meta.get("retrieved_count").unwrap_or(&serde_json::Value::Number(serde_json::Number::from(0))));
         }
     }
 
-    println!("⏱️  Total processing time: {:?}", result.metrics.total_duration);
+    tracing::debug!("⏱️  Total processing time: {:?}", result.metrics.total_duration);
 
     Ok(())
 }
@@ -175,61 +175,61 @@ async fn multi_stage_rag_pipeline() -> RGraphResult<()> {
     let result = graph.execute(initial_state).await?;
 
     // Display results
-    println!("❓ Complex Query: How does quantum computing work and what are its applications?");
+    tracing::debug!("❓ Complex Query: How does quantum computing work and what are its applications?");
     
     if let Ok(relevance) = result.final_state.get("context_relevance") {
         if let Some(rel_obj) = relevance.as_object() {
-            println!("🎯 Context Quality:");
-            println!("   - Average relevance: {:.2}", 
+            tracing::debug!("🎯 Context Quality:");
+            tracing::debug!("   - Average relevance: {:.2}", 
                      rel_obj.get("average_score").unwrap_or(&serde_json::Value::Number(serde_json::Number::from(0))).as_f64().unwrap_or(0.0));
-            println!("   - Relevant docs: {}", 
+            tracing::debug!("   - Relevant docs: {}", 
                      rel_obj.get("relevant_docs_count").unwrap_or(&serde_json::Value::Number(serde_json::Number::from(0))));
         }
     }
 
     if let Ok(answer) = result.final_state.get("refined_answer") {
         if let Some(text) = answer.as_string() {
-            println!("✅ Refined Answer: {}", 
+            tracing::debug!("✅ Refined Answer: {}", 
                      text.chars().take(200).collect::<String>() + "...");
         }
     }
 
-    println!("⚙️  Pipeline stages: retrieval → evaluation → generation");
-    println!("⏱️  Total pipeline time: {:?}", result.metrics.total_duration);
+    tracing::debug!("⚙️  Pipeline stages: retrieval → evaluation → generation");
+    tracing::debug!("⏱️  Total pipeline time: {:?}", result.metrics.total_duration);
 
     Ok(())
 }
 
 async fn adaptive_rag_workflow() -> RGraphResult<()> {
     // This would demonstrate adaptive RAG that changes strategy based on context quality
-    println!("🔄 Adaptive RAG workflow simulated");
-    println!("   - Context quality assessment: ✅ High");
-    println!("   - Routing decision: Direct generation");
-    println!("   - Fallback strategy: Not needed");
-    println!("⏱️  Adaptive processing: ~1.2s");
+    tracing::debug!("🔄 Adaptive RAG workflow simulated");
+    tracing::debug!("   - Context quality assessment: ✅ High");
+    tracing::debug!("   - Routing decision: Direct generation");
+    tracing::debug!("   - Fallback strategy: Not needed");
+    tracing::debug!("⏱️  Adaptive processing: ~1.2s");
     
     Ok(())
 }
 
 async fn rag_multi_agent_system() -> RGraphResult<()> {
     // This would show multiple agents using RAG for different purposes
-    println!("👨‍🔬 Research Agent: RAG-powered knowledge gathering");
-    println!("👩‍💻 Analysis Agent: RAG-powered data interpretation");
-    println!("✍️  Writing Agent: RAG-powered content generation");
-    println!("🔗 Agent coordination: Context sharing enabled");
-    println!("⏱️  Multi-agent collaboration: ~2.8s");
+    tracing::debug!("👨‍🔬 Research Agent: RAG-powered knowledge gathering");
+    tracing::debug!("👩‍💻 Analysis Agent: RAG-powered data interpretation");
+    tracing::debug!("✍️  Writing Agent: RAG-powered content generation");
+    tracing::debug!("🔗 Agent coordination: Context sharing enabled");
+    tracing::debug!("⏱️  Multi-agent collaboration: ~2.8s");
     
     Ok(())
 }
 
 async fn knowledge_aware_orchestration() -> RGraphResult<()> {
     // This would demonstrate intelligent orchestration based on knowledge availability
-    println!("🧠 Knowledge-aware routing:");
-    println!("   - Query complexity: High");
-    println!("   - Available knowledge: Comprehensive");
-    println!("   - Orchestration strategy: Multi-stage with validation");
-    println!("   - Confidence score: 0.92");
-    println!("⏱️  Smart orchestration: ~3.5s");
+    tracing::debug!("🧠 Knowledge-aware routing:");
+    tracing::debug!("   - Query complexity: High");
+    tracing::debug!("   - Available knowledge: Comprehensive");
+    tracing::debug!("   - Orchestration strategy: Multi-stage with validation");
+    tracing::debug!("   - Confidence score: 0.92");
+    tracing::debug!("⏱️  Smart orchestration: ~3.5s");
     
     Ok(())
 }

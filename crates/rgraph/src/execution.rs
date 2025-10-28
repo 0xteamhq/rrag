@@ -122,7 +122,7 @@ impl ExecutionEngine {
             #[cfg(feature = "observability")]
             tracing::info!("Starting graph execution: {}", graph.id());
             #[cfg(not(feature = "observability"))]
-            eprintln!("Starting graph execution: {}", graph.id());
+            tracing::debug!("Starting graph execution: {}", graph.id());
         }
 
         // Get entry points
@@ -172,7 +172,7 @@ impl ExecutionEngine {
                 total_duration
             );
             #[cfg(not(feature = "observability"))]
-            eprintln!(
+            tracing::debug!(
                 "Graph execution completed: {} (success: {}, duration: {:?})",
                 graph.id(),
                 success,
@@ -210,7 +210,7 @@ impl ExecutionEngine {
             #[cfg(feature = "observability")]
             tracing::debug!("Executing node: {}", node_id.as_str());
             #[cfg(not(feature = "observability"))]
-            eprintln!("Executing node: {}", node_id.as_str());
+            tracing::debug!("Executing node: {}", node_id.as_str());
         }
 
         // Execute the node
@@ -220,7 +220,7 @@ impl ExecutionEngine {
                     #[cfg(feature = "observability")]
                     tracing::debug!("Node '{}' completed successfully", node_id.as_str());
                     #[cfg(not(feature = "observability"))]
-                    eprintln!("Node '{}' completed successfully", node_id.as_str());
+                    tracing::debug!("Node '{}' completed successfully", node_id.as_str());
                 }
                 Ok(())
             }
@@ -229,7 +229,7 @@ impl ExecutionEngine {
                     #[cfg(feature = "observability")]
                     tracing::info!("Node '{}' requested execution stop", node_id.as_str());
                     #[cfg(not(feature = "observability"))]
-                    eprintln!("Node '{}' requested execution stop", node_id.as_str());
+                    tracing::debug!("Node '{}' requested execution stop", node_id.as_str());
                 }
                 Ok(())
             }
@@ -240,7 +240,7 @@ impl ExecutionEngine {
                     #[cfg(feature = "observability")]
                     tracing::debug!("Node '{}' requested routing", node_id.as_str());
                     #[cfg(not(feature = "observability"))]
-                    eprintln!("Node '{}' requested routing", node_id.as_str());
+                    tracing::debug!("Node '{}' requested routing", node_id.as_str());
                 }
                 Ok(())
             }
@@ -251,7 +251,7 @@ impl ExecutionEngine {
                     #[cfg(feature = "observability")]
                     tracing::debug!("Node '{}' requested jump", node_id.as_str());
                     #[cfg(not(feature = "observability"))]
-                    eprintln!("Node '{}' requested jump", node_id.as_str());
+                    tracing::debug!("Node '{}' requested jump", node_id.as_str());
                 }
                 Ok(())
             }
@@ -260,7 +260,7 @@ impl ExecutionEngine {
                     #[cfg(feature = "observability")]
                     tracing::error!("Node '{}' failed: {}", node_id.as_str(), e);
                     #[cfg(not(feature = "observability"))]
-                    eprintln!("Node '{}' failed: {}", node_id.as_str(), e);
+                    tracing::debug!("Node '{}' failed: {}", node_id.as_str(), e);
                 }
                 Err(e)
             }

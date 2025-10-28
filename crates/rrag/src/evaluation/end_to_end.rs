@@ -340,7 +340,7 @@ impl Evaluator for EndToEndEvaluator {
                     overall_scores.insert(metric.name().to_string(), score);
                 }
                 Err(e) => {
-                    eprintln!("Warning: Failed to evaluate {}: {}", metric.name(), e);
+                    ewarn!(" Failed to evaluate {}: {}", metric.name(), e);
                 }
             }
         }

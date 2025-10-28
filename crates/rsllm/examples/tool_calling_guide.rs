@@ -286,38 +286,38 @@ fn best_practice_search(
 // ============================================================================
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("╔═══════════════════════════════════════════════════════════╗");
-    println!("║  🛠️  RSLLM Tool Calling - Complete Guide                 ║");
-    println!("╚═══════════════════════════════════════════════════════════╝\n");
+    tracing::debug!("╔═══════════════════════════════════════════════════════════╗");
+    tracing::debug!("║  🛠️  RSLLM Tool Calling - Complete Guide                 ║");
+    tracing::debug!("╚═══════════════════════════════════════════════════════════╝\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // SECTION 1: QUICK START
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("┌─────────────────────────────────────────────────────────┐");
-    println!("│ 📚 SECTION 1: Quick Start (13 Lines!)                  │");
-    println!("└─────────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────────┐");
+    tracing::debug!("│ 📚 SECTION 1: Quick Start (13 Lines!)                  │");
+    tracing::debug!("└─────────────────────────────────────────────────────────┘\n");
 
     let mut registry = ToolRegistry::new();
     registry.register(Box::new(QuickAddTool))?;
 
-    println!("✅ Created a tool in just 13 lines!");
-    println!("   Code: Define params (4) + result (3) + function (5) = 13 lines");
+    tracing::debug!("✅ Created a tool in just 13 lines!");
+    tracing::debug!("   Code: Define params (4) + result (3) + function (5) = 13 lines");
 
     let result = registry.execute(&ToolCallExec::new(
         "q1",
         "quick_add",
         json!({"a": 10, "b": 20}),
     ));
-    println!("   Test: quick_add(10, 20) = {}\n", result.content);
+    tracing::debug!("   Test: quick_add(10, 20) = {}\n", result.content);
 
     // ═══════════════════════════════════════════════════════════════════════
     // SECTION 2: ALL 4 APPROACHES
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("┌─────────────────────────────────────────────────────────┐");
-    println!("│ 🎯 SECTION 2: All 4 Approaches Compared                │");
-    println!("└─────────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────────┐");
+    tracing::debug!("│ 🎯 SECTION 2: All 4 Approaches Compared                │");
+    tracing::debug!("└─────────────────────────────────────────────────────────┘\n");
 
     // Register all approaches
     registry.register(Box::new(CalculatorTool))?; // Approach 1: #[tool] macro
@@ -325,20 +325,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     registry.register(create_text_tool())?; // Approach 3: simple_tool!
     registry.register(Box::new(EchoTool))?; // Approach 4: Manual JSON
 
-    println!("📊 Comparison Table:");
-    println!("┌──────────────────┬──────┬───────────┬─────────────┐");
-    println!("│ Approach         │ Lines│ Type Safe │ Auto Schema │");
-    println!("├──────────────────┼──────┼───────────┼─────────────┤");
-    println!("│ #[tool] macro    │  15  │    ✅     │     ✅      │");
-    println!("│ SchemaBasedTool  │  30  │    ✅     │     ✅      │");
-    println!("│ simple_tool!     │  20  │    ❌     │     ❌      │");
-    println!("│ Manual JSON      │  50  │    ❌     │     ❌      │");
-    println!("└──────────────────┴──────┴───────────┴─────────────┘\n");
+    tracing::debug!("📊 Comparison Table:");
+    tracing::debug!("┌──────────────────┬──────┬───────────┬─────────────┐");
+    tracing::debug!("│ Approach         │ Lines│ Type Safe │ Auto Schema │");
+    tracing::debug!("├──────────────────┼──────┼───────────┼─────────────┤");
+    tracing::debug!("│ #[tool] macro    │  15  │    ✅     │     ✅      │");
+    tracing::debug!("│ SchemaBasedTool  │  30  │    ✅     │     ✅      │");
+    tracing::debug!("│ simple_tool!     │  20  │    ❌     │     ❌      │");
+    tracing::debug!("│ Manual JSON      │  50  │    ❌     │     ❌      │");
+    tracing::debug!("└──────────────────┴──────┴───────────┴─────────────┘\n");
 
-    println!("💡 Recommendation: Use #[tool] macro for 90% of cases\n");
+    tracing::debug!("💡 Recommendation: Use #[tool] macro for 90% of cases\n");
 
     // Execute all approaches with same input
-    println!("🚀 Testing all approaches execute correctly:");
+    tracing::debug!("🚀 Testing all approaches execute correctly:");
     for tool_name in &["calculator", "counter", "text_analyzer", "echo"] {
         let call = match *tool_name {
             "calculator" => ToolCallExec::new(
@@ -363,35 +363,35 @@ fn main() -> Result<(), Box<dyn Error>> {
         } else {
             format!("({})", result.error.unwrap_or_default())
         };
-        println!("   {} {} {}", status, tool_name, error_msg);
+        tracing::debug!("   {} {} {}", status, tool_name, error_msg);
     }
-    println!();
+    tracing::debug!();
 
     // ═══════════════════════════════════════════════════════════════════════
     // SECTION 3: BEST PRACTICES
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("┌─────────────────────────────────────────────────────────┐");
-    println!("│ 📝 SECTION 3: Best Practices (Prevent Hallucination!)  │");
-    println!("└─────────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────────┐");
+    tracing::debug!("│ 📝 SECTION 3: Best Practices (Prevent Hallucination!)  │");
+    tracing::debug!("└─────────────────────────────────────────────────────────┘\n");
 
     registry.register(Box::new(BestPracticeSearchTool))?;
 
-    println!("✅ ALWAYS add descriptions using doc comments (///)");
-    println!("✅ Use #[schemars(...)] attributes for validation:");
-    println!("   • range(min = X, max = Y) - for numbers");
-    println!("   • length(min = X, max = Y) - for strings");
-    println!("   • Use enums for limited value sets");
-    println!("   • Add #[serde(default)] for optional params\n");
+    tracing::debug!("✅ ALWAYS add descriptions using doc comments (///)");
+    tracing::debug!("✅ Use #[schemars(...)] attributes for validation:");
+    tracing::debug!("   • range(min = X, max = Y) - for numbers");
+    tracing::debug!("   • length(min = X, max = Y) - for strings");
+    tracing::debug!("   • Use enums for limited value sets");
+    tracing::debug!("   • Add #[serde(default)] for optional params\n");
 
-    println!("Example schema generated:");
+    tracing::debug!("Example schema generated:");
     let search_def = registry
         .tool_definitions()
         .into_iter()
         .find(|d| d.name == "best_practice_search")
         .unwrap();
 
-    println!(
+    tracing::debug!(
         "{}\n",
         serde_json::to_string_pretty(&search_def.parameters)?
     );
@@ -400,12 +400,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     // SECTION 4: ADVANCED FEATURES
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("┌─────────────────────────────────────────────────────────┐");
-    println!("│ 🔧 SECTION 4: Advanced Features                        │");
-    println!("└─────────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────────┐");
+    tracing::debug!("│ 🔧 SECTION 4: Advanced Features                        │");
+    tracing::debug!("└─────────────────────────────────────────────────────────┘\n");
 
     // 4.1: Batch Execution
-    println!("📦 Batch Execution (multiple tools at once):");
+    tracing::debug!("📦 Batch Execution (multiple tools at once):");
     let batch_calls = vec![
         ToolCallExec::new(
             "b1",
@@ -421,63 +421,63 @@ fn main() -> Result<(), Box<dyn Error>> {
     ];
 
     let batch_results = registry.execute_batch(&batch_calls);
-    println!("   Executed {} tools in batch:", batch_results.len());
+    tracing::debug!("   Executed {} tools in batch:", batch_results.len());
     for r in &batch_results {
-        println!(
+        tracing::debug!(
             "      {} {}",
             if r.success { "✅" } else { "❌" },
             r.tool_name
         );
     }
-    println!();
+    tracing::debug!();
 
     // 4.2: Tool Discovery
-    println!("🔍 Tool Discovery & Introspection:");
-    println!("   Total tools: {}", registry.len());
-    println!("   Available: {:?}", registry.tool_names());
-    println!(
+    tracing::debug!("🔍 Tool Discovery & Introspection:");
+    tracing::debug!("   Total tools: {}", registry.len());
+    tracing::debug!("   Available: {:?}", registry.tool_names());
+    tracing::debug!(
         "   'calculator' exists: {}",
         registry.contains("calculator")
     );
-    println!(
+    tracing::debug!(
         "   'nonexistent' exists: {}\n",
         registry.contains("nonexistent")
     );
 
     // 4.3: Stateful Tool
-    println!("🔄 Stateful Tool (Counter maintains state):");
+    tracing::debug!("🔄 Stateful Tool (Counter maintains state):");
     let c1 = registry.execute(&ToolCallExec::new(
         "s1",
         "counter",
         json!({"action": "increment", "amount": 5}),
     ));
-    println!("   Increment by 5: {}", c1.content);
+    tracing::debug!("   Increment by 5: {}", c1.content);
 
     let c2 = registry.execute(&ToolCallExec::new(
         "s2",
         "counter",
         json!({"action": "increment", "amount": 3}),
     ));
-    println!("   Increment by 3: {}", c2.content);
+    tracing::debug!("   Increment by 3: {}", c2.content);
 
     let c3 = registry.execute(&ToolCallExec::new(
         "s3",
         "counter",
         json!({"action": "get"}),
     ));
-    println!("   Get current: {}", c3.content);
-    println!("   Notice: State is maintained between calls!\n");
+    tracing::debug!("   Get current: {}", c3.content);
+    tracing::debug!("   Notice: State is maintained between calls!\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // SECTION 5: ERROR HANDLING
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("┌─────────────────────────────────────────────────────────┐");
-    println!("│ ⚠️  SECTION 5: Error Handling                           │");
-    println!("└─────────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────────┐");
+    tracing::debug!("│ ⚠️  SECTION 5: Error Handling                           │");
+    tracing::debug!("└─────────────────────────────────────────────────────────┘\n");
 
     // Error 1: Division by zero
-    println!("🔴 Error 1: Division by zero");
+    tracing::debug!("🔴 Error 1: Division by zero");
     let err1 = registry.execute(&ToolCallExec::new(
         "e1",
         "calculator",
@@ -486,51 +486,51 @@ fn main() -> Result<(), Box<dyn Error>> {
     let err1_msg = err1
         .error
         .unwrap_or_else(|| "unexpected success".to_string());
-    println!("   Result: {}", err1_msg);
+    tracing::debug!("   Result: {}", err1_msg);
 
     // Error 2: Invalid tool
-    println!("\n🔴 Error 2: Invalid tool name");
+    tracing::debug!("\n🔴 Error 2: Invalid tool name");
     let err2 = registry.execute(&ToolCallExec::new("e2", "nonexistent", json!({})));
-    println!("   Result: {}", err2.error.unwrap());
+    tracing::debug!("   Result: {}", err2.error.unwrap());
 
     // Error 3: Missing required parameter
-    println!("\n🔴 Error 3: Missing required parameter");
+    tracing::debug!("\n🔴 Error 3: Missing required parameter");
     let err3 = registry.execute(&ToolCallExec::new(
         "e3",
         "calculator",
         json!({"operation": "add"}),
     ));
-    println!("   Result: {}", err3.error.unwrap());
+    tracing::debug!("   Result: {}", err3.error.unwrap());
 
     // Error 4: Validation failure
-    println!("\n🔴 Error 4: Validation failure (amount = 0)");
+    tracing::debug!("\n🔴 Error 4: Validation failure (amount = 0)");
     let err4 = registry.execute(&ToolCallExec::new(
         "e4",
         "counter",
         json!({"action": "increment", "amount": 0}),
     ));
-    println!("   Result: {}\n", err4.error.unwrap());
+    tracing::debug!("   Result: {}\n", err4.error.unwrap());
 
     // ═══════════════════════════════════════════════════════════════════════
     // SECTION 6: REAL-WORLD WORKFLOW
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("┌─────────────────────────────────────────────────────────┐");
-    println!("│ 🎬 SECTION 6: Real-World Workflow Example              │");
-    println!("└─────────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────────┐");
+    tracing::debug!("│ 🎬 SECTION 6: Real-World Workflow Example              │");
+    tracing::debug!("└─────────────────────────────────────────────────────────┘\n");
 
-    println!("Scenario: Calculate average of counter value and multiply by 2\n");
+    tracing::debug!("Scenario: Calculate average of counter value and multiply by 2\n");
 
-    println!("Step 1: Get counter value");
+    tracing::debug!("Step 1: Get counter value");
     let step1 = registry.execute(&ToolCallExec::new(
         "w1",
         "counter",
         json!({"action": "get"}),
     ));
     let counter_val = step1.content["value"].as_i64().unwrap_or(0) as f64;
-    println!("   Counter value: {}", counter_val);
+    tracing::debug!("   Counter value: {}", counter_val);
 
-    println!("\nStep 2: Calculate (counter + 100) / 2");
+    tracing::debug!("\nStep 2: Calculate (counter + 100) / 2");
     let step2 = registry.execute(&ToolCallExec::new(
         "w2",
         "calculator",
@@ -538,57 +538,57 @@ fn main() -> Result<(), Box<dyn Error>> {
     ));
     let sum = step2.content["result"].as_f64().unwrap_or(0.0);
     let avg = sum / 2.0;
-    println!("   Average: {}", avg);
+    tracing::debug!("   Average: {}", avg);
 
-    println!("\nStep 3: Multiply by 2");
+    tracing::debug!("\nStep 3: Multiply by 2");
     let step3 = registry.execute(&ToolCallExec::new(
         "w3",
         "calculator",
         json!({"operation": "multiply", "a": avg, "b": 2.0}),
     ));
-    println!("   Final result: {}\n", step3.content["result"]);
+    tracing::debug!("   Final result: {}\n", step3.content["result"]);
 
     // ═══════════════════════════════════════════════════════════════════════
     // SUMMARY & RECOMMENDATIONS
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("┌─────────────────────────────────────────────────────────┐");
-    println!("│ 📊 SUMMARY & RECOMMENDATIONS                            │");
-    println!("└─────────────────────────────────────────────────────────┘\n");
+    tracing::debug!("┌─────────────────────────────────────────────────────────┐");
+    tracing::debug!("│ 📊 SUMMARY & RECOMMENDATIONS                            │");
+    tracing::debug!("└─────────────────────────────────────────────────────────┘\n");
 
-    println!("✨ What You Learned:");
-    println!("   1. ✅ Create tools in 13 lines with #[tool] macro");
-    println!("   2. ✅ 4 different approaches for different needs");
-    println!("   3. ✅ ALWAYS add descriptions to prevent hallucination");
-    println!("   4. ✅ Use #[schemars(...)] for validation");
-    println!("   5. ✅ Stateful tools with SchemaBasedTool");
-    println!("   6. ✅ Batch execution for performance");
-    println!("   7. ✅ Proper error handling");
-    println!("   8. ✅ Multi-step workflows\n");
+    tracing::debug!("✨ What You Learned:");
+    tracing::debug!("   1. ✅ Create tools in 13 lines with #[tool] macro");
+    tracing::debug!("   2. ✅ 4 different approaches for different needs");
+    tracing::debug!("   3. ✅ ALWAYS add descriptions to prevent hallucination");
+    tracing::debug!("   4. ✅ Use #[schemars(...)] for validation");
+    tracing::debug!("   5. ✅ Stateful tools with SchemaBasedTool");
+    tracing::debug!("   6. ✅ Batch execution for performance");
+    tracing::debug!("   7. ✅ Proper error handling");
+    tracing::debug!("   8. ✅ Multi-step workflows\n");
 
-    println!("🎯 Quick Reference:");
-    println!("   ┌─────────────────────────────────────────────────────┐");
-    println!("   │ #[derive(JsonSchema, Serialize, Deserialize)]      │");
-    println!("   │ pub struct MyParams {{                              │");
-    println!("   │     /// Description here! (Critical!)               │");
-    println!("   │     #[schemars(range(min = 0, max = 100))]          │");
-    println!("   │     pub field: i32,                                 │");
-    println!("   │ }}                                                  │");
-    println!("   │                                                     │");
-    println!("   │ #[tool(description = \"Tool description\")]          │");
-    println!("   │ fn my_tool(p: MyParams) -> Result<MyResult, Error> │");
-    println!("   └─────────────────────────────────────────────────────┘\n");
+    tracing::debug!("🎯 Quick Reference:");
+    tracing::debug!("   ┌─────────────────────────────────────────────────────┐");
+    tracing::debug!("   │ #[derive(JsonSchema, Serialize, Deserialize)]      │");
+    tracing::debug!("   │ pub struct MyParams {{                              │");
+    tracing::debug!("   │     /// Description here! (Critical!)               │");
+    tracing::debug!("   │     #[schemars(range(min = 0, max = 100))]          │");
+    tracing::debug!("   │     pub field: i32,                                 │");
+    tracing::debug!("   │ }}                                                  │");
+    tracing::debug!("   │                                                     │");
+    tracing::debug!("   │ #[tool(description = \"Tool description\")]          │");
+    tracing::debug!("   │ fn my_tool(p: MyParams) -> Result<MyResult, Error> │");
+    tracing::debug!("   └─────────────────────────────────────────────────────┘\n");
 
-    println!("📚 Key Takeaways:");
-    println!("   • Use #[tool] macro for 90% of tools");
-    println!("   • Use SchemaBasedTool for stateful tools");
-    println!("   • ALWAYS add /// doc comments to fields");
-    println!("   • Use #[schemars(...)] for validation");
-    println!("   • Test with batch execution");
-    println!("   • Handle errors gracefully\n");
+    tracing::debug!("📚 Key Takeaways:");
+    tracing::debug!("   • Use #[tool] macro for 90% of tools");
+    tracing::debug!("   • Use SchemaBasedTool for stateful tools");
+    tracing::debug!("   • ALWAYS add /// doc comments to fields");
+    tracing::debug!("   • Use #[schemars(...)] for validation");
+    tracing::debug!("   • Test with batch execution");
+    tracing::debug!("   • Handle errors gracefully\n");
 
-    println!("🎉 You're now ready to build production tool calling apps!");
-    println!("\n📖 This example covers everything. You don't need others!");
+    tracing::debug!("🎉 You're now ready to build production tool calling apps!");
+    tracing::debug!("\n📖 This example covers everything. You don't need others!");
 
     Ok(())
 }

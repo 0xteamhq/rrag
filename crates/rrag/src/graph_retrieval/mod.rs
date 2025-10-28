@@ -50,7 +50,7 @@
 //! }
 //!
 //! let graph = builder.build().await?;
-//! println!("Built graph with {} nodes and {} edges",
+//! tracing::debug!("Built graph with {} nodes and {} edges",
 //!          graph.node_count(),
 //!          graph.edge_count());
 //! # Ok(())
@@ -69,8 +69,8 @@
 //! let original_query = "Einstein's theories";
 //! let expanded = expander.expand_query(original_query).await?;
 //!
-//! println!("Original: {}", original_query);
-//! println!("Expanded: {:?}", expanded.expanded_terms);
+//! tracing::debug!("Original: {}", original_query);
+//! tracing::debug!("Expanded: {:?}", expanded.expanded_terms);
 //! // Output might include: ["theory of relativity", "special relativity",
 //! //                       "general relativity", "physics", "German physicist"]
 //! # Ok(())
@@ -93,7 +93,7 @@
 //! ).await?;
 //!
 //! for connection in connections {
-//!     println!("Path: {}", connection.format_path());
+//!     tracing::debug!("Path: {}", connection.format_path());
 //! }
 //! # Ok(())
 //! # }
@@ -115,9 +115,9 @@
 //! ).await?;
 //!
 //! for result in results {
-//!     println!("Document: {}", result.content);
-//!     println!("Related entities: {:?}", result.entities);
-//!     println!("Relationship path: {:?}", result.path);
+//!     tracing::debug!("Document: {}", result.content);
+//!     tracing::debug!("Related entities: {:?}", result.entities);
+//!     tracing::debug!("Relationship path: {:?}", result.path);
 //! }
 //! # Ok(())
 //! # }
@@ -137,13 +137,13 @@
 //!
 //! let top_entities = pagerank_scores.top_k(10);
 //! for (entity, score) in top_entities {
-//!     println!("Entity: {}, Importance: {:.3}", entity, score);
+//!     tracing::debug!("Entity: {}, Importance: {:.3}", entity, score);
 //! }
 //!
 //! // Detect communities
 //! let communities = analyzer.detect_communities().await?;
 //! for (idx, community) in communities.iter().enumerate() {
-//!     println!("Community {}: {:?}", idx, community.entities);
+//!     tracing::debug!("Community {}: {:?}", idx, community.entities);
 //! }
 //! # Ok(())
 //! # }

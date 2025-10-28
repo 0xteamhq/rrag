@@ -15,109 +15,109 @@ use std::time::Instant;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("📚 RRAG Framework - Getting Started Guide");
-    println!("=========================================\n");
+    tracing::debug!("📚 RRAG Framework - Getting Started Guide");
+    tracing::debug!("=========================================\n");
 
-    println!("Welcome to RRAG (Rust RAG Framework)! This guide will walk you through");
-    println!("the key concepts and help you build your first RAG application.\n");
+    tracing::debug!("Welcome to RRAG (Rust RAG Framework)! This guide will walk you through");
+    tracing::debug!("the key concepts and help you build your first RAG application.\n");
 
     // Step 1: Understanding RRAG
-    println!("🎯 Step 1: Understanding RRAG");
-    println!("------------------------------");
+    tracing::debug!("🎯 Step 1: Understanding RRAG");
+    tracing::debug!("------------------------------");
     explain_rrag_concepts();
-    println!();
+    tracing::debug!();
 
     // Step 2: Quick Start
-    println!("🚀 Step 2: Quick Start - Your First RAG System");
-    println!("-----------------------------------------------");
+    tracing::debug!("🚀 Step 2: Quick Start - Your First RAG System");
+    tracing::debug!("-----------------------------------------------");
     let basic_system = quick_start_tutorial().await?;
-    println!();
+    tracing::debug!();
 
     // Step 3: Document Processing
-    println!("📄 Step 3: Document Processing and Chunking");
-    println!("-------------------------------------------");
+    tracing::debug!("📄 Step 3: Document Processing and Chunking");
+    tracing::debug!("-------------------------------------------");
     document_processing_tutorial(&basic_system).await?;
-    println!();
+    tracing::debug!();
 
     // Step 4: Advanced Search
-    println!("🔍 Step 4: Advanced Search Techniques");
-    println!("-------------------------------------");
+    tracing::debug!("🔍 Step 4: Advanced Search Techniques");
+    tracing::debug!("-------------------------------------");
     advanced_search_tutorial(&basic_system).await?;
-    println!();
+    tracing::debug!();
 
     // Step 5: Query Enhancement
-    println!("✨ Step 5: Query Enhancement and Processing");
-    println!("------------------------------------------");
+    tracing::debug!("✨ Step 5: Query Enhancement and Processing");
+    tracing::debug!("------------------------------------------");
     query_enhancement_tutorial().await?;
-    println!();
+    tracing::debug!();
 
     // Step 6: Performance Optimization
-    println!("⚡ Step 6: Performance Optimization");
-    println!("---------------------------------");
+    tracing::debug!("⚡ Step 6: Performance Optimization");
+    tracing::debug!("---------------------------------");
     performance_optimization_tutorial().await?;
-    println!();
+    tracing::debug!();
 
     // Step 7: Production Considerations
-    println!("🏭 Step 7: Production Deployment");
-    println!("-------------------------------");
+    tracing::debug!("🏭 Step 7: Production Deployment");
+    tracing::debug!("-------------------------------");
     production_considerations();
-    println!();
+    tracing::debug!();
 
     // Step 8: Next Steps
-    println!("📈 Step 8: Next Steps and Advanced Features");
-    println!("------------------------------------------");
+    tracing::debug!("📈 Step 8: Next Steps and Advanced Features");
+    tracing::debug!("------------------------------------------");
     next_steps_guide();
-    println!();
+    tracing::debug!();
 
-    println!("🎉 Congratulations! You've completed the RRAG getting started guide!");
-    println!("You're now ready to build powerful RAG applications with Rust.");
-    println!("\nHappy coding! 🦀");
+    tracing::debug!("🎉 Congratulations! You've completed the RRAG getting started guide!");
+    tracing::debug!("You're now ready to build powerful RAG applications with Rust.");
+    tracing::debug!("\nHappy coding! 🦀");
 
     Ok(())
 }
 
 fn explain_rrag_concepts() {
-    println!("RRAG is a high-performance Rust framework for building Retrieval-Augmented");
-    println!("Generation (RAG) systems. Here are the key concepts:");
-    println!();
-    println!("📖 Core Components:");
-    println!("  • Document Processing: Chunking, cleaning, and preprocessing");
-    println!("  • Embedding Generation: Converting text to vector representations");
-    println!("  • Vector Storage: Efficient storage and indexing of embeddings");
-    println!("  • Retrieval: Finding relevant documents using similarity search");
-    println!("  • Generation: Augmenting LLM responses with retrieved context");
-    println!();
-    println!("🎯 Key Benefits:");
-    println!("  • High Performance: Rust's speed for production workloads");
-    println!("  • Memory Safety: Zero-cost abstractions without runtime overhead");
-    println!("  • Async Support: Non-blocking I/O for scalable applications");
-    println!("  • Modular Design: Use only the components you need");
-    println!("  • Production Ready: Built-in monitoring, caching, and error handling");
+    tracing::debug!("RRAG is a high-performance Rust framework for building Retrieval-Augmented");
+    tracing::debug!("Generation (RAG) systems. Here are the key concepts:");
+    tracing::debug!();
+    tracing::debug!("📖 Core Components:");
+    tracing::debug!("  • Document Processing: Chunking, cleaning, and preprocessing");
+    tracing::debug!("  • Embedding Generation: Converting text to vector representations");
+    tracing::debug!("  • Vector Storage: Efficient storage and indexing of embeddings");
+    tracing::debug!("  • Retrieval: Finding relevant documents using similarity search");
+    tracing::debug!("  • Generation: Augmenting LLM responses with retrieved context");
+    tracing::debug!();
+    tracing::debug!("🎯 Key Benefits:");
+    tracing::debug!("  • High Performance: Rust's speed for production workloads");
+    tracing::debug!("  • Memory Safety: Zero-cost abstractions without runtime overhead");
+    tracing::debug!("  • Async Support: Non-blocking I/O for scalable applications");
+    tracing::debug!("  • Modular Design: Use only the components you need");
+    tracing::debug!("  • Production Ready: Built-in monitoring, caching, and error handling");
 }
 
 async fn quick_start_tutorial() -> RragResult<RragSystem> {
-    println!("Let's build your first RAG system in just a few lines of code!");
-    println!();
+    tracing::debug!("Let's build your first RAG system in just a few lines of code!");
+    tracing::debug!();
 
-    println!("1. Create a basic RRAG system:");
-    println!("```rust");
-    println!("use rrag::prelude::*;");
-    println!();
-    println!("let system = RragSystemBuilder::new()");
-    println!("    .with_embedding_provider(LocalEmbeddingProvider::new())");
-    println!("    .with_vector_store(InMemoryVectorStore::new())");
-    println!("    .build()");
-    println!("    .await?;");
-    println!("```");
-    println!();
+    tracing::debug!("1. Create a basic RRAG system:");
+    tracing::debug!("```rust");
+    tracing::debug!("use rrag::prelude::*;");
+    tracing::debug!();
+    tracing::debug!("let system = RragSystemBuilder::new()");
+    tracing::debug!("    .with_embedding_provider(LocalEmbeddingProvider::new())");
+    tracing::debug!("    .with_vector_store(InMemoryVectorStore::new())");
+    tracing::debug!("    .build()");
+    tracing::debug!("    .await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
     // Actually build the system
     let system = RragSystemBuilder::new().build().await?;
 
-    println!("✅ System created successfully!");
-    println!();
+    tracing::debug!("✅ System created successfully!");
+    tracing::debug!();
 
-    println!("2. Add some sample documents:");
+    tracing::debug!("2. Add some sample documents:");
     let documents = vec![
         "Machine learning is a subset of artificial intelligence that focuses on algorithms.",
         "Deep learning uses neural networks with multiple layers to model complex patterns.",
@@ -125,14 +125,14 @@ async fn quick_start_tutorial() -> RragResult<RragSystem> {
         "Computer vision allows machines to interpret and understand visual information.",
     ];
 
-    println!("```rust");
-    println!("let documents = vec![");
+    tracing::debug!("```rust");
+    tracing::debug!("let documents = vec![");
     for doc in &documents {
-        println!("    \"{}\",", doc);
+        tracing::debug!("    \"{}\",", doc);
     }
-    println!("]);");
-    println!("```");
-    println!();
+    tracing::debug!("]);");
+    tracing::debug!("```");
+    tracing::debug!();
 
     // Process and index documents
     let start_time = Instant::now();
@@ -147,62 +147,62 @@ async fn quick_start_tutorial() -> RragResult<RragSystem> {
     }
     let processing_time = start_time.elapsed();
 
-    println!(
+    tracing::debug!(
         "✅ Added {} documents in {:.2}ms",
         documents.len(),
         processing_time.as_millis()
     );
-    println!();
+    tracing::debug!();
 
-    println!("3. Perform your first search:");
-    println!("```rust");
-    println!("let results = system.search(\"neural networks\", Some(3)).await?;");
-    println!("```");
-    println!();
+    tracing::debug!("3. Perform your first search:");
+    tracing::debug!("```rust");
+    tracing::debug!("let results = system.search(\"neural networks\", Some(3)).await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
     let results = system
         .search("neural networks".to_string(), Some(3))
         .await?;
 
-    println!("📊 Search Results:");
+    tracing::debug!("📊 Search Results:");
     for (i, result) in results.results.iter().enumerate() {
-        println!(
+        tracing::debug!(
             "  {}. Score: {:.3} - {}",
             i + 1,
             result.score,
             result.content.chars().take(60).collect::<String>() + "..."
         );
     }
-    println!();
+    tracing::debug!();
 
     Ok(system)
 }
 
 async fn document_processing_tutorial(_system: &RragSystem) -> RragResult<()> {
-    println!("RRAG provides powerful document processing capabilities:");
-    println!();
+    tracing::debug!("RRAG provides powerful document processing capabilities:");
+    tracing::debug!();
 
-    println!("1. Text Preprocessing:");
-    println!("```rust");
-    println!("use rrag::preprocessing::{{TextPreprocessor, PreprocessingStep}};");
-    println!();
-    println!("let preprocessor = TextPreprocessor::new()");
-    println!("    .add_step(PreprocessingStep::RemoveExtraWhitespace)");
-    println!("    .add_step(PreprocessingStep::NormalizeUnicode)");
-    println!("    .add_step(PreprocessingStep::RemoveHtmlTags);");
-    println!("```");
-    println!();
+    tracing::debug!("1. Text Preprocessing:");
+    tracing::debug!("```rust");
+    tracing::debug!("use rrag::preprocessing::{{TextPreprocessor, PreprocessingStep}};");
+    tracing::debug!();
+    tracing::debug!("let preprocessor = TextPreprocessor::new()");
+    tracing::debug!("    .add_step(PreprocessingStep::RemoveExtraWhitespace)");
+    tracing::debug!("    .add_step(PreprocessingStep::NormalizeUnicode)");
+    tracing::debug!("    .add_step(PreprocessingStep::RemoveHtmlTags);");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("2. Document Chunking:");
-    println!("```rust");
-    println!("use rrag::chunking::{{DocumentChunker, ChunkingStrategy}};");
-    println!();
-    println!("let chunker = DocumentChunker::new()");
-    println!("    .with_strategy(ChunkingStrategy::Semantic)");
-    println!("    .with_chunk_size(512)");
-    println!("    .with_overlap(50);");
-    println!("```");
-    println!();
+    tracing::debug!("2. Document Chunking:");
+    tracing::debug!("```rust");
+    tracing::debug!("use rrag::chunking::{{DocumentChunker, ChunkingStrategy}};");
+    tracing::debug!();
+    tracing::debug!("let chunker = DocumentChunker::new()");
+    tracing::debug!("    .with_strategy(ChunkingStrategy::Semantic)");
+    tracing::debug!("    .with_chunk_size(512)");
+    tracing::debug!("    .with_overlap(50);");
+    tracing::debug!("```");
+    tracing::debug!();
 
     // Demonstrate chunking
     let long_document = "This is a long document that will be split into chunks. \
@@ -213,266 +213,266 @@ async fn document_processing_tutorial(_system: &RragSystem) -> RragResult<()> {
         understand human language. Computer vision enables machines to \
         interpret visual information from images and videos.";
 
-    println!("Example: Chunking a longer document");
-    println!("Original length: {} characters", long_document.len());
+    tracing::debug!("Example: Chunking a longer document");
+    tracing::debug!("Original length: {} characters", long_document.len());
 
     // Simulate chunking (in a real implementation, you'd use the actual chunker)
     let chunks = simulate_chunking(long_document, 100);
-    println!("Number of chunks: {}", chunks.len());
+    tracing::debug!("Number of chunks: {}", chunks.len());
 
     for (i, chunk) in chunks.iter().enumerate() {
-        println!(
+        tracing::debug!(
             "  Chunk {}: {}...",
             i + 1,
             chunk.chars().take(50).collect::<String>()
         );
     }
-    println!();
+    tracing::debug!();
 
-    println!("3. Metadata Enhancement:");
-    println!("```rust");
-    println!("let document = Document::new(content)");
-    println!("    .with_metadata(HashMap::from([");
-    println!("        (\"source\".to_string(), \"research_paper.pdf\".to_string()),");
-    println!("        (\"section\".to_string(), \"introduction\".to_string()),");
-    println!("        (\"page\".to_string(), \"1\".to_string()),");
-    println!("    ]));");
-    println!("```");
-    println!();
+    tracing::debug!("3. Metadata Enhancement:");
+    tracing::debug!("```rust");
+    tracing::debug!("let document = Document::new(content)");
+    tracing::debug!("    .with_metadata(HashMap::from([");
+    tracing::debug!("        (\"source\".to_string(), \"research_paper.pdf\".to_string()),");
+    tracing::debug!("        (\"section\".to_string(), \"introduction\".to_string()),");
+    tracing::debug!("        (\"page\".to_string(), \"1\".to_string()),");
+    tracing::debug!("    ]));");
+    tracing::debug!("```");
+    tracing::debug!();
 
     Ok(())
 }
 
 async fn advanced_search_tutorial(system: &RragSystem) -> RragResult<()> {
-    println!("RRAG supports multiple search strategies and algorithms:");
-    println!();
+    tracing::debug!("RRAG supports multiple search strategies and algorithms:");
+    tracing::debug!();
 
-    println!("1. Similarity Search:");
+    tracing::debug!("1. Similarity Search:");
     let similarity_results = system
         .search("artificial intelligence".to_string(), Some(2))
         .await?;
-    println!("Query: 'artificial intelligence'");
+    tracing::debug!("Query: 'artificial intelligence'");
     for result in similarity_results.results {
-        println!(
+        tracing::debug!(
             "  • Score: {:.3} - {}",
             result.score,
             result.content.chars().take(60).collect::<String>() + "..."
         );
     }
-    println!();
+    tracing::debug!();
 
-    println!("2. Hybrid Search (combines multiple signals):");
-    println!("```rust");
-    println!("let config = HybridSearchConfig::new()");
-    println!("    .with_semantic_weight(0.7)");
-    println!("    .with_keyword_weight(0.3);");
-    println!();
-    println!("let results = system.hybrid_search(\"deep learning\", config).await?;");
-    println!("```");
-    println!();
+    tracing::debug!("2. Hybrid Search (combines multiple signals):");
+    tracing::debug!("```rust");
+    tracing::debug!("let config = HybridSearchConfig::new()");
+    tracing::debug!("    .with_semantic_weight(0.7)");
+    tracing::debug!("    .with_keyword_weight(0.3);");
+    tracing::debug!();
+    tracing::debug!("let results = system.hybrid_search(\"deep learning\", config).await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("3. Filtered Search:");
-    println!("```rust");
-    println!("let filters = SearchFilters::new()");
-    println!("    .with_metadata_filter(\"topic\", \"AI/ML\")");
-    println!("    .with_score_threshold(0.5);");
-    println!();
-    println!("let results = system.search_with_filters(query, filters).await?;");
-    println!("```");
-    println!();
+    tracing::debug!("3. Filtered Search:");
+    tracing::debug!("```rust");
+    tracing::debug!("let filters = SearchFilters::new()");
+    tracing::debug!("    .with_metadata_filter(\"topic\", \"AI/ML\")");
+    tracing::debug!("    .with_score_threshold(0.5);");
+    tracing::debug!();
+    tracing::debug!("let results = system.search_with_filters(query, filters).await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("4. Multi-Modal Search:");
-    println!("```rust");
-    println!("// Search across text, images, and tables");
-    println!("let results = system.multimodal_search(");
-    println!("    \"show me revenue charts\",");
-    println!("    MultiModalOptions::new()");
-    println!("        .include_text(true)");
-    println!("        .include_images(true)");
-    println!("        .include_tables(true)");
-    println!(").await?;");
-    println!("```");
-    println!();
+    tracing::debug!("4. Multi-Modal Search:");
+    tracing::debug!("```rust");
+    tracing::debug!("// Search across text, images, and tables");
+    tracing::debug!("let results = system.multimodal_search(");
+    tracing::debug!("    \"show me revenue charts\",");
+    tracing::debug!("    MultiModalOptions::new()");
+    tracing::debug!("        .include_text(true)");
+    tracing::debug!("        .include_images(true)");
+    tracing::debug!("        .include_tables(true)");
+    tracing::debug!(").await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
     Ok(())
 }
 
 async fn query_enhancement_tutorial() -> RragResult<()> {
-    println!("RRAG can automatically improve your queries:");
-    println!();
+    tracing::debug!("RRAG can automatically improve your queries:");
+    tracing::debug!();
 
-    println!("1. Query Rewriting:");
-    println!("```rust");
-    println!("use rrag::query::{{QueryProcessor, QueryProcessorConfig}};");
-    println!();
-    println!("let processor = QueryProcessor::new(QueryProcessorConfig::default());");
-    println!("let enhanced = processor.process_query(\"What's ML?\").await?;");
-    println!();
-    println!("// Original: \"What's ML?\"");
-    println!("// Enhanced: [\"What is machine learning?\", \"ML algorithms\", ...]");
-    println!("```");
-    println!();
+    tracing::debug!("1. Query Rewriting:");
+    tracing::debug!("```rust");
+    tracing::debug!("use rrag::query::{{QueryProcessor, QueryProcessorConfig}};");
+    tracing::debug!();
+    tracing::debug!("let processor = QueryProcessor::new(QueryProcessorConfig::default());");
+    tracing::debug!("let enhanced = processor.process_query(\"What's ML?\").await?;");
+    tracing::debug!();
+    tracing::debug!("// Original: \"What's ML?\"");
+    tracing::debug!("// Enhanced: [\"What is machine learning?\", \"ML algorithms\", ...]");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("2. Query Expansion:");
-    println!("Original query: \"neural networks\"");
-    println!("Expanded to include:");
-    println!("  • deep learning");
-    println!("  • artificial neural networks");
-    println!("  • multi-layer perceptrons");
-    println!("  • backpropagation");
-    println!();
+    tracing::debug!("2. Query Expansion:");
+    tracing::debug!("Original query: \"neural networks\"");
+    tracing::debug!("Expanded to include:");
+    tracing::debug!("  • deep learning");
+    tracing::debug!("  • artificial neural networks");
+    tracing::debug!("  • multi-layer perceptrons");
+    tracing::debug!("  • backpropagation");
+    tracing::debug!();
 
-    println!("3. HyDE (Hypothetical Document Embeddings):");
-    println!("```rust");
-    println!("// Generate hypothetical answer and search with it");
-    println!("let hyde_generator = HyDEGenerator::new();");
-    println!(
+    tracing::debug!("3. HyDE (Hypothetical Document Embeddings):");
+    tracing::debug!("```rust");
+    tracing::debug!("// Generate hypothetical answer and search with it");
+    tracing::debug!("let hyde_generator = HyDEGenerator::new();");
+    tracing::debug!(
         "let hypothetical = hyde_generator.generate(\"How does photosynthesis work?\").await?;"
     );
-    println!("let results = system.search_with_hyde(query, hypothetical).await?;");
-    println!("```");
-    println!();
+    tracing::debug!("let results = system.search_with_hyde(query, hypothetical).await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
     Ok(())
 }
 
 async fn performance_optimization_tutorial() -> RragResult<()> {
-    println!("RRAG includes several performance optimization features:");
-    println!();
+    tracing::debug!("RRAG includes several performance optimization features:");
+    tracing::debug!();
 
-    println!("1. Intelligent Caching:");
-    println!("```rust");
-    println!("let cache_config = CacheConfig::default()");
-    println!("    .with_query_cache(true)");
-    println!("    .with_embedding_cache(true)");
-    println!("    .with_semantic_cache(true);");
-    println!();
-    println!("let system = RragSystemBuilder::new()");
-    println!("    .with_caching(cache_config)");
-    println!("    .build().await?;");
-    println!("```");
-    println!();
+    tracing::debug!("1. Intelligent Caching:");
+    tracing::debug!("```rust");
+    tracing::debug!("let cache_config = CacheConfig::default()");
+    tracing::debug!("    .with_query_cache(true)");
+    tracing::debug!("    .with_embedding_cache(true)");
+    tracing::debug!("    .with_semantic_cache(true);");
+    tracing::debug!();
+    tracing::debug!("let system = RragSystemBuilder::new()");
+    tracing::debug!("    .with_caching(cache_config)");
+    tracing::debug!("    .build().await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("Cache Benefits:");
-    println!("  • Query Cache: 10-100x faster for repeated queries");
-    println!("  • Embedding Cache: Skip expensive embedding computation");
-    println!("  • Semantic Cache: Hit rate for similar queries");
-    println!();
+    tracing::debug!("Cache Benefits:");
+    tracing::debug!("  • Query Cache: 10-100x faster for repeated queries");
+    tracing::debug!("  • Embedding Cache: Skip expensive embedding computation");
+    tracing::debug!("  • Semantic Cache: Hit rate for similar queries");
+    tracing::debug!();
 
-    println!("2. Async Processing:");
-    println!("```rust");
-    println!("// Process multiple queries concurrently");
-    println!("let queries = vec![\"query1\", \"query2\", \"query3\"];");
-    println!("let futures: Vec<_> = queries.iter()");
-    println!("    .map(|q| system.search(q, Some(5)))");
-    println!("    .collect();");
-    println!("let results = futures::future::join_all(futures).await;");
-    println!("```");
-    println!();
+    tracing::debug!("2. Async Processing:");
+    tracing::debug!("```rust");
+    tracing::debug!("// Process multiple queries concurrently");
+    tracing::debug!("let queries = vec![\"query1\", \"query2\", \"query3\"];");
+    tracing::debug!("let futures: Vec<_> = queries.iter()");
+    tracing::debug!("    .map(|q| system.search(q, Some(5)))");
+    tracing::debug!("    .collect();");
+    tracing::debug!("let results = futures::future::join_all(futures).await;");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("3. Batch Operations:");
-    println!("```rust");
-    println!("// Add multiple documents efficiently");
-    println!("system.add_documents_batch(documents).await?;");
-    println!();
-    println!("// Generate embeddings in batches");
-    println!("let embeddings = embedding_provider.embed_batch(texts).await?;");
-    println!("```");
-    println!();
+    tracing::debug!("3. Batch Operations:");
+    tracing::debug!("```rust");
+    tracing::debug!("// Add multiple documents efficiently");
+    tracing::debug!("system.add_documents_batch(documents).await?;");
+    tracing::debug!();
+    tracing::debug!("// Generate embeddings in batches");
+    tracing::debug!("let embeddings = embedding_provider.embed_batch(texts).await?;");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("4. Memory Management:");
-    println!("  • Streaming processing for large documents");
-    println!("  • Lazy loading of embeddings");
-    println!("  • Configurable memory limits");
-    println!("  • Automatic garbage collection");
-    println!();
+    tracing::debug!("4. Memory Management:");
+    tracing::debug!("  • Streaming processing for large documents");
+    tracing::debug!("  • Lazy loading of embeddings");
+    tracing::debug!("  • Configurable memory limits");
+    tracing::debug!("  • Automatic garbage collection");
+    tracing::debug!();
 
     Ok(())
 }
 
 fn production_considerations() {
-    println!("Key considerations for production deployment:");
-    println!();
+    tracing::debug!("Key considerations for production deployment:");
+    tracing::debug!();
 
-    println!("1. Observability:");
-    println!("```rust");
-    println!("let observability = ObservabilityConfig::production()");
-    println!("    .with_metrics(true)");
-    println!("    .with_monitoring(true)");
-    println!("    .with_alerting(true)");
-    println!("    .with_dashboard(true);");
-    println!("```");
-    println!();
+    tracing::debug!("1. Observability:");
+    tracing::debug!("```rust");
+    tracing::debug!("let observability = ObservabilityConfig::production()");
+    tracing::debug!("    .with_metrics(true)");
+    tracing::debug!("    .with_monitoring(true)");
+    tracing::debug!("    .with_alerting(true)");
+    tracing::debug!("    .with_dashboard(true);");
+    tracing::debug!("```");
+    tracing::debug!();
 
-    println!("2. High Availability:");
-    println!("  • Multiple embedding provider fallbacks");
-    println!("  • Vector store replication");
-    println!("  • Circuit breaker patterns");
-    println!("  • Health checks and readiness probes");
-    println!();
+    tracing::debug!("2. High Availability:");
+    tracing::debug!("  • Multiple embedding provider fallbacks");
+    tracing::debug!("  • Vector store replication");
+    tracing::debug!("  • Circuit breaker patterns");
+    tracing::debug!("  • Health checks and readiness probes");
+    tracing::debug!();
 
-    println!("3. Scaling Strategies:");
-    println!("  • Horizontal scaling with load balancing");
-    println!("  • Vertical scaling for memory-intensive operations");
-    println!("  • Distributed caching with Redis/Memcached");
-    println!("  • GPU acceleration for embeddings");
-    println!();
+    tracing::debug!("3. Scaling Strategies:");
+    tracing::debug!("  • Horizontal scaling with load balancing");
+    tracing::debug!("  • Vertical scaling for memory-intensive operations");
+    tracing::debug!("  • Distributed caching with Redis/Memcached");
+    tracing::debug!("  • GPU acceleration for embeddings");
+    tracing::debug!();
 
-    println!("4. Security:");
-    println!("  • Input sanitization and validation");
-    println!("  • Rate limiting and DDoS protection");
-    println!("  • Secure embedding provider connections");
-    println!("  • Audit logging for compliance");
-    println!();
+    tracing::debug!("4. Security:");
+    tracing::debug!("  • Input sanitization and validation");
+    tracing::debug!("  • Rate limiting and DDoS protection");
+    tracing::debug!("  • Secure embedding provider connections");
+    tracing::debug!("  • Audit logging for compliance");
+    tracing::debug!();
 
-    println!("5. Configuration Management:");
-    println!("```rust");
-    println!("let config = RragConfig::from_env()?");
-    println!("    .or_from_file(\"config.toml\")?");
-    println!("    .with_defaults();");
-    println!("```");
-    println!();
+    tracing::debug!("5. Configuration Management:");
+    tracing::debug!("```rust");
+    tracing::debug!("let config = RragConfig::from_env()?");
+    tracing::debug!("    .or_from_file(\"config.toml\")?");
+    tracing::debug!("    .with_defaults();");
+    tracing::debug!("```");
+    tracing::debug!();
 }
 
 fn next_steps_guide() {
-    println!("Explore RRAG's advanced features:");
-    println!();
+    tracing::debug!("Explore RRAG's advanced features:");
+    tracing::debug!();
 
-    println!("🎯 Specialized Examples:");
-    println!("  cargo run --bin advanced_reranking_demo");
-    println!("  cargo run --bin graph_retrieval_demo");
-    println!("  cargo run --bin multimodal_rag_demo");
-    println!("  cargo run --bin observability_dashboard_demo");
-    println!("  cargo run --bin production_deployment_demo");
-    println!();
+    tracing::debug!("🎯 Specialized Examples:");
+    tracing::debug!("  cargo run --bin advanced_reranking_demo");
+    tracing::debug!("  cargo run --bin graph_retrieval_demo");
+    tracing::debug!("  cargo run --bin multimodal_rag_demo");
+    tracing::debug!("  cargo run --bin observability_dashboard_demo");
+    tracing::debug!("  cargo run --bin production_deployment_demo");
+    tracing::debug!();
 
-    println!("📚 Documentation:");
-    println!("  • API Documentation: docs.rs/rrag");
-    println!("  • GitHub Repository: github.com/levalhq/rrag");
-    println!("  • Examples Directory: ./examples/");
-    println!("  • Architecture Guide: ./ARCHITECTURE.md");
-    println!();
+    tracing::debug!("📚 Documentation:");
+    tracing::debug!("  • API Documentation: docs.rs/rrag");
+    tracing::debug!("  • GitHub Repository: github.com/levalhq/rrag");
+    tracing::debug!("  • Examples Directory: ./examples/");
+    tracing::debug!("  • Architecture Guide: ./ARCHITECTURE.md");
+    tracing::debug!();
 
-    println!("🛠️  Advanced Features to Explore:");
-    println!("  • Graph Retrieval: Knowledge graph-based search");
-    println!("  • Incremental Indexing: Real-time document updates");
-    println!("  • Multi-Modal Processing: Images, tables, charts");
-    println!("  • Advanced Reranking: Neural reranking models");
-    println!("  • Custom Evaluations: RAGAS and custom metrics");
-    println!();
+    tracing::debug!("🛠️  Advanced Features to Explore:");
+    tracing::debug!("  • Graph Retrieval: Knowledge graph-based search");
+    tracing::debug!("  • Incremental Indexing: Real-time document updates");
+    tracing::debug!("  • Multi-Modal Processing: Images, tables, charts");
+    tracing::debug!("  • Advanced Reranking: Neural reranking models");
+    tracing::debug!("  • Custom Evaluations: RAGAS and custom metrics");
+    tracing::debug!();
 
-    println!("🤝 Community:");
-    println!("  • Join discussions on GitHub Issues");
-    println!("  • Contribute features and bug fixes");
-    println!("  • Share your use cases and success stories");
-    println!("  • Help improve documentation");
-    println!();
+    tracing::debug!("🤝 Community:");
+    tracing::debug!("  • Join discussions on GitHub Issues");
+    tracing::debug!("  • Contribute features and bug fixes");
+    tracing::debug!("  • Share your use cases and success stories");
+    tracing::debug!("  • Help improve documentation");
+    tracing::debug!();
 
-    println!("🚀 Performance Optimization:");
-    println!("  • Profile your application with built-in tools");
-    println!("  • Experiment with different embedding providers");
-    println!("  • Tune caching and memory settings");
-    println!("  • Consider GPU acceleration for large-scale deployments");
+    tracing::debug!("🚀 Performance Optimization:");
+    tracing::debug!("  • Profile your application with built-in tools");
+    tracing::debug!("  • Experiment with different embedding providers");
+    tracing::debug!("  • Tune caching and memory settings");
+    tracing::debug!("  • Consider GPU acceleration for large-scale deployments");
 }
 
 // Helper functions

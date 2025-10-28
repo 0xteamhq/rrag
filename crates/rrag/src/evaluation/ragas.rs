@@ -378,7 +378,7 @@ impl Evaluator for RagasEvaluator {
                                 .push(score);
                         }
                         Err(e) => {
-                            eprintln!(
+                            tracing::debug!(
                                 "Warning: Failed to evaluate {} for query {}: {}",
                                 metric.name(),
                                 query.id,

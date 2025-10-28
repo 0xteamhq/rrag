@@ -126,9 +126,9 @@ fn create_task(params: TaskParams) -> Result<TaskResult, Box<dyn Error + Send + 
 // ============================================================================
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("╔══════════════════════════════════════════════════════════╗");
-    println!("║  OpenAI Function Calling - Compatibility Verification   ║");
-    println!("╚══════════════════════════════════════════════════════════╝\n");
+    tracing::debug!("╔══════════════════════════════════════════════════════════╗");
+    tracing::debug!("║  OpenAI Function Calling - Compatibility Verification   ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════════╝\n");
 
     let mut registry = ToolRegistry::new();
 
@@ -136,7 +136,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     registry.register(Box::new(BookRoomTool))?;
     registry.register(Box::new(CreateTaskTool))?;
 
-    println!("✅ Registered {} tools\n", registry.len());
+    tracing::debug!("✅ Registered {} tools\n", registry.len());
 
     let tool_defs = registry.tool_definitions();
 
@@ -144,19 +144,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     // VERIFICATION CHECKS
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("🔍 VERIFICATION CHECKS:");
-    println!("══════════════════════════════════════════════════════════\n");
+    tracing::debug!("🔍 VERIFICATION CHECKS:");
+    tracing::debug!("══════════════════════════════════════════════════════════\n");
 
     for (i, def) in tool_defs.iter().enumerate() {
-        println!("Tool #{}: {}", i + 1, def.name);
-        println!("─────────────────────────────────────────────────────\n");
+        tracing::debug!("Tool #{}: {}", i + 1, def.name);
+        tracing::debug!("─────────────────────────────────────────────────────\n");
 
         let schema_str = serde_json::to_string_pretty(&def.parameters)?;
 
         // Check 1: No $schema field
         let has_schema_field = schema_str.contains("\"$schema\"");
-        println!("   ✓ Check 1: No $schema field");
-        println!(
+        tracing::debug!("   ✓ Check 1: No $schema field");
+        tracing::debug!(
             "      Result: {} {}",
             if has_schema_field {
                 "❌ FAILED"
@@ -172,8 +172,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Check 2: No $ref references
         let has_ref = schema_str.contains("\"$ref\"");
-        println!("\n   ✓ Check 2: No $ref references");
-        println!(
+        tracing::debug!("\n   ✓ Check 2: No $ref references");
+        tracing::debug!(
             "      Result: {} {}",
             if has_ref { "❌ FAILED" } else { "✅ PASSED" },
             if has_ref { "(found $ref)" } else { "" }
@@ -181,8 +181,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Check 3: No definitions section
         let has_definitions = schema_str.contains("\"definitions\"");
-        println!("\n   ✓ Check 3: No definitions section");
-        println!(
+        tracing::debug!("\n   ✓ Check 3: No definitions section");
+        tracing::debug!(
             "      Result: {} {}",
             if has_definitions {
                 "❌ FAILED"
@@ -198,8 +198,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Check 4: No $defs section
         let has_defs = schema_str.contains("\"$defs\"");
-        println!("\n   ✓ Check 4: No $defs section");
-        println!(
+        tracing::debug!("\n   ✓ Check 4: No $defs section");
+        tracing::debug!(
             "      Result: {} {}",
             if has_defs { "❌ FAILED" } else { "✅ PASSED" },
             if has_defs { "(found $defs)" } else { "" }
@@ -207,8 +207,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Check 5: Has type field
         let has_type = schema_str.contains("\"type\"");
-        println!("\n   ✓ Check 5: Has type field");
-        println!(
+        tracing::debug!("\n   ✓ Check 5: Has type field");
+        tracing::debug!(
             "      Result: {} {}",
             if has_type { "✅ PASSED" } else { "❌ FAILED" },
             if !has_type { "(missing type)" } else { "" }
@@ -216,8 +216,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Check 6: Has properties field
         let has_properties = schema_str.contains("\"properties\"");
-        println!("\n   ✓ Check 6: Has properties field");
-        println!(
+        tracing::debug!("\n   ✓ Check 6: Has properties field");
+        tracing::debug!(
             "      Result: {} {}",
             if has_properties {
                 "✅ PASSED"
@@ -231,21 +231,21 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         );
 
-        println!("\n   📄 Full Schema:");
-        println!("{}", indent(&schema_str, 6));
-        println!();
+        tracing::debug!("\n   📄 Full Schema:");
+        tracing::debug!("{}", indent(&schema_str, 6));
+        tracing::debug!();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // OPENAI FORMAT EXAMPLE
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("\n╔══════════════════════════════════════════════════════════╗");
-    println!("║  OpenAI API Format Example                               ║");
-    println!("╚══════════════════════════════════════════════════════════╝\n");
+    tracing::debug!("\n╔══════════════════════════════════════════════════════════╗");
+    tracing::debug!("║  OpenAI API Format Example                               ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════════╝\n");
 
-    println!("This is how you'd send to OpenAI:");
-    println!();
+    tracing::debug!("This is how you'd send to OpenAI:");
+    tracing::debug!();
 
     let openai_format = json!({
         "model": "gpt-4",
@@ -264,15 +264,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         }).collect::<Vec<_>>()
     });
 
-    println!("{}\n", serde_json::to_string_pretty(&openai_format)?);
+    tracing::debug!("{}\n", serde_json::to_string_pretty(&openai_format)?);
 
     // ═══════════════════════════════════════════════════════════════════════
     // FINAL SUMMARY
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("╔══════════════════════════════════════════════════════════╗");
-    println!("║  Compatibility Summary                                   ║");
-    println!("╚══════════════════════════════════════════════════════════╝\n");
+    tracing::debug!("╔══════════════════════════════════════════════════════════╗");
+    tracing::debug!("║  Compatibility Summary                                   ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════════╝\n");
 
     let all_tools_valid = tool_defs.iter().all(|def| {
         let schema_str = serde_json::to_string(&def.parameters).unwrap_or_default();
@@ -285,24 +285,24 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     if all_tools_valid {
-        println!("🎉 ALL SCHEMAS ARE 100% OPENAI COMPATIBLE!");
-        println!();
-        println!("✅ No $schema field");
-        println!("✅ No $ref references");
-        println!("✅ No definitions section");
-        println!("✅ No $defs section");
-        println!("✅ All types inlined");
-        println!("✅ Proper enum handling");
-        println!("✅ Optional fields with null");
-        println!();
-        println!("🚀 Ready for production use with:");
-        println!("   • OpenAI (GPT-4, GPT-3.5)");
-        println!("   • Claude (Anthropic)");
-        println!("   • Ollama (local models)");
-        println!("   • Any OpenAI-compatible API");
+        tracing::debug!("🎉 ALL SCHEMAS ARE 100% OPENAI COMPATIBLE!");
+        tracing::debug!();
+        tracing::debug!("✅ No $schema field");
+        tracing::debug!("✅ No $ref references");
+        tracing::debug!("✅ No definitions section");
+        tracing::debug!("✅ No $defs section");
+        tracing::debug!("✅ All types inlined");
+        tracing::debug!("✅ Proper enum handling");
+        tracing::debug!("✅ Optional fields with null");
+        tracing::debug!();
+        tracing::debug!("🚀 Ready for production use with:");
+        tracing::debug!("   • OpenAI (GPT-4, GPT-3.5)");
+        tracing::debug!("   • Claude (Anthropic)");
+        tracing::debug!("   • Ollama (local models)");
+        tracing::debug!("   • Any OpenAI-compatible API");
     } else {
-        println!("❌ SOME SCHEMAS ARE NOT COMPATIBLE");
-        println!("   Please review the schemas above");
+        error!(" SOME SCHEMAS ARE NOT COMPATIBLE");
+        tracing::debug!("   Please review the schemas above");
     }
 
     Ok(())

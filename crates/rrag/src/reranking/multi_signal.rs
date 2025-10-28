@@ -387,7 +387,7 @@ impl MultiSignalReranker {
                     all_signals.insert(signal_type.clone(), signals);
                 }
                 Err(e) => {
-                    eprintln!("Warning: Failed to extract signal {:?}: {}", signal_type, e);
+                    ewarn!(" Failed to extract signal {:?}: {}", signal_type, e);
                     // Continue with other signals
                 }
             }

@@ -48,7 +48,7 @@
 //!
 //! let results = retriever.search(query).await?;
 //! for result in results {
-//!     println!("Score: {:.3} - {}", result.score, result.content);
+//!     tracing::debug!("Score: {:.3} - {}", result.score, result.content);
 //! }
 //! # Ok(())
 //! # }
@@ -75,7 +75,7 @@
 //!     });
 //!
 //! let results = retriever.search(query).await?;
-//! println!("Found {} filtered results", results.len());
+//! tracing::debug!("Found {} filtered results", results.len());
 //! # Ok(())
 //! # }
 //! ```
@@ -152,16 +152,16 @@
 //! # async fn main() {
 //! match retriever.search(query).await {
 //!     Ok(results) => {
-//!         println!("Found {} results", results.len());
+//!         tracing::debug!("Found {} results", results.len());
 //!         for result in results {
-//!             println!("  {}: {:.3}", result.content, result.score);
+//!             tracing::debug!("  {}: {:.3}", result.content, result.score);
 //!         }
 //!     }
 //!     Err(RragError::Retrieval { query, .. }) => {
-//!         eprintln!("Search failed for query: {}", query);
+//!         tracing::debug!("Search failed for query: {}", query);
 //!     }
 //!     Err(e) => {
-//!         eprintln!("Retrieval error: {}", e);
+//!         tracing::debug!("Retrieval error: {}", e);
 //!     }
 //! }
 //! # }
@@ -194,7 +194,7 @@ use std::sync::Arc;
 /// .with_metadata("author", "Dr. Smith".into())
 /// .with_embedding(embedding); // Optional embedding
 ///
-/// println!("Result: {} (score: {:.3})", result.content, result.score);
+/// tracing::debug!("Result: {} (score: {:.3})", result.content, result.score);
 /// ```
 ///
 /// # Scoring

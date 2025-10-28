@@ -8,24 +8,24 @@ use rrag::system::{EmbeddingConfig, StorageConfig};
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("🦀 RRAG + RSLLM Integration Demo");
-    println!("==================================\n");
+    tracing::debug!("🦀 RRAG + RSLLM Integration Demo");
+    tracing::debug!("==================================\n");
 
     // Create rsllm client for LLM operations
     #[cfg(feature = "rsllm-client")]
     {
-        println!("🔧 Creating RSLLM client...");
+        tracing::debug!("🔧 Creating RSLLM client...");
         // Note: In production, you would use a real provider like OpenAI, Claude, or Ollama
         // For demo purposes, we'll show the integration structure
-        println!("📝 Note: RSLLM client creation would connect to real LLM providers");
-        println!("   Supported providers: OpenAI, Claude, Ollama");
-        println!("   Example: rsllm::Provider::OpenAI with API key");
+        tracing::debug!("📝 Note: RSLLM client creation would connect to real LLM providers");
+        tracing::debug!("   Supported providers: OpenAI, Claude, Ollama");
+        tracing::debug!("   Example: rsllm::Provider::OpenAI with API key");
 
         // For demo, we'll skip actual client creation to avoid connection errors
-        println!("✅ RSLLM client interface ready (demo mode)!\n");
+        tracing::debug!("✅ RSLLM client interface ready (demo mode)!\n");
 
         // Create RRAG agent (without rsllm client for demo)
-        println!("🤖 Creating RRAG agent...");
+        tracing::debug!("🤖 Creating RRAG agent...");
         let agent = RragAgent::builder()
             .with_name("RRAG Demo Agent")
             .with_model("openai", "gpt-3.5-turbo")  // Example configuration
@@ -33,31 +33,31 @@ async fn main() -> RragResult<()> {
             .with_temperature(0.7)
             .build()?;
 
-        println!("✅ RRAG agent created successfully!\n");
+        tracing::debug!("✅ RRAG agent created successfully!\n");
 
         // Test agent capabilities
-        println!("💬 Testing agent chat capabilities...");
+        tracing::debug!("💬 Testing agent chat capabilities...");
         match agent
             .process_message("Hello! Can you tell me about Rust programming?", None)
             .await
         {
             Ok(response) => {
-                println!("🤖 Agent Response: {}", response.text);
-                println!("⏱️  Processing time: {}ms", response.metadata.duration_ms);
-                println!("🔧 Tool calls: {}", response.tool_calls.len());
+                tracing::debug!("🤖 Agent Response: {}", response.text);
+                tracing::debug!("⏱️  Processing time: {}ms", response.metadata.duration_ms);
+                tracing::debug!("🔧 Tool calls: {}", response.tool_calls.len());
             }
             Err(e) => {
-                println!(
+                tracing::debug!(
                     "⚠️  Agent response failed (expected if no Ollama server): {}",
                     e
                 );
-                println!("📝 This demonstrates the integration structure is correct");
+                tracing::debug!("📝 This demonstrates the integration structure is correct");
             }
         }
-        println!();
+        tracing::debug!();
 
         // Create a complete RAG system with rsllm integration
-        println!("🏗️  Building complete RAG system...");
+        tracing::debug!("🏗️  Building complete RAG system...");
         let rag_system = RragSystemBuilder::new()
             .with_name("Demo RAG System")
             .with_embedding_config(EmbeddingConfig {
@@ -78,10 +78,10 @@ async fn main() -> RragResult<()> {
             .build()
             .await?;
 
-        println!("✅ RAG system created successfully!\n");
+        tracing::debug!("✅ RAG system created successfully!\n");
 
         // Add some demo documents
-        println!("📚 Adding demo documents to RAG system...");
+        tracing::debug!("📚 Adding demo documents to RAG system...");
         let documents = vec![
             Document::new("Rust is a systems programming language that runs blazingly fast, prevents segfaults, and guarantees thread safety."),
             Document::new("RAG (Retrieval-Augmented Generation) combines information retrieval with text generation to provide more accurate and contextual responses."),
@@ -92,44 +92,44 @@ async fn main() -> RragResult<()> {
         for document in documents {
             rag_system.process_document(document).await?;
         }
-        println!("✅ Documents ingested successfully!\n");
+        tracing::debug!("✅ Documents ingested successfully!\n");
 
         // Test RAG system search
-        println!("🔍 Testing RAG system search...");
+        tracing::debug!("🔍 Testing RAG system search...");
         let search_results = rag_system
             .search("What is Rust programming language?".to_string(), Some(2))
             .await?;
-        println!("📊 Search completed: {} results", search_results.query);
-        println!("⏱️  Search time: {}ms", search_results.processing_time_ms);
-        println!("✅ Search functionality verified!");
-        println!();
+        tracing::debug!("📊 Search completed: {} results", search_results.query);
+        tracing::debug!("⏱️  Search time: {}ms", search_results.processing_time_ms);
+        tracing::debug!("✅ Search functionality verified!");
+        tracing::debug!();
 
         // Demonstrate RSLLM streaming interface (without actual connection)
-        println!("🌊 RSLLM Streaming Interface Demo...");
-        println!("📝 In production, this would stream tokens from the LLM provider:");
-        println!("   - Real-time token streaming");
-        println!("   - Backpressure handling");
-        println!("   - Error recovery");
-        println!("   - Progress indicators");
-        println!("✅ Streaming interface verified!\n");
+        tracing::debug!("🌊 RSLLM Streaming Interface Demo...");
+        tracing::debug!("📝 In production, this would stream tokens from the LLM provider:");
+        tracing::debug!("   - Real-time token streaming");
+        tracing::debug!("   - Backpressure handling");
+        tracing::debug!("   - Error recovery");
+        tracing::debug!("   - Progress indicators");
+        tracing::debug!("✅ Streaming interface verified!\n");
 
         // Demonstrate pipeline integration (simplified for demo)
-        println!("⚙️  Testing pipeline integration...");
-        println!("📝 Pipeline integration would use RagPipelineBuilder in production");
-        println!("✅ Pipeline architecture verified!");
+        tracing::debug!("⚙️  Testing pipeline integration...");
+        tracing::debug!("📝 Pipeline integration would use RagPipelineBuilder in production");
+        tracing::debug!("✅ Pipeline architecture verified!");
 
-        println!();
+        tracing::debug!();
     }
 
     #[cfg(not(feature = "rsllm-client"))]
     {
-        println!("⚠️  rsllm-client feature not enabled");
-        println!("📝 To test the full integration, run with:");
-        println!("   cargo run --features=rsllm-client --example rrag_rsllm_integration");
-        println!();
+        warn!("  rsllm-client feature not enabled");
+        tracing::debug!("📝 To test the full integration, run with:");
+        tracing::debug!("   cargo run --features=rsllm-client --example rrag_rsllm_integration");
+        tracing::debug!();
 
         // Still demonstrate RRAG-only functionality
-        println!("🏗️  Testing RRAG framework without rsllm...");
+        tracing::debug!("🏗️  Testing RRAG framework without rsllm...");
         let rag_system = RragSystemBuilder::new()
             .with_name("Demo RAG System (No LLM)")
             .with_embedding_config(EmbeddingConfig {
@@ -150,24 +150,24 @@ async fn main() -> RragResult<()> {
             .build()
             .await?;
 
-        println!("✅ RRAG system created successfully (without LLM integration)!\n");
+        tracing::debug!("✅ RRAG system created successfully (without LLM integration)!\n");
     }
 
     // Show system capabilities
-    println!("ℹ️  Integration Summary:");
-    println!("   📦 RRAG Framework: Ready");
+    tracing::debug!("ℹ️  Integration Summary:");
+    tracing::debug!("   📦 RRAG Framework: Ready");
     #[cfg(feature = "rsllm-client")]
-    println!("   🤖 RSLLM Client: Integrated");
+    tracing::debug!("   🤖 RSLLM Client: Integrated");
     #[cfg(not(feature = "rsllm-client"))]
-    println!("   🤖 RSLLM Client: Not enabled");
-    println!("   🔧 Pipeline System: Ready");
-    println!("   💾 Storage System: Ready");
-    println!("   🔍 Retrieval System: Ready");
-    println!("   🎯 Agent System: Ready");
-    println!();
+    tracing::debug!("   🤖 RSLLM Client: Not enabled");
+    tracing::debug!("   🔧 Pipeline System: Ready");
+    tracing::debug!("   💾 Storage System: Ready");
+    tracing::debug!("   🔍 Retrieval System: Ready");
+    tracing::debug!("   🎯 Agent System: Ready");
+    tracing::debug!();
 
-    println!("🎉 Integration demo completed successfully!");
-    println!("📚 RRAG + RSLLM are ready for production RAG applications!");
+    tracing::debug!("🎉 Integration demo completed successfully!");
+    tracing::debug!("📚 RRAG + RSLLM are ready for production RAG applications!");
 
     Ok(())
 }

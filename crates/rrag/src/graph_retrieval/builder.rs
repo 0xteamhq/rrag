@@ -566,10 +566,10 @@ impl ProgressCallback for PrintProgressCallback {
     async fn on_progress(&self, progress: &GraphBuildProgress) {
         match &progress.phase {
             BuildPhase::Initializing => {
-                println!("Initializing graph builder...");
+                tracing::debug!("Initializing graph builder...");
             }
             BuildPhase::EntityExtraction => {
-                println!(
+                tracing::debug!(
                     "Extracting entities: {}/{} documents processed ({:.1} docs/sec), {} entities found, {} relationships found",
                     progress.documents_processed,
                     progress.total_documents,
@@ -579,45 +579,45 @@ impl ProgressCallback for PrintProgressCallback {
                 );
             }
             BuildPhase::GraphConstruction => {
-                println!(
+                tracing::debug!(
                     "Building graph: {} nodes, {} edges",
                     progress.graph_nodes, progress.graph_edges
                 );
             }
             BuildPhase::EmbeddingGeneration => {
-                println!("Generating embeddings for entities...");
+                tracing::debug!("Generating embeddings for entities...");
             }
             BuildPhase::MetricComputation => {
-                println!("Computing graph metrics (PageRank, centrality, etc.)...");
+                tracing::debug!("Computing graph metrics (PageRank, centrality, etc.)...");
             }
             BuildPhase::Indexing => {
-                println!("Building search indices...");
+                tracing::debug!("Building search indices...");
             }
             BuildPhase::Completed => {
-                println!(
+                tracing::debug!(
                     "Graph construction completed! Processed {} documents, extracted {} entities, found {} relationships",
                     progress.documents_processed,
                     progress.entities_extracted,
                     progress.relationships_found
                 );
-                println!(
+                tracing::debug!(
                     "Final graph: {} nodes, {} edges",
                     progress.graph_nodes, progress.graph_edges
                 );
                 if !progress.errors.is_empty() {
-                    println!(
+                    tracing::debug!(
                         "Encountered {} errors during processing",
                         progress.errors.len()
                     );
                 }
             }
             BuildPhase::Failed(error) => {
-                println!("Graph construction failed: {}", error);
+                tracing::debug!("Graph construction failed: {}", error);
             }
         }
 
         if progress.estimated_remaining_seconds > 0 {
-            println!(
+            tracing::debug!(
                 "Estimated time remaining: {} seconds",
                 progress.estimated_remaining_seconds
             );
@@ -686,7 +686,7 @@ mod tests {
                 assert!(health);
             }
             Err(e) => {
-                println!("Builder test failed: {}", e);
+                tracing::debug!("Builder test failed: {}", e);
                 // For now, we'll allow this to fail since we don't have full entity extraction
                 // In a real implementation, this should work
             }

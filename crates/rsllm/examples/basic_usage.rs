@@ -7,45 +7,45 @@ use rsllm::prelude::*;
 
 #[tokio::main]
 async fn main() -> RsllmResult<()> {
-    println!("🦀 RSLLM - Rust LLM Client Library Demo");
-    println!("=====================================\n");
+    tracing::debug!("🦀 RSLLM - Rust LLM Client Library Demo");
+    tracing::debug!("=====================================\n");
 
     // Create a client using the builder pattern (using Ollama since it doesn't require auth)
-    println!("🔧 Creating RSLLM client...");
+    tracing::debug!("🔧 Creating RSLLM client...");
     let client = Client::builder()
         .provider(Provider::Ollama)
         .model("llama3.1")
         .temperature(0.7)
         .build()?;
 
-    println!("✅ Client created successfully!\n");
+    tracing::debug!("✅ Client created successfully!\n");
 
     // Test basic chat completion (non-streaming)
-    println!("💬 Testing chat completion...");
+    tracing::debug!("💬 Testing chat completion...");
     let messages = vec![ChatMessage::user("What is Rust programming language?")];
 
     match client.chat_completion(messages).await {
         Ok(response) => {
-            println!("🤖 Response: {}", response.content);
-            println!("📊 Model: {}", response.model);
+            tracing::debug!("🤖 Response: {}", response.content);
+            tracing::debug!("📊 Model: {}", response.model);
             if let Some(reason) = &response.finish_reason {
-                println!("🏁 Finish reason: {}", reason);
+                tracing::debug!("🏁 Finish reason: {}", reason);
             }
         }
         Err(e) => {
-            println!(
+            tracing::debug!(
                 "⚠️  API call failed (expected since no Ollama server): {}",
                 e
             );
-            println!(
+            tracing::debug!(
                 "📝 This demonstrates the client can be created and would work with a real server"
             );
         }
     }
-    println!();
+    tracing::debug!();
 
     // Test streaming chat completion
-    println!("🌊 Testing streaming completion...");
+    tracing::debug!("🌊 Testing streaming completion...");
     let stream_messages = vec![ChatMessage::user("Tell me about async programming in Rust")];
 
     match client.chat_completion_stream(stream_messages).await {
@@ -60,56 +60,56 @@ async fn main() -> RsllmResult<()> {
                         std::io::Write::flush(&mut std::io::stdout()).unwrap();
                     }
                     Ok(chunk) if chunk.is_done => {
-                        println!("\n🏁 Stream completed!");
+                        tracing::debug!("\n🏁 Stream completed!");
                         break;
                     }
                     Ok(_) => {}
                     Err(e) => {
-                        println!("\n❌ Stream error: {}", e);
+                        tracing::debug!("\n❌ Stream error: {}", e);
                         break;
                     }
                 }
             }
         }
         Err(e) => {
-            println!(
+            tracing::debug!(
                 "⚠️  Streaming failed (expected since no Ollama server): {}",
                 e
             );
-            println!("📝 But streaming framework is properly implemented and would work with real server");
+            tracing::debug!("📝 But streaming framework is properly implemented and would work with real server");
         }
     }
-    println!();
+    tracing::debug!();
 
     // Test simple completion helper
-    println!("⚡ Testing simple completion helper...");
+    tracing::debug!("⚡ Testing simple completion helper...");
     match client.complete("What are the benefits of Rust?").await {
         Ok(simple_response) => {
-            println!("🤖 Simple response: {}", simple_response);
+            tracing::debug!("🤖 Simple response: {}", simple_response);
         }
         Err(e) => {
-            println!("⚠️  Simple completion failed (expected): {}", e);
+            warn!("  Simple completion failed (expected): {}", e);
         }
     }
-    println!();
+    tracing::debug!();
 
     // Test provider information
-    println!("ℹ️  Provider Information:");
-    println!("   Provider: {:?}", client.provider().provider_type());
-    println!("   Supported models: {:?}", client.supported_models());
-    println!();
+    tracing::debug!("ℹ️  Provider Information:");
+    tracing::debug!("   Provider: {:?}", client.provider().provider_type());
+    tracing::debug!("   Supported models: {:?}", client.supported_models());
+    tracing::debug!();
 
     // Test health check
-    println!("🏥 Testing provider health check...");
+    tracing::debug!("🏥 Testing provider health check...");
     match client.health_check().await {
-        Ok(true) => println!("✅ Provider is healthy!"),
-        Ok(false) => println!("⚠️  Provider health check failed"),
-        Err(e) => println!("⚠️  Health check failed (expected since no Ollama): {}", e),
+        Ok(true) => tracing::debug!("✅ Provider is healthy!"),
+        Ok(false) => warn!("  Provider health check failed"),
+        Err(e) => warn!("  Health check failed (expected since no Ollama): {}", e),
     }
-    println!();
+    tracing::debug!();
 
     // Demonstrate different message types
-    println!("📝 Testing different message types...");
+    tracing::debug!("📝 Testing different message types...");
     let complex_messages = vec![
         ChatMessage::system("You are a helpful Rust programming assistant."),
         ChatMessage::user("Explain ownership in Rust"),
@@ -119,20 +119,20 @@ async fn main() -> RsllmResult<()> {
 
     match client.chat_completion(complex_messages).await {
         Ok(complex_response) => {
-            println!(
+            tracing::debug!(
                 "🤖 Complex conversation response: {}",
                 complex_response.content
             );
         }
         Err(e) => {
-            println!("⚠️  Complex conversation failed (expected): {}", e);
-            println!("📝 But message types are properly structured");
+            warn!("  Complex conversation failed (expected): {}", e);
+            tracing::debug!("📝 But message types are properly structured");
         }
     }
-    println!();
+    tracing::debug!();
 
-    println!("🎉 All tests completed successfully!");
-    println!("📚 RSLLM is ready for integration with RRAG framework!");
+    tracing::debug!("🎉 All tests completed successfully!");
+    tracing::debug!("📚 RSLLM is ready for integration with RRAG framework!");
 
     Ok(())
 }

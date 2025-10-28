@@ -33,7 +33,7 @@
 //! let document = Document::new("The quick brown fox jumps over the lazy dog");
 //! let embedding = service.embed_document(&document).await?;
 //!
-//! println!("Generated embedding with {} dimensions", embedding.dimensions);
+//! tracing::debug!("Generated embedding with {} dimensions", embedding.dimensions);
 //! # Ok(())
 //! # }
 //! ```
@@ -66,7 +66,7 @@
 //! ];
 //!
 //! let embeddings = service.embed_documents(&documents).await?;
-//! println!("Generated {} embeddings", embeddings.len());
+//! tracing::debug!("Generated {} embeddings", embeddings.len());
 //! # Ok(())
 //! # }
 //! ```
@@ -127,13 +127,13 @@
 //! # async fn main() {
 //! match service.embed_document(&document).await {
 //!     Ok(embedding) => {
-//!         println!("Success: {} dimensions", embedding.dimensions);
+//!         tracing::debug!("Success: {} dimensions", embedding.dimensions);
 //!     }
 //!     Err(RragError::Embedding { content_type, message, .. }) => {
-//!         eprintln!("Embedding error for {}: {}", content_type, message);
+//!         tracing::debug!("Embedding error for {}: {}", content_type, message);
 //!     }
 //!     Err(e) => {
-//!         eprintln!("Other error: {}", e);
+//!         tracing::debug!("Other error: {}", e);
 //!     }
 //! }
 //! # }
@@ -795,7 +795,7 @@ impl EmbeddingProvider for LocalEmbeddingProvider {
 /// ];
 ///
 /// let embeddings = service.embed_documents(&documents).await?;
-/// println!("Generated {} embeddings", embeddings.len());
+/// tracing::debug!("Generated {} embeddings", embeddings.len());
 /// # Ok(())
 /// # }
 /// ```

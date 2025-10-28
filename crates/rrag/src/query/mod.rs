@@ -62,7 +62,7 @@
 //!
 //! // Use hypothetical documents for retrieval
 //! for doc in hypothetical_docs.documents {
-//!     println!("Hypothetical answer: {}", doc.content);
+//!     tracing::debug!("Hypothetical answer: {}", doc.content);
 //! }
 //! # Ok(())
 //! # }

@@ -49,78 +49,78 @@ async fn main() -> RragResult<()> {
     // Initialize logging
     tracing_subscriber::fmt::init();
 
-    println!("🚀 RRAG Incremental Indexing System Demo");
-    println!("=========================================\n");
+    tracing::debug!("🚀 RRAG Incremental Indexing System Demo");
+    tracing::debug!("=========================================\n");
 
     // Step 1: Create and configure the incremental indexing service
-    println!("📋 Step 1: Setting up Incremental Indexing Service");
+    tracing::debug!("📋 Step 1: Setting up Incremental Indexing Service");
     let service = create_incremental_service().await?;
 
     // Perform health check
     let health = service.health_check().await?;
-    println!("✅ Service health check: {:?}", health);
-    println!();
+    tracing::debug!("✅ Service health check: {:?}", health);
+    tracing::debug!();
 
     // Step 2: Demonstrate change detection
-    println!("🔍 Step 2: Change Detection Demo");
+    tracing::debug!("🔍 Step 2: Change Detection Demo");
     demo_change_detection().await?;
-    println!();
+    tracing::debug!();
 
     // Step 3: Demonstrate incremental indexing operations
-    println!("📚 Step 3: Incremental Indexing Operations");
+    tracing::debug!("📚 Step 3: Incremental Indexing Operations");
     demo_incremental_operations().await?;
-    println!();
+    tracing::debug!();
 
     // Step 4: Demonstrate batch processing
-    println!("⚡ Step 4: Batch Processing Demo");
+    tracing::debug!("⚡ Step 4: Batch Processing Demo");
     demo_batch_processing().await?;
-    println!();
+    tracing::debug!();
 
     // Step 5: Demonstrate versioning and conflict resolution
-    println!("🔄 Step 5: Versioning and Conflict Resolution");
+    tracing::debug!("🔄 Step 5: Versioning and Conflict Resolution");
     demo_versioning_system().await?;
-    println!();
+    tracing::debug!();
 
     // Step 6: Demonstrate rollback capabilities
-    println!("↩️  Step 6: Rollback System Demo");
+    tracing::debug!("↩️  Step 6: Rollback System Demo");
     demo_rollback_system().await?;
-    println!();
+    tracing::debug!();
 
     // Step 7: Demonstrate integrity checking
-    println!("🔒 Step 7: Integrity Checking Demo");
+    tracing::debug!("🔒 Step 7: Integrity Checking Demo");
     demo_integrity_system().await?;
-    println!();
+    tracing::debug!();
 
     // Step 8: Demonstrate vector updates
-    println!("🎯 Step 8: Vector Update Management");
+    tracing::debug!("🎯 Step 8: Vector Update Management");
     demo_vector_updates().await?;
-    println!();
+    tracing::debug!();
 
     // Step 9: Demonstrate monitoring and metrics
-    println!("📊 Step 9: Monitoring and Metrics Demo");
+    tracing::debug!("📊 Step 9: Monitoring and Metrics Demo");
     demo_monitoring_system().await?;
-    println!();
+    tracing::debug!();
 
     // Step 10: Demonstrate production scenarios
-    println!("🏭 Step 10: Production Scenarios");
+    tracing::debug!("🏭 Step 10: Production Scenarios");
     demo_production_scenarios().await?;
-    println!();
+    tracing::debug!();
 
-    println!("🎉 Demo completed successfully!");
-    println!("The incremental indexing system provides:");
-    println!("  ✅ Efficient document updates without full rebuilds");
-    println!("  ✅ Comprehensive change detection and versioning");
-    println!("  ✅ Robust batch processing with error handling");
-    println!("  ✅ Complete rollback and recovery capabilities");
-    println!("  ✅ Continuous integrity monitoring");
-    println!("  ✅ Performance optimization and alerting");
+    tracing::debug!("🎉 Demo completed successfully!");
+    tracing::debug!("The incremental indexing system provides:");
+    tracing::debug!("  ✅ Efficient document updates without full rebuilds");
+    tracing::debug!("  ✅ Comprehensive change detection and versioning");
+    tracing::debug!("  ✅ Robust batch processing with error handling");
+    tracing::debug!("  ✅ Complete rollback and recovery capabilities");
+    tracing::debug!("  ✅ Continuous integrity monitoring");
+    tracing::debug!("  ✅ Performance optimization and alerting");
 
     Ok(())
 }
 
 /// Create and configure the incremental indexing service
 async fn create_incremental_service() -> RragResult<IncrementalIndexingService> {
-    println!("  📦 Creating incremental indexing service...");
+    tracing::debug!("  📦 Creating incremental indexing service...");
 
     let service = IncrementalServiceBuilder::new()
         .with_batch_size(100)
@@ -135,17 +135,17 @@ async fn create_incremental_service() -> RragResult<IncrementalIndexingService> 
         .build()
         .await?;
 
-    println!("  ✅ Service created with optimized configuration");
-    println!("  📊 Max batch size: 100 documents");
-    println!("  ⏱️  Batch timeout: 5 seconds");
-    println!("  🔄 Max concurrency: 8 operations");
+    tracing::debug!("  ✅ Service created with optimized configuration");
+    tracing::debug!("  📊 Max batch size: 100 documents");
+    tracing::debug!("  ⏱️  Batch timeout: 5 seconds");
+    tracing::debug!("  🔄 Max concurrency: 8 operations");
 
     Ok(service)
 }
 
 /// Demonstrate change detection capabilities
 async fn demo_change_detection() -> RragResult<()> {
-    println!("  🔍 Setting up change detector...");
+    tracing::debug!("  🔍 Setting up change detector...");
 
     let detector = ChangeDetector::new(ChangeDetectionConfig {
         enable_content_hash: true,
@@ -165,12 +165,12 @@ async fn demo_change_detection() -> RragResult<()> {
 
     // First detection (should be "Added")
     let result1 = detector.detect_changes(&doc).await?;
-    println!("  📝 Initial document detection: {:?}", result1.change_type);
-    println!("  🔢 Content hash: {}", result1.current_hash);
+    tracing::debug!("  📝 Initial document detection: {:?}", result1.change_type);
+    tracing::debug!("  🔢 Content hash: {}", result1.current_hash);
 
     // No change detection
     let result2 = detector.detect_changes(&doc).await?;
-    println!("  ⏸️  Unchanged document: {:?}", result2.change_type);
+    tracing::debug!("  ⏸️  Unchanged document: {:?}", result2.change_type);
 
     // Content change
     let doc_modified = Document::with_id(
@@ -182,13 +182,13 @@ async fn demo_change_detection() -> RragResult<()> {
     .with_content_hash();
 
     let result3 = detector.detect_changes(&doc_modified).await?;
-    println!("  ✏️  Content changed: {:?}", result3.change_type);
-    println!(
+    tracing::debug!("  ✏️  Content changed: {:?}", result3.change_type);
+    tracing::debug!(
         "  📊 Change percentage: {:.1}%",
         result3.delta.change_percentage * 100.0
     );
-    println!("  📈 Characters added: {}", result3.delta.added_chars);
-    println!("  📉 Characters removed: {}", result3.delta.removed_chars);
+    tracing::debug!("  📈 Characters added: {}", result3.delta.added_chars);
+    tracing::debug!("  📉 Characters removed: {}", result3.delta.removed_chars);
 
     // Metadata change
     let doc_meta_changed = Document::with_id(
@@ -203,21 +203,21 @@ async fn demo_change_detection() -> RragResult<()> {
     .with_content_hash();
 
     let result4 = detector.detect_changes(&doc_meta_changed).await?;
-    println!("  🏷️  Metadata changed: {:?}", result4.change_type);
-    println!(
+    tracing::debug!("  🏷️  Metadata changed: {:?}", result4.change_type);
+    tracing::debug!(
         "  🔧 Modified keys: {:?}",
         result4.metadata_changes.modified_keys
     );
 
     // Get change statistics
     let stats = detector.get_stats().await;
-    println!("  📊 Detection stats:");
-    println!("      📋 Total processed: {}", stats.total_processed);
-    println!(
+    tracing::debug!("  📊 Detection stats:");
+    tracing::debug!("      📋 Total processed: {}", stats.total_processed);
+    tracing::debug!(
         "      ⏱️  Average time: {:.2}ms",
         stats.avg_processing_time_ms
     );
-    println!(
+    tracing::debug!(
         "      🎯 Cache hit rate: {:.1}%",
         stats.cache_hit_rate * 100.0
     );
@@ -227,7 +227,7 @@ async fn demo_change_detection() -> RragResult<()> {
 
 /// Demonstrate incremental indexing operations
 async fn demo_incremental_operations() -> RragResult<()> {
-    println!("  📚 Setting up index manager...");
+    tracing::debug!("  📚 Setting up index manager...");
 
     let index_manager = IncrementalIndexManager::new(IndexManagerConfig {
         batch_size: 50,
@@ -239,7 +239,7 @@ async fn demo_incremental_operations() -> RragResult<()> {
 
     // Create test documents
     let documents = create_test_documents(5).await;
-    println!("  📄 Created {} test documents", documents.len());
+    tracing::debug!("  📄 Created {} test documents", documents.len());
 
     // Submit add operations
     let mut operation_ids = Vec::new();
@@ -267,7 +267,7 @@ async fn demo_incremental_operations() -> RragResult<()> {
 
         let op_id = index_manager.submit_update(update).await?;
         operation_ids.push(op_id.clone());
-        println!(
+        tracing::debug!(
             "  📤 Submitted add operation {}: {}",
             i + 1,
             op_id.split('-').next().unwrap_or("unknown")
@@ -278,10 +278,10 @@ async fn demo_incremental_operations() -> RragResult<()> {
     sleep(Duration::from_millis(500)).await;
 
     // Check operation status
-    println!("  📋 Checking operation statuses:");
+    tracing::debug!("  📋 Checking operation statuses:");
     for (i, op_id) in operation_ids.iter().enumerate() {
         if let Some(status) = index_manager.get_operation_status(op_id).await? {
-            println!("      Operation {}: {:?}", i + 1, status);
+            tracing::debug!("      Operation {}: {:?}", i + 1, status);
         }
     }
 
@@ -347,7 +347,7 @@ async fn demo_incremental_operations() -> RragResult<()> {
     };
 
     let update_op_id = index_manager.submit_update(update_request).await?;
-    println!(
+    tracing::debug!(
         "  🔄 Submitted update operation: {}",
         update_op_id.split('-').next().unwrap_or("unknown")
     );
@@ -370,7 +370,7 @@ async fn demo_incremental_operations() -> RragResult<()> {
     };
 
     let delete_op_id = index_manager.submit_update(delete_request).await?;
-    println!(
+    tracing::debug!(
         "  🗑️  Submitted delete operation: {}",
         delete_op_id.split('-').next().unwrap_or("unknown")
     );
@@ -378,21 +378,21 @@ async fn demo_incremental_operations() -> RragResult<()> {
     // Get statistics
     sleep(Duration::from_millis(100)).await;
     let stats = index_manager.get_stats().await;
-    println!("  📊 Index manager stats:");
-    println!("      📋 Total operations: {}", stats.total_operations);
-    println!("      ✅ Success rate: {:.1}%", stats.success_rate * 100.0);
-    println!(
+    tracing::debug!("  📊 Index manager stats:");
+    tracing::debug!("      📋 Total operations: {}", stats.total_operations);
+    tracing::debug!("      ✅ Success rate: {:.1}%", stats.success_rate * 100.0);
+    tracing::debug!(
         "      ⏱️  Average time: {:.2}ms",
         stats.avg_processing_time_ms
     );
-    println!("      📤 Queue depth: {}", stats.current_queue_depth);
+    tracing::debug!("      📤 Queue depth: {}", stats.current_queue_depth);
 
     Ok(())
 }
 
 /// Demonstrate batch processing capabilities
 async fn demo_batch_processing() -> RragResult<()> {
-    println!("  ⚡ Setting up batch processor...");
+    tracing::debug!("  ⚡ Setting up batch processor...");
 
     let batch_processor = BatchProcessor::new(BatchConfig {
         max_batch_size: 10,
@@ -407,7 +407,7 @@ async fn demo_batch_processing() -> RragResult<()> {
 
     // Create multiple operations for batch processing
     let documents = create_test_documents(15).await;
-    println!(
+    tracing::debug!(
         "  📚 Created {} documents for batch processing",
         documents.len()
     );
@@ -446,30 +446,30 @@ async fn demo_batch_processing() -> RragResult<()> {
         operation_ids.push(op_id.clone());
 
         if (i + 1) % 5 == 0 {
-            println!("  📤 Submitted batch {} ({} operations)", (i + 1) / 5, 5);
+            tracing::debug!("  📤 Submitted batch {} ({} operations)", (i + 1) / 5, 5);
         }
     }
 
     // Wait for batch processing to complete
-    println!("  ⏳ Waiting for batch processing...");
+    tracing::debug!("  ⏳ Waiting for batch processing...");
     sleep(Duration::from_millis(3000)).await;
 
     // Get batch processing metrics
     let metrics = batch_processor.get_metrics().await;
-    println!("  📊 Batch processing metrics:");
-    println!("      📋 Total operations: {}", metrics.total_operations);
-    println!("      📦 Total batches: {}", metrics.total_batches);
-    println!("      📏 Average batch size: {:.1}", metrics.avg_batch_size);
-    println!(
+    tracing::debug!("  📊 Batch processing metrics:");
+    tracing::debug!("      📋 Total operations: {}", metrics.total_operations);
+    tracing::debug!("      📦 Total batches: {}", metrics.total_batches);
+    tracing::debug!("      📏 Average batch size: {:.1}", metrics.avg_batch_size);
+    tracing::debug!(
         "      🚀 Throughput: {:.1} ops/sec",
         metrics.throughput_ops_per_second
     );
-    println!("      ❌ Error rate: {:.2}%", metrics.error_rate * 100.0);
+    tracing::debug!("      ❌ Error rate: {:.2}%", metrics.error_rate * 100.0);
 
     let queue_stats = batch_processor.get_queue_stats().await;
-    println!("  📋 Queue statistics:");
-    println!("      📊 Total processed: {}", queue_stats.total_processed);
-    println!(
+    tracing::debug!("  📋 Queue statistics:");
+    tracing::debug!("      📊 Total processed: {}", queue_stats.total_processed);
+    tracing::debug!(
         "      🎯 Current throughput: {:.1} ops/sec",
         queue_stats.current_throughput
     );
@@ -479,7 +479,7 @@ async fn demo_batch_processing() -> RragResult<()> {
 
 /// Demonstrate versioning and conflict resolution
 async fn demo_versioning_system() -> RragResult<()> {
-    println!("  🔄 Setting up version manager...");
+    tracing::debug!("  🔄 Setting up version manager...");
 
     let version_manager = VersionManager::new(VersioningConfig {
         max_versions_per_document: 5,
@@ -508,7 +508,7 @@ async fn demo_versioning_system() -> RragResult<()> {
         ),
     ];
 
-    println!("  📝 Creating document versions...");
+    tracing::debug!("  📝 Creating document versions...");
     let mut version_ids = Vec::new();
 
     for (i, (version_name, content, author)) in versions.iter().enumerate() {
@@ -530,7 +530,7 @@ async fn demo_versioning_system() -> RragResult<()> {
             .await?;
         version_ids.push(version.version_id.clone());
 
-        println!(
+        tracing::debug!(
             "  ✅ Created version {}: {} ({})",
             version.version_number,
             version_name,
@@ -538,7 +538,7 @@ async fn demo_versioning_system() -> RragResult<()> {
         );
 
         if let Some(change_summary) = &version.change_summary {
-            println!(
+            tracing::debug!(
                 "      📊 Changes: +{} chars, -{} chars",
                 change_summary.additions, change_summary.deletions
             );
@@ -551,9 +551,9 @@ async fn demo_versioning_system() -> RragResult<()> {
     // Retrieve version history
     let history = version_manager.get_version_history(doc_id).await?;
     if let Some(history) = history {
-        println!("  📚 Version history for document:");
-        println!("      📋 Total versions: {}", history.versions.len());
-        println!(
+        tracing::debug!("  📚 Version history for document:");
+        tracing::debug!("      📋 Total versions: {}", history.versions.len());
+        tracing::debug!(
             "      🆔 Current version: {}",
             history
                 .current_version
@@ -561,7 +561,7 @@ async fn demo_versioning_system() -> RragResult<()> {
                 .next()
                 .unwrap_or("unknown")
         );
-        println!(
+        tracing::debug!(
             "      🌿 Branches: {:?}",
             history.branches.keys().collect::<Vec<_>>()
         );
@@ -576,13 +576,13 @@ async fn demo_versioning_system() -> RragResult<()> {
         .detect_conflicts(&doc_conflict, Some("wrong_version_id"))
         .await?;
     if let Some(conflict) = conflict {
-        println!("  ⚠️  Conflict detected:");
-        println!(
+        tracing::debug!("  ⚠️  Conflict detected:");
+        tracing::debug!(
             "      🆔 Conflict ID: {}",
             conflict.conflict_id.split('-').next().unwrap_or("unknown")
         );
-        println!("      📋 Type: {:?}", conflict.conflict_type);
-        println!("      🔄 Status: {:?}", conflict.resolution_status);
+        tracing::debug!("      📋 Type: {:?}", conflict.conflict_type);
+        tracing::debug!("      🔄 Status: {:?}", conflict.resolution_status);
 
         // Resolve the conflict
         let resolution = VersionResolution {
@@ -598,21 +598,21 @@ async fn demo_versioning_system() -> RragResult<()> {
         let resolved = version_manager
             .resolve_conflict(&conflict.conflict_id, resolution)
             .await?;
-        println!("      ✅ Conflict resolved: {}", resolved);
+        tracing::debug!("      ✅ Conflict resolved: {}", resolved);
     }
 
     // Get version statistics
     let stats = version_manager.get_stats().await;
-    println!("  📊 Versioning statistics:");
-    println!("      📚 Total documents: {}", stats.total_documents);
-    println!("      📋 Total versions: {}", stats.total_versions);
-    println!(
+    tracing::debug!("  📊 Versioning statistics:");
+    tracing::debug!("      📚 Total documents: {}", stats.total_documents);
+    tracing::debug!("      📋 Total versions: {}", stats.total_versions);
+    tracing::debug!(
         "      📊 Avg versions per doc: {:.1}",
         stats.avg_versions_per_document
     );
-    println!("      ⚠️  Total conflicts: {}", stats.total_conflicts);
-    println!("      🤖 Auto-resolved: {}", stats.auto_resolved_conflicts);
-    println!(
+    tracing::debug!("      ⚠️  Total conflicts: {}", stats.total_conflicts);
+    tracing::debug!("      🤖 Auto-resolved: {}", stats.auto_resolved_conflicts);
+    tracing::debug!(
         "      👥 Manual resolved: {}",
         stats.manually_resolved_conflicts
     );
@@ -622,7 +622,7 @@ async fn demo_versioning_system() -> RragResult<()> {
 
 /// Demonstrate rollback system capabilities
 async fn demo_rollback_system() -> RragResult<()> {
-    println!("  ↩️  Setting up rollback manager...");
+    tracing::debug!("  ↩️  Setting up rollback manager...");
 
     let rollback_manager = RollbackManager::new(RollbackConfig {
         max_operation_log_size: 1000,
@@ -636,7 +636,7 @@ async fn demo_rollback_system() -> RragResult<()> {
 
     // Simulate some operations
     let documents = create_test_documents(3).await;
-    println!("  📚 Simulating operations for rollback demo...");
+    tracing::debug!("  📚 Simulating operations for rollback demo...");
 
     for (i, doc) in documents.iter().enumerate() {
         let chunks = create_test_chunks(&doc, 2).await;
@@ -679,14 +679,14 @@ async fn demo_rollback_system() -> RragResult<()> {
             )
             .await?;
 
-        println!("  📝 Logged operation {}", i + 1);
+        tracing::debug!("  📝 Logged operation {}", i + 1);
     }
 
     // Create a system snapshot
     let snapshot_id = rollback_manager
         .create_snapshot("demo_checkpoint".to_string())
         .await?;
-    println!(
+    tracing::debug!(
         "  📸 Created snapshot: {}",
         snapshot_id.split('-').next().unwrap_or("unknown")
     );
@@ -699,13 +699,13 @@ async fn demo_rollback_system() -> RragResult<()> {
             true,
         )
         .await?;
-    println!(
+    tracing::debug!(
         "  🔖 Created rollback point: {}",
         rollback_point_id.split('-').next().unwrap_or("unknown")
     );
 
     // Simulate a failed operation that needs rollback
-    println!("  ⚠️  Simulating failed operations...");
+    tracing::debug!("  ⚠️  Simulating failed operations...");
     sleep(Duration::from_millis(100)).await;
 
     // Perform rollback
@@ -724,21 +724,21 @@ async fn demo_rollback_system() -> RragResult<()> {
     };
 
     let recovery_result = rollback_manager.rollback(rollback_op).await?;
-    println!("  🔄 Rollback completed:");
-    println!("      ✅ Success: {}", recovery_result.success);
-    println!(
+    tracing::debug!("  🔄 Rollback completed:");
+    tracing::debug!("      ✅ Success: {}", recovery_result.success);
+    tracing::debug!(
         "      ⏱️  Recovery time: {}ms",
         recovery_result.recovery_time_ms
     );
-    println!(
+    tracing::debug!(
         "      📋 Operations rolled back: {}",
         recovery_result.rolled_back_operations.len()
     );
 
     if !recovery_result.verification_results.is_empty() {
-        println!("      🔍 Verification results:");
+        tracing::debug!("      🔍 Verification results:");
         for result in &recovery_result.verification_results {
-            println!(
+            tracing::debug!(
                 "          {}: {}",
                 result.check_name,
                 if result.passed { "✅" } else { "❌" }
@@ -748,32 +748,32 @@ async fn demo_rollback_system() -> RragResult<()> {
 
     // Get rollback statistics
     let stats = rollback_manager.get_stats().await;
-    println!("  📊 Rollback statistics:");
-    println!(
+    tracing::debug!("  📊 Rollback statistics:");
+    tracing::debug!(
         "      📋 Operations logged: {}",
         stats.total_operations_logged
     );
-    println!("      🔄 Total rollbacks: {}", stats.total_rollbacks);
-    println!(
+    tracing::debug!("      🔄 Total rollbacks: {}", stats.total_rollbacks);
+    tracing::debug!(
         "      ✅ Successful rollbacks: {}",
         stats.successful_rollbacks
     );
-    println!("      📸 Total snapshots: {}", stats.total_snapshots);
-    println!(
+    tracing::debug!("      📸 Total snapshots: {}", stats.total_snapshots);
+    tracing::debug!(
         "      ⏱️  Average rollback time: {:.2}ms",
         stats.avg_rollback_time_ms
     );
 
     // Get available snapshots
     let snapshots = rollback_manager.get_snapshots().await?;
-    println!("      📸 Available snapshots: {}", snapshots.len());
+    tracing::debug!("      📸 Available snapshots: {}", snapshots.len());
 
     Ok(())
 }
 
 /// Demonstrate integrity checking system
 async fn demo_integrity_system() -> RragResult<()> {
-    println!("  🔒 Setting up integrity checker...");
+    tracing::debug!("  🔒 Setting up integrity checker...");
 
     let mut config = IntegrityConfig::default();
     config.enable_auto_checks = false; // Disable for demo control
@@ -781,11 +781,11 @@ async fn demo_integrity_system() -> RragResult<()> {
     let integrity_checker = IntegrityChecker::new(config).await?;
 
     // Perform quick integrity check
-    println!("  🔍 Performing quick integrity check...");
+    tracing::debug!("  🔍 Performing quick integrity check...");
     let quick_report = integrity_checker.quick_check().await?;
 
-    println!("  📋 Quick check results:");
-    println!(
+    tracing::debug!("  📋 Quick check results:");
+    tracing::debug!(
         "      🆔 Report ID: {}",
         quick_report
             .report_id
@@ -793,98 +793,98 @@ async fn demo_integrity_system() -> RragResult<()> {
             .next()
             .unwrap_or("unknown")
     );
-    println!("      🏥 Overall health: {:?}", quick_report.overall_health);
-    println!(
+    tracing::debug!("      🏥 Overall health: {:?}", quick_report.overall_health);
+    tracing::debug!(
         "      ⏱️  Check duration: {}ms",
         quick_report.check_duration_ms
     );
-    println!(
+    tracing::debug!(
         "      📊 Entities checked: {}",
         quick_report.entities_checked
     );
-    println!(
+    tracing::debug!(
         "      ⚠️  Integrity errors: {}",
         quick_report.integrity_errors.len()
     );
 
     if !quick_report.recommendations.is_empty() {
-        println!("      💡 Recommendations:");
+        tracing::debug!("      💡 Recommendations:");
         for rec in quick_report.recommendations.iter().take(3) {
-            println!("          {:?}: {}", rec.priority, rec.description);
+            tracing::debug!("          {:?}: {}", rec.priority, rec.description);
         }
     }
 
     // Perform comprehensive integrity check
-    println!("  🔍 Performing comprehensive integrity check...");
+    tracing::debug!("  🔍 Performing comprehensive integrity check...");
     let comprehensive_report = integrity_checker.comprehensive_check().await?;
 
-    println!("  📋 Comprehensive check results:");
-    println!(
+    tracing::debug!("  📋 Comprehensive check results:");
+    tracing::debug!(
         "      🏥 Overall health: {:?}",
         comprehensive_report.overall_health
     );
-    println!(
+    tracing::debug!(
         "      ⏱️  Check duration: {}ms",
         comprehensive_report.check_duration_ms
     );
-    println!(
+    tracing::debug!(
         "      📊 Entities checked: {}",
         comprehensive_report.entities_checked
     );
-    println!(
+    tracing::debug!(
         "      ⚠️  Integrity errors: {}",
         comprehensive_report.integrity_errors.len()
     );
-    println!(
+    tracing::debug!(
         "      🔧 Repair actions: {}",
         comprehensive_report.repair_actions.len()
     );
 
     // Display performance metrics
     let perf_metrics = &comprehensive_report.performance_metrics;
-    println!("  📈 Performance metrics:");
-    println!(
+    tracing::debug!("  📈 Performance metrics:");
+    tracing::debug!(
         "      ⏱️  Avg response time: {:.2}ms",
         perf_metrics.avg_response_time_ms
     );
-    println!(
+    tracing::debug!(
         "      🎯 Success rate: {:.1}%",
         perf_metrics.success_rate * 100.0
     );
-    println!(
+    tracing::debug!(
         "      💾 Memory usage: {:.1} MB",
         perf_metrics.memory_usage_mb
     );
-    println!("      💻 CPU usage: {:.1}%", perf_metrics.cpu_usage_percent);
+    tracing::debug!("      💻 CPU usage: {:.1}%", perf_metrics.cpu_usage_percent);
 
     // Display system stats
     let sys_stats = &comprehensive_report.system_stats;
-    println!("  🖥️  System statistics:");
-    println!("      📚 Total documents: {}", sys_stats.total_documents);
-    println!("      🧩 Total chunks: {}", sys_stats.total_chunks);
-    println!("      🎯 Total embeddings: {}", sys_stats.total_embeddings);
-    println!("      ⏰ Uptime: {} hours", sys_stats.uptime_seconds / 3600);
+    tracing::debug!("  🖥️  System statistics:");
+    tracing::debug!("      📚 Total documents: {}", sys_stats.total_documents);
+    tracing::debug!("      🧩 Total chunks: {}", sys_stats.total_chunks);
+    tracing::debug!("      🎯 Total embeddings: {}", sys_stats.total_embeddings);
+    tracing::debug!("      ⏰ Uptime: {} hours", sys_stats.uptime_seconds / 3600);
 
     // Get integrity statistics
     let stats = integrity_checker.get_stats().await;
-    println!("  📊 Integrity checker statistics:");
-    println!("      🔍 Total checks: {}", stats.total_checks);
-    println!("      ⚡ Quick checks: {}", stats.quick_checks);
-    println!(
+    tracing::debug!("  📊 Integrity checker statistics:");
+    tracing::debug!("      🔍 Total checks: {}", stats.total_checks);
+    tracing::debug!("      ⚡ Quick checks: {}", stats.quick_checks);
+    tracing::debug!(
         "      🔬 Comprehensive checks: {}",
         stats.comprehensive_checks
     );
-    println!("      ⚠️  Total errors found: {}", stats.total_errors_found);
-    println!(
+    tracing::debug!("      ⚠️  Total errors found: {}", stats.total_errors_found);
+    tracing::debug!(
         "      🔧 Repairs attempted: {}",
         stats.total_repairs_attempted
     );
-    println!("      ✅ Successful repairs: {}", stats.successful_repairs);
-    println!(
+    tracing::debug!("      ✅ Successful repairs: {}", stats.successful_repairs);
+    tracing::debug!(
         "      ⏱️  Avg check time: {:.2}ms",
         stats.avg_check_duration_ms
     );
-    println!(
+    tracing::debug!(
         "      📊 System availability: {:.2}%",
         stats.system_availability_percent
     );
@@ -894,7 +894,7 @@ async fn demo_integrity_system() -> RragResult<()> {
 
 /// Demonstrate vector update management
 async fn demo_vector_updates() -> RragResult<()> {
-    println!("  🎯 Setting up vector update manager...");
+    tracing::debug!("  🎯 Setting up vector update manager...");
 
     let vector_manager = VectorUpdateManager::new(VectorUpdateConfig {
         enable_batch_processing: true,
@@ -909,7 +909,7 @@ async fn demo_vector_updates() -> RragResult<()> {
     .await?;
 
     // Create test embeddings
-    println!("  🔢 Creating test embeddings...");
+    tracing::debug!("  🔢 Creating test embeddings...");
     let embeddings = create_test_embeddings_direct(10).await;
 
     // Submit vector add operation
@@ -919,7 +919,7 @@ async fn demo_vector_updates() -> RragResult<()> {
     };
 
     let add_op_id = vector_manager.submit_operation(add_operation).await?;
-    println!(
+    tracing::debug!(
         "  ➕ Submitted add operation: {}",
         add_op_id.split('-').next().unwrap_or("unknown")
     );
@@ -953,43 +953,43 @@ async fn demo_vector_updates() -> RragResult<()> {
         .process_embedding_updates(embedding_updates, "demo_index")
         .await?;
 
-    println!("  🔄 Embedding update results:");
-    println!("      ✅ Success: {}", update_result.success);
-    println!(
+    tracing::debug!("  🔄 Embedding update results:");
+    tracing::debug!("      ✅ Success: {}", update_result.success);
+    tracing::debug!(
         "      🔢 Embeddings processed: {}",
         update_result.embeddings_processed
     );
-    println!(
+    tracing::debug!(
         "      ⏱️  Processing time: {}ms",
         update_result.processing_time_ms
     );
 
     if let Some(index_stats) = &update_result.index_stats {
-        println!("      📊 Index stats:");
-        println!(
+        tracing::debug!("      📊 Index stats:");
+        tracing::debug!(
             "          🔢 Embedding count: {}",
             index_stats.embedding_count
         );
-        println!("          📏 Dimensions: {}", index_stats.dimensions);
-        println!(
+        tracing::debug!("          📏 Dimensions: {}", index_stats.dimensions);
+        tracing::debug!(
             "          💾 Memory usage: {} MB",
             index_stats.memory_usage_bytes / (1024 * 1024)
         );
     }
 
     // Perform index optimization
-    println!("  ⚡ Performing index optimization...");
+    tracing::debug!("  ⚡ Performing index optimization...");
     let opt_result = vector_manager
         .optimize_index("demo_index", OptimizationType::QueryOptimization)
         .await?;
 
-    println!("  🔧 Optimization results:");
-    println!("      ✅ Success: {}", opt_result.success);
-    println!(
+    tracing::debug!("  🔧 Optimization results:");
+    tracing::debug!("      ✅ Success: {}", opt_result.success);
+    tracing::debug!(
         "      ⏱️  Processing time: {}ms",
         opt_result.processing_time_ms
     );
-    println!(
+    tracing::debug!(
         "      🎯 Performance improved: {}",
         opt_result.performance_metrics.throughput_eps > 0.0
     );
@@ -1001,45 +1001,45 @@ async fn demo_vector_updates() -> RragResult<()> {
     };
 
     let threshold_op_id = vector_manager.submit_operation(threshold_operation).await?;
-    println!(
+    tracing::debug!(
         "  🎯 Updated similarity threshold: {}",
         threshold_op_id.split('-').next().unwrap_or("unknown")
     );
 
     // Get vector update metrics
     let metrics = vector_manager.get_metrics().await;
-    println!("  📊 Vector update metrics:");
-    println!("      📋 Total operations: {}", metrics.total_operations);
-    println!(
+    tracing::debug!("  📊 Vector update metrics:");
+    tracing::debug!("      📋 Total operations: {}", metrics.total_operations);
+    tracing::debug!(
         "      ✅ Success rate: {:.1}%",
         metrics.success_rate * 100.0
     );
-    println!(
+    tracing::debug!(
         "      🔢 Embeddings processed: {}",
         metrics.total_embeddings_processed
     );
-    println!(
+    tracing::debug!(
         "      ⏱️  Avg processing time: {:.2}ms",
         metrics.avg_processing_time_ms
     );
-    println!(
+    tracing::debug!(
         "      🚀 System throughput: {:.1} emb/sec",
         metrics.system_performance.overall_throughput_eps
     );
-    println!(
+    tracing::debug!(
         "      💾 Memory usage: {:.1} MB",
         metrics.system_performance.memory_usage_mb
     );
-    println!(
+    tracing::debug!(
         "      🏥 Health score: {:.2}",
         metrics.system_performance.health_score
     );
 
     // Get all index statistics
     let all_stats = vector_manager.get_all_index_stats().await?;
-    println!("  📊 All index statistics ({} indexes):", all_stats.len());
+    tracing::debug!("  📊 All index statistics ({} indexes):", all_stats.len());
     for (index_name, stats) in all_stats.iter() {
-        println!(
+        tracing::debug!(
             "      {}: {} embeddings, {:.1} MB",
             index_name,
             stats.embedding_count,
@@ -1052,7 +1052,7 @@ async fn demo_vector_updates() -> RragResult<()> {
 
 /// Demonstrate monitoring and metrics system
 async fn demo_monitoring_system() -> RragResult<()> {
-    println!("  📊 Setting up monitoring system...");
+    tracing::debug!("  📊 Setting up monitoring system...");
 
     let monitoring_config = MonitoringConfig {
         enable_performance_metrics: true,
@@ -1085,7 +1085,7 @@ async fn demo_monitoring_system() -> RragResult<()> {
     let performance_tracker = PerformanceTracker::new(monitoring_config, 1000);
 
     // Record some performance data points
-    println!("  📈 Recording performance data...");
+    tracing::debug!("  📈 Recording performance data...");
     let operations = ["indexing", "searching", "updating", "optimizing"];
 
     for i in 0..20 {
@@ -1115,39 +1115,39 @@ async fn demo_monitoring_system() -> RragResult<()> {
             .await?;
 
         if (i + 1) % 5 == 0 {
-            println!("  📊 Recorded {} performance data points", i + 1);
+            tracing::debug!("  📊 Recorded {} performance data points", i + 1);
         }
     }
 
     // Get performance statistics
     let perf_stats = performance_tracker.get_statistics().await;
-    println!("  📈 Performance statistics:");
-    println!(
+    tracing::debug!("  📈 Performance statistics:");
+    tracing::debug!(
         "      📋 Total operations: {}",
         perf_stats.overall.total_count
     );
-    println!(
+    tracing::debug!(
         "      ✅ Success rate: {:.1}%",
         (perf_stats.overall.success_count as f64 / perf_stats.overall.total_count as f64) * 100.0
     );
-    println!(
+    tracing::debug!(
         "      ⏱️  Average duration: {:.2}ms",
         perf_stats.overall.avg_duration_ms
     );
-    println!(
+    tracing::debug!(
         "      📊 95th percentile: {:.2}ms",
         perf_stats.overall.p95_duration_ms
     );
-    println!(
+    tracing::debug!(
         "      🚀 Throughput: {:.1} ops/sec",
         perf_stats.overall.operations_per_second
     );
 
     // Show statistics by operation type
-    println!("  📋 Statistics by operation type:");
+    tracing::debug!("  📋 Statistics by operation type:");
     for (op_type, stats) in perf_stats.by_operation_type.iter() {
         let success_rate = (stats.success_count as f64 / stats.total_count as f64) * 100.0;
-        println!(
+        tracing::debug!(
             "      {}: {} ops, {:.1}% success, {:.2}ms avg",
             op_type, stats.total_count, success_rate, stats.avg_duration_ms
         );
@@ -1234,56 +1234,56 @@ async fn demo_monitoring_system() -> RragResult<()> {
 
     // Get current metrics
     let current_metrics = metrics_collector.get_current_metrics().await;
-    println!("  🎯 Current system metrics:");
-    println!(
+    tracing::debug!("  🎯 Current system metrics:");
+    tracing::debug!(
         "      📊 Overall system score: {:.2}",
         current_metrics.calculate_system_score()
     );
-    println!(
+    tracing::debug!(
         "      🏥 Health score: {:.2}",
         current_metrics.health_metrics.overall_health_score
     );
-    println!(
+    tracing::debug!(
         "      🔄 Service availability: {:.2}%",
         current_metrics.health_metrics.service_availability * 100.0
     );
-    println!(
+    tracing::debug!(
         "      ⚡ Performance score: {:.2}",
         current_metrics.health_metrics.performance_score
     );
 
-    println!("  📈 Indexing performance:");
+    tracing::debug!("  📈 Indexing performance:");
     let idx_metrics = &current_metrics.indexing_metrics;
-    println!(
+    tracing::debug!(
         "      📚 Documents/sec: {:.1}",
         idx_metrics.documents_per_second
     );
-    println!("      🧩 Chunks/sec: {:.1}", idx_metrics.chunks_per_second);
-    println!(
+    tracing::debug!("      🧩 Chunks/sec: {:.1}", idx_metrics.chunks_per_second);
+    tracing::debug!(
         "      🎯 Embeddings/sec: {:.1}",
         idx_metrics.embeddings_per_second
     );
-    println!(
+    tracing::debug!(
         "      📦 Batch efficiency: {:.1}%",
         idx_metrics.batch_efficiency * 100.0
     );
 
-    println!("  🖥️  System resources:");
+    tracing::debug!("  🖥️  System resources:");
     let sys_metrics = &current_metrics.system_metrics;
-    println!("      💻 CPU: {:.1}%", sys_metrics.cpu_usage_percent);
-    println!(
+    tracing::debug!("      💻 CPU: {:.1}%", sys_metrics.cpu_usage_percent);
+    tracing::debug!(
         "      💾 Memory: {:.1} MB / {:.1} MB",
         sys_metrics.memory_usage_bytes as f64 / (1024.0 * 1024.0),
         (sys_metrics.memory_usage_bytes + sys_metrics.available_memory_bytes) as f64
             / (1024.0 * 1024.0)
     );
-    println!(
+    tracing::debug!(
         "      💽 Storage: {:.1} GB / {:.1} GB",
         sys_metrics.storage_usage_bytes as f64 / (1024.0 * 1024.0 * 1024.0),
         (sys_metrics.storage_usage_bytes + sys_metrics.available_storage_bytes) as f64
             / (1024.0 * 1024.0 * 1024.0)
     );
-    println!(
+    tracing::debug!(
         "      🔗 Active connections: {}",
         sys_metrics.active_connections
     );
@@ -1293,10 +1293,10 @@ async fn demo_monitoring_system() -> RragResult<()> {
 
 /// Demonstrate production scenarios
 async fn demo_production_scenarios() -> RragResult<()> {
-    println!("  🏭 Simulating production scenarios...");
+    tracing::debug!("  🏭 Simulating production scenarios...");
 
     // Scenario 1: High-volume document ingestion
-    println!("  📈 Scenario 1: High-volume document ingestion");
+    tracing::debug!("  📈 Scenario 1: High-volume document ingestion");
     let batch_processor = BatchProcessor::new(BatchConfig {
         max_batch_size: 100,
         min_batch_size: 10,
@@ -1308,7 +1308,7 @@ async fn demo_production_scenarios() -> RragResult<()> {
     })
     .await?;
 
-    println!("      📚 Processing 1000 documents in batches...");
+    tracing::debug!("      📚 Processing 1000 documents in batches...");
     for batch_num in 0..10 {
         let documents = create_test_documents(100).await;
         let mut operations = Vec::new();
@@ -1344,7 +1344,7 @@ async fn demo_production_scenarios() -> RragResult<()> {
         }
 
         if (batch_num + 1) % 3 == 0 {
-            println!(
+            tracing::debug!(
                 "      ✅ Processed {} batches ({} documents)",
                 batch_num + 1,
                 (batch_num + 1) * 100
@@ -1356,14 +1356,14 @@ async fn demo_production_scenarios() -> RragResult<()> {
     sleep(Duration::from_millis(2000)).await;
 
     let metrics = batch_processor.get_metrics().await;
-    println!(
+    tracing::debug!(
         "      📊 Final metrics: {:.1} ops/sec, {:.2}% error rate",
         metrics.throughput_ops_per_second,
         metrics.error_rate * 100.0
     );
 
     // Scenario 2: Real-time updates with conflict resolution
-    println!("  🔄 Scenario 2: Real-time updates with conflict resolution");
+    tracing::debug!("  🔄 Scenario 2: Real-time updates with conflict resolution");
     let version_manager = VersionManager::new(VersioningConfig {
         max_versions_per_document: 10,
         enable_auto_cleanup: true,
@@ -1382,7 +1382,7 @@ async fn demo_production_scenarios() -> RragResult<()> {
         "Updated content by user2 with different changes",
     ];
 
-    println!(
+    tracing::debug!(
         "      👥 Simulating concurrent updates from {} users...",
         authors.len()
     );
@@ -1398,7 +1398,7 @@ async fn demo_production_scenarios() -> RragResult<()> {
         let version = version_manager
             .create_version(&doc, author, ChangeType::Minor, None)
             .await?;
-        println!(
+        tracing::debug!(
             "      ✏️  {} created version {}",
             author, version.version_number
         );
@@ -1408,23 +1408,23 @@ async fn demo_production_scenarios() -> RragResult<()> {
     }
 
     let stats = version_manager.get_stats().await;
-    println!(
+    tracing::debug!(
         "      📊 Version stats: {} versions, {} conflicts",
         stats.total_versions, stats.total_conflicts
     );
 
     // Scenario 3: System recovery after failure
-    println!("  🚨 Scenario 3: System recovery after failure");
+    tracing::debug!("  🚨 Scenario 3: System recovery after failure");
     let rollback_manager = RollbackManager::new(RollbackConfig::default()).await?;
 
     // Create checkpoint before risky operations
     let checkpoint_id = rollback_manager
         .create_snapshot("pre_risky_ops".to_string())
         .await?;
-    println!("      📸 Created recovery checkpoint");
+    tracing::debug!("      📸 Created recovery checkpoint");
 
     // Simulate system failure and recovery
-    println!("      ⚠️  Simulating system failure...");
+    tracing::debug!("      ⚠️  Simulating system failure...");
     sleep(Duration::from_millis(100)).await;
 
     let recovery = rollback_manager
@@ -1443,14 +1443,14 @@ async fn demo_production_scenarios() -> RragResult<()> {
         })
         .await?;
 
-    println!(
+    tracing::debug!(
         "      🔄 Recovery completed in {}ms",
         recovery.recovery_time_ms
     );
-    println!("      ✅ System restored to stable state");
+    tracing::debug!("      ✅ System restored to stable state");
 
     // Scenario 4: Performance monitoring and alerting
-    println!("  📊 Scenario 4: Performance monitoring and alerting");
+    tracing::debug!("  📊 Scenario 4: Performance monitoring and alerting");
     let monitoring_config = MonitoringConfig {
         enable_alerting: true,
         alert_config: AlertConfig {
@@ -1470,7 +1470,7 @@ async fn demo_production_scenarios() -> RragResult<()> {
     collector_config.enable_performance_metrics = false; // Disable auto for demo
     let metrics_collector = MetricsCollector::new(collector_config).await?;
 
-    println!("      🚨 Simulating alert conditions...");
+    tracing::debug!("      🚨 Simulating alert conditions...");
 
     // Simulate high error rate scenario
     let high_error_update = MetricsUpdate {
@@ -1508,7 +1508,7 @@ async fn demo_production_scenarios() -> RragResult<()> {
             .thresholds
             .error_rate_threshold
     {
-        println!(
+        tracing::debug!(
             "      🚨 ALERT: Error rate ({:.1}%) exceeds threshold ({:.1}%)",
             current_metrics.error_metrics.error_rate * 100.0,
             monitoring_config
@@ -1520,19 +1520,19 @@ async fn demo_production_scenarios() -> RragResult<()> {
     }
 
     if current_metrics.health_metrics.overall_health_score < 0.8 {
-        println!(
+        tracing::debug!(
             "      🚨 ALERT: System health score ({:.2}) below acceptable level",
             current_metrics.health_metrics.overall_health_score
         );
     }
 
-    println!("      📊 Monitoring system successfully detected and reported issues");
+    tracing::debug!("      📊 Monitoring system successfully detected and reported issues");
 
-    println!("  🎯 Production scenario summary:");
-    println!("      ✅ High-volume ingestion: Processed 1000 documents efficiently");
-    println!("      ✅ Concurrent updates: Handled version conflicts automatically");
-    println!("      ✅ System recovery: Restored from failure in <100ms");
-    println!("      ✅ Monitoring/alerting: Detected and alerted on performance issues");
+    tracing::debug!("  🎯 Production scenario summary:");
+    tracing::debug!("      ✅ High-volume ingestion: Processed 1000 documents efficiently");
+    tracing::debug!("      ✅ Concurrent updates: Handled version conflicts automatically");
+    tracing::debug!("      ✅ System recovery: Restored from failure in <100ms");
+    tracing::debug!("      ✅ Monitoring/alerting: Detected and alerted on performance issues");
 
     Ok(())
 }

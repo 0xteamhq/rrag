@@ -174,7 +174,7 @@ impl ExecutionEngine {
             #[cfg(feature = "observability")]
             tracing::info!("Starting graph execution: {}", execution_id);
             #[cfg(not(feature = "observability"))]
-            eprintln!("Starting graph execution: {}", execution_id);
+            tracing::debug!("Starting graph execution: {}", execution_id);
         }
         
         // Validate the graph
@@ -224,12 +224,12 @@ impl ExecutionEngine {
                 #[cfg(feature = "observability")]
                 tracing::info!("Graph execution completed successfully: {}", execution_id);
                 #[cfg(not(feature = "observability"))]
-                eprintln!("Graph execution completed successfully: {}", execution_id);
+                tracing::debug!("Graph execution completed successfully: {}", execution_id);
             } else {
                 #[cfg(feature = "observability")]
                 tracing::error!("Graph execution failed: {}", execution_id);
                 #[cfg(not(feature = "observability"))]
-                eprintln!("Graph execution failed: {}", execution_id);
+                tracing::debug!("Graph execution failed: {}", execution_id);
             }
         }
         
@@ -409,7 +409,7 @@ impl ExecutionEngine {
                 node_duration.as_millis()
             );
             #[cfg(not(feature = "observability"))]
-            eprintln!(
+            tracing::debug!(
                 "Executed node '{}' in {:.2}ms",
                 current_node_id.as_str(),
                 node_duration.as_millis()
@@ -438,7 +438,7 @@ impl ExecutionEngine {
                     #[cfg(feature = "observability")]
                     tracing::info!("Node '{}' requested execution stop", current_node_id.as_str());
                     #[cfg(not(feature = "observability"))]
-                    eprintln!("Node '{}' requested execution stop", current_node_id.as_str());
+                    tracing::debug!("Node '{}' requested execution stop", current_node_id.as_str());
                 }
             }
             Ok(ExecutionResult::JumpTo(next_node_id)) => {
