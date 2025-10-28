@@ -187,6 +187,21 @@ pub trait LLMProvider: Send + Sync {
         temperature: Option<f32>,
         max_tokens: Option<u32>,
     ) -> RsllmResult<Box<dyn futures_util::Stream<Item = RsllmResult<StreamChunk>> + Send + Unpin>>;
+
+    /// Chat completion with tool calling support
+    async fn chat_completion_with_tools(
+        &self,
+        messages: Vec<ChatMessage>,
+        tools: Vec<crate::tools::ToolDefinition>,
+        model: Option<&str>,
+        temperature: Option<f32>,
+        max_tokens: Option<u32>,
+    ) -> RsllmResult<ChatResponse> {
+        // Default implementation: call without tools (fallback for providers without tool support)
+        let _ = tools; // Suppress unused warning
+        self.chat_completion(messages, model, temperature, max_tokens)
+            .await
+    }
 }
 
 /// OpenAI provider implementation
@@ -543,6 +558,126 @@ impl LLMProvider for OllamaProvider {
         }));
 
         Ok(Box::new(stream))
+    }
+
+    async fn chat_completion_with_tools(
+        &self,
+        messages: Vec<ChatMessage>,
+        tools: Vec<crate::tools::ToolDefinition>,
+        model: Option<&str>,
+        temperature: Option<f32>,
+        _max_tokens: Option<u32>,
+    ) -> RsllmResult<ChatResponse> {
+        let url = self.base_url.join("chat")?;
+
+        // Build tools in Ollama/OpenAI format
+        let tools_json: Vec<serde_json::Value> = tools
+            .iter()
+            .map(|tool| {
+                serde_json::json!({
+                    "type": "function",
+                    "function": {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.parameters
+                    }
+                })
+            })
+            .collect();
+
+        let mut request_body = serde_json::json!({
+            "model": model.unwrap_or(Provider::Ollama.default_model()),
+            "messages": messages,
+            "stream": false,
+            "tools": tools_json,
+        });
+
+        if let Some(temp) = temperature {
+            request_body["options"] = serde_json::json!({
+                "temperature": temp
+            });
+        }
+
+        let response = self.client.post(url).json(&request_body).send().await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(RsllmError::api(
+                "Ollama",
+                format!("API request failed: {}", error_text),
+                status.as_str(),
+            ));
+        }
+
+        let response_data: serde_json::Value = response.json().await?;
+
+        let content = response_data["message"]["content"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+
+        // Parse tool calls if present
+        let tool_calls = if let Some(calls_array) = response_data["message"]["tool_calls"].as_array() {
+            let parsed_calls: Vec<crate::message::ToolCall> = calls_array
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, call)| {
+                    let function_name = call["function"]["name"].as_str()?;
+
+                    // Ollama returns arguments as an object, sometimes with string values
+                    // Convert string numbers to actual numbers for compatibility
+                    let mut arguments = call["function"]["arguments"].clone();
+                    if let serde_json::Value::Object(ref mut args_obj) = arguments {
+                        for (_key, value) in args_obj.iter_mut() {
+                            if let serde_json::Value::String(s) = value {
+                                // Try to parse as number
+                                if let Ok(num) = s.parse::<f64>() {
+                                    *value = serde_json::json!(num);
+                                } else if let Ok(int_num) = s.parse::<i64>() {
+                                    *value = serde_json::json!(int_num);
+                                }
+                            }
+                        }
+                    }
+
+                    // Ollama doesn't provide an ID, so generate one
+                    let id = call["id"]
+                        .as_str()
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| format!("call_{}", idx));
+
+                    Some(crate::message::ToolCall {
+                        id,
+                        call_type: crate::message::ToolCallType::Function,
+                        function: crate::message::ToolFunction {
+                            name: function_name.to_string(),
+                            arguments,
+                        },
+                    })
+                })
+                .collect();
+
+            if parsed_calls.is_empty() {
+                None
+            } else {
+                Some(parsed_calls)
+            }
+        } else {
+            None
+        };
+
+        let mut response = ChatResponse::new(content, model.unwrap_or(Provider::Ollama.default_model()))
+            .with_finish_reason("stop");
+
+        if let Some(calls) = tool_calls {
+            response = response.with_tool_calls(calls);
+        }
+
+        Ok(response)
     }
 }
 

@@ -164,6 +164,47 @@ impl Client {
             .await
     }
 
+    /// Chat completion with tool calling support
+    pub async fn chat_completion_with_tools(
+        &self,
+        messages: Vec<ChatMessage>,
+        tools: Vec<crate::tools::ToolDefinition>,
+    ) -> RsllmResult<ChatResponse> {
+        self.chat_completion_with_tools_and_options(messages, tools, None, None, None)
+            .await
+    }
+
+    /// Chat completion with tools and custom options
+    pub async fn chat_completion_with_tools_and_options(
+        &self,
+        messages: Vec<ChatMessage>,
+        tools: Vec<crate::tools::ToolDefinition>,
+        model: Option<&str>,
+        temperature: Option<f32>,
+        max_tokens: Option<u32>,
+    ) -> RsllmResult<ChatResponse> {
+        // Validate messages
+        if messages.is_empty() {
+            return Err(RsllmError::validation(
+                "messages",
+                "Messages cannot be empty",
+            ));
+        }
+
+        // Use configured model if not specified
+        let model = model.unwrap_or(&self.config.model.model);
+
+        // Use configured temperature if not specified
+        let temperature = temperature.or(self.config.model.temperature);
+
+        // Use configured max_tokens if not specified
+        let max_tokens = max_tokens.or(self.config.model.max_tokens);
+
+        self.provider
+            .chat_completion_with_tools(messages, tools, Some(model), temperature, max_tokens)
+            .await
+    }
+
     /// Chat completion (streaming)
     pub async fn chat_completion_stream(
         &self,

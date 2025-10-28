@@ -160,15 +160,26 @@ impl Agent {
 
     /// Single LLM step with tool calling support
     async fn llm_step(&self) -> Result<ChatResponse, Box<dyn Error>> {
-        // For now, we'll simulate the tool calling since we need to integrate with actual LLM
-        // In real implementation, this would call the LLM with tools parameter
+        // Get tool definitions for the LLM
+        let tools = self.tool_registry.tool_definitions();
 
-        // TODO: This is where we'd integrate actual LLM tool calling
-        // For now, return a mock response
-        Ok(ChatResponse::new(
-            "I'll help you with that using the available tools.".to_string(),
-            "mock-model",
-        ))
+        if self.config.verbose {
+            println!("   🔧 Calling LLM with {} tools", tools.len());
+        }
+
+        // Call LLM with conversation history and available tools
+        let response = self
+            .llm_client
+            .chat_completion_with_tools(self.conversation.clone(), tools)
+            .await?;
+
+        if self.config.verbose {
+            println!("   📥 LLM Response: content='{}', tool_calls={:?}",
+                response.content,
+                response.tool_calls.as_ref().map(|t| t.len()));
+        }
+
+        Ok(response)
     }
 
     /// Execute a tool call and add result to conversation
@@ -509,37 +520,83 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("└─────────────────────────────────────────────────────┘\n");
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 7: Next Steps for Implementation
+    // STEP 7: REAL AGENT EXECUTION WITH OLLAMA!
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("📦 STEP 7: Next Steps");
+    println!("\n📦 STEP 7: REAL Agent Execution with Ollama");
     println!("─────────────────────────────────────────────────────\n");
 
-    println!("🔮 To complete the agent, we need to:");
-    println!("   1. ✅ Tool registry (DONE!)");
-    println!("   2. ✅ Conversation memory (DONE!)");
-    println!("   3. ✅ Agent structure (DONE!)");
-    println!("   4. 🚧 LLM tool calling integration (TODO)");
-    println!("   5. 🚧 Response parsing for tool calls (TODO)");
-    println!("   6. 🚧 Agent loop with LLM (TODO)\n");
+    println!("⚠️  Note: Make sure Ollama is running with:");
+    println!("   ollama serve");
+    println!("   ollama pull llama3.2:3b\n");
 
-    println!("💡 Key Insights:");
-    println!("   • Agent = LLM Client + Tools + Memory + Loop");
-    println!("   • Tools use our RSLLM tool framework");
-    println!("   • Conversation history enables context");
-    println!("   • Agent loop handles multi-turn reasoning\n");
+    // Test 1: Simple query (should not need tools)
+    println!("🧪 Test 1: Simple Query (No Tools Needed)");
+    println!("─────────────────────────────────────────────────────\n");
 
-    println!("🎯 Ready to move to source code:");
-    println!("   Create: crates/rrag/src/agent/");
-    println!("   Files:");
-    println!("     - agent.rs       (Agent struct)");
-    println!("     - config.rs      (AgentConfig)");
-    println!("     - executor.rs    (Tool execution)");
-    println!("     - memory.rs      (Conversation management)");
-    println!("     - mod.rs         (Public API)\n");
+    match agent.run("Hello, what can you help me with?").await {
+        Ok(response) => {
+            println!("✅ Agent Response: {}\n", response);
+        }
+        Err(e) => {
+            println!("❌ Error: {}", e);
+            println!("   (Make sure Ollama is running)\n");
+        }
+    }
 
-    println!("🎉 Agent framework prototype complete!");
-    println!("   This example shows the core patterns we need!");
+    // Test 2: Query that needs calculator tool
+    agent.reset(); // Start fresh
+    println!("🧪 Test 2: Math Query (Should Use Calculator Tool)");
+    println!("─────────────────────────────────────────────────────\n");
+
+    match agent.run("What is 156 multiplied by 23?").await {
+        Ok(response) => {
+            println!("✅ Agent Response: {}\n", response);
+        }
+        Err(e) => {
+            println!("❌ Error: {}\n", e);
+        }
+    }
+
+    // Test 3: Query that needs weather tool
+    agent.reset();
+    println!("🧪 Test 3: Weather Query (Should Use Weather Tool)");
+    println!("─────────────────────────────────────────────────────\n");
+
+    match agent.run("What's the weather like in Tokyo?").await {
+        Ok(response) => {
+            println!("✅ Agent Response: {}\n", response);
+        }
+        Err(e) => {
+            println!("❌ Error: {}\n", e);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SUMMARY
+    // ═══════════════════════════════════════════════════════════════════════
+
+    println!("\n╔══════════════════════════════════════════════════════╗");
+    println!("║  🎉 Agent Framework Complete!                       ║");
+    println!("╚══════════════════════════════════════════════════════╝\n");
+
+    println!("✅ Implemented:");
+    println!("   1. ✅ Tool registry");
+    println!("   2. ✅ Conversation memory");
+    println!("   3. ✅ Agent structure");
+    println!("   4. ✅ LLM tool calling integration");
+    println!("   5. ✅ Response parsing for tool calls");
+    println!("   6. ✅ Agent loop with real LLM\n");
+
+    println!("💡 Agent = LLM Client + Tools + Memory + Loop");
+    println!();
+    println!("🎯 Next Steps:");
+    println!("   - Move to crates/rrag/src/agent/");
+    println!("   - Add stateful conversation mode");
+    println!("   - Add streaming support");
+    println!("   - Add more agent strategies (ReAct, Plan-and-Execute)");
+    println!();
+    println!("🚀 Ready for production agent implementation!");
 
     Ok(())
 }

@@ -3775,6 +3775,8 @@ dependencies = [
  "reqwest",
  "rrag",
  "rrag-graph",
+ "rsllm 0.1.0",
+ "schemars",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
