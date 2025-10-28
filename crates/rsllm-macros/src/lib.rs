@@ -212,7 +212,7 @@ fn analyze_parameters(inputs: &syn::punctuated::Punctuated<syn::FnArg, Token![,]
                         .find(|attr| attr.path().is_ident("arg"))
                         .and_then(|attr| {
                             // Try to extract description from the attribute
-                            if let syn::Meta::List(list) = &attr.meta {
+                            if let syn::Meta::List(_list) = &attr.meta {
                                 // Simple extraction - just get the string
                                 Some("Individual parameter".to_string())
                             } else {
