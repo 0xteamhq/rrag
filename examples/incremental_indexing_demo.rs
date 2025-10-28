@@ -59,52 +59,42 @@ async fn main() -> RragResult<()> {
     // Perform health check
     let health = service.health_check().await?;
     tracing::debug!("✅ Service health check: {:?}", health);
-    tracing::debug!();
 
     // Step 2: Demonstrate change detection
     tracing::debug!("🔍 Step 2: Change Detection Demo");
     demo_change_detection().await?;
-    tracing::debug!();
 
     // Step 3: Demonstrate incremental indexing operations
     tracing::debug!("📚 Step 3: Incremental Indexing Operations");
     demo_incremental_operations().await?;
-    tracing::debug!();
 
     // Step 4: Demonstrate batch processing
     tracing::debug!("⚡ Step 4: Batch Processing Demo");
     demo_batch_processing().await?;
-    tracing::debug!();
 
     // Step 5: Demonstrate versioning and conflict resolution
     tracing::debug!("🔄 Step 5: Versioning and Conflict Resolution");
     demo_versioning_system().await?;
-    tracing::debug!();
 
     // Step 6: Demonstrate rollback capabilities
     tracing::debug!("↩️  Step 6: Rollback System Demo");
     demo_rollback_system().await?;
-    tracing::debug!();
 
     // Step 7: Demonstrate integrity checking
     tracing::debug!("🔒 Step 7: Integrity Checking Demo");
     demo_integrity_system().await?;
-    tracing::debug!();
 
     // Step 8: Demonstrate vector updates
     tracing::debug!("🎯 Step 8: Vector Update Management");
     demo_vector_updates().await?;
-    tracing::debug!();
 
     // Step 9: Demonstrate monitoring and metrics
     tracing::debug!("📊 Step 9: Monitoring and Metrics Demo");
     demo_monitoring_system().await?;
-    tracing::debug!();
 
     // Step 10: Demonstrate production scenarios
     tracing::debug!("🏭 Step 10: Production Scenarios");
     demo_production_scenarios().await?;
-    tracing::debug!();
 
     tracing::debug!("🎉 Demo completed successfully!");
     tracing::debug!("The incremental indexing system provides:");

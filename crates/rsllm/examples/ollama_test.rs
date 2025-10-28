@@ -37,7 +37,6 @@ async fn main() -> RsllmResult<()> {
             if let Some(reason) = &response.finish_reason {
                 tracing::debug!("🏁 Finish reason: {}", reason);
             }
-            tracing::debug!();
         }
         Err(e) => {
             error!(" Test failed: {}", e);
@@ -58,7 +57,7 @@ async fn main() -> RsllmResult<()> {
 
     match client.chat_completion_stream(stream_messages).await {
         Ok(mut stream) => {
-            print!("🤖 Streaming: ");
+            tracing::debug!("🤖 Streaming: ");
 
             use futures_util::StreamExt;
             let mut full_response = String::new();
@@ -66,7 +65,7 @@ async fn main() -> RsllmResult<()> {
             while let Some(chunk_result) = stream.next().await {
                 match chunk_result {
                     Ok(chunk) if chunk.has_content() => {
-                        print!("{}", chunk.content);
+                        tracing::debug!("{}", chunk.content);
                         full_response.push_str(&chunk.content);
                         std::io::Write::flush(&mut std::io::stdout()).unwrap();
                     }
@@ -81,11 +80,9 @@ async fn main() -> RsllmResult<()> {
                     }
                 }
             }
-            tracing::debug!();
         }
         Err(e) => {
             error!(" Streaming test failed: {}", e);
-            tracing::debug!();
         }
     }
 
@@ -103,11 +100,9 @@ async fn main() -> RsllmResult<()> {
         Ok(response) => {
             tracing::debug!("✅ Multi-turn conversation works!");
             tracing::debug!("🤖 Response: {}", response.content);
-            tracing::debug!();
         }
         Err(e) => {
             error!(" Multi-turn test failed: {}", e);
-            tracing::debug!();
         }
     }
 

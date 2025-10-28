@@ -47,7 +47,6 @@ async fn main() -> RragResult<()> {
         }
         Err(e) => {
             error!(" Test 1 failed: {}", e);
-            tracing::debug!();
         }
     }
 
@@ -81,7 +80,6 @@ async fn main() -> RragResult<()> {
         }
         Err(e) => {
             error!(" Test 2 failed: {}", e);
-            tracing::debug!();
         }
     }
 
@@ -99,7 +97,6 @@ async fn main() -> RragResult<()> {
         }
         Err(e) => {
             error!(" Test 3 failed: {}", e);
-            tracing::debug!();
         }
     }
 

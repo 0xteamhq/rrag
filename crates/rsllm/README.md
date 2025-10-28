@@ -54,15 +54,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key("your-api-key")
         .model("gpt-4")
         .build()?;
-    
+
     // Simple chat completion
     let messages = vec![
         ChatMessage::new(MessageRole::User, "What is Rust?")
     ];
-    
+
     let response = client.chat_completion(messages).await?;
-    println!("Response: {}", response.content);
-    
+    tracing::debug!("Response: {}", response.content);
+
     Ok(())
 }
 ```
@@ -80,17 +80,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .api_key("your-api-key")
         .model("gpt-4")
         .build()?;
-    
+
     let messages = vec![
         ChatMessage::new(MessageRole::User, "Tell me a story")
     ];
-    
+
     let mut stream = client.chat_completion_stream(messages).await?;
-    
+
     while let Some(chunk) = stream.next().await {
-        print!("{}", chunk?.content);
+        tracing::debug!("{}", chunk?.content);
     }
-    
+
     Ok(())
 }
 ```
@@ -155,22 +155,26 @@ let client = Client::from_env()?;
 #### Supported Environment Variables
 
 **Provider Configuration:**
+
 - `RSLLM_PROVIDER` - Provider name (openai, claude, ollama)
 - `RSLLM_API_KEY` - API key for the provider
 
 **Base URL Configuration (supports custom/self-hosted endpoints):**
+
 - `RSLLM_BASE_URL` - Generic base URL (works for any provider)
 - `RSLLM_OPENAI_BASE_URL` - OpenAI-specific base URL (overrides generic)
 - `RSLLM_OLLAMA_BASE_URL` - Ollama-specific base URL (overrides generic)
 - `RSLLM_CLAUDE_BASE_URL` - Claude-specific base URL (overrides generic)
 
 **Model Configuration (supports custom models and fine-tuned models):**
+
 - `RSLLM_MODEL` - Generic model name
 - `RSLLM_OPENAI_MODEL` - OpenAI-specific model (overrides generic)
 - `RSLLM_OLLAMA_MODEL` - Ollama-specific model (overrides generic)
 - `RSLLM_CLAUDE_MODEL` - Claude-specific model (overrides generic)
 
 **Other Settings:**
+
 - `RSLLM_TEMPERATURE` - Temperature setting (0.0 to 2.0)
 - `RSLLM_MAX_TOKENS` - Maximum tokens to generate
 - `RSLLM_TIMEOUT` - Request timeout in seconds
@@ -192,6 +196,7 @@ RSLLM_API_KEY=my-custom-api-key
 ```
 
 **Key Features:**
+
 - ✅ **Custom Models Supported**: Use any model name, not limited to predefined lists
 - ✅ **Custom Endpoints**: Point to self-hosted or custom LLM endpoints
 - ✅ **URL Flexibility**: Base URLs work with or without trailing slashes
@@ -199,14 +204,14 @@ RSLLM_API_KEY=my-custom-api-key
 
 ## 🌟 Supported Providers
 
-| Provider | Status | Models | Streaming |
-|----------|--------|--------|-----------|
-| OpenAI | ✅ | GPT-4, GPT-3.5 | ✅ |
-| Anthropic Claude | ✅ | Claude-3 (Sonnet, Opus, Haiku) | ✅ |
-| Ollama | ✅ | Llama, Mistral, CodeLlama | ✅ |
-| Azure OpenAI | 🚧 | GPT-4, GPT-3.5 | 🚧 |
-| Cohere | 📝 | Command | 📝 |
-| Google Gemini | 📝 | Gemini Pro | 📝 |
+| Provider         | Status | Models                         | Streaming |
+| ---------------- | ------ | ------------------------------ | --------- |
+| OpenAI           | ✅     | GPT-4, GPT-3.5                 | ✅        |
+| Anthropic Claude | ✅     | Claude-3 (Sonnet, Opus, Haiku) | ✅        |
+| Ollama           | ✅     | Llama, Mistral, CodeLlama      | ✅        |
+| Azure OpenAI     | 🚧     | GPT-4, GPT-3.5                 | 🚧        |
+| Cohere           | 📝     | Command                        | 📝        |
+| Google Gemini    | 📝     | Gemini Pro                     | 📝        |
 
 Legend: ✅ Supported | 🚧 In Progress | 📝 Planned
 
@@ -223,7 +228,7 @@ Legend: ✅ Supported | 🚧 In Progress | 📝 Planned
 version = "0.1"
 features = [
     "openai",        # OpenAI provider support
-    "claude",        # Anthropic Claude support  
+    "claude",        # Anthropic Claude support
     "ollama",        # Ollama local model support
     "streaming",     # Streaming response support
     "json-schema",   # JSON schema support for structured outputs

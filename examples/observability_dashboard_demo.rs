@@ -220,13 +220,11 @@ async fn main() -> RragResult<()> {
     let export = observability.export().clone();
 
     tracing::debug!("✅ Observability system started successfully!");
-    tracing::debug!();
     tracing::debug!("🌐 Dashboard available at: http://127.0.0.1:3000");
     tracing::debug!("📈 Real-time metrics and charts will be displayed");
     tracing::debug!("🚨 Alerts will be shown in the console and dashboard");
     tracing::debug!("📝 Logs are being aggregated and searchable");
     tracing::debug!("💾 Data export and retention policies are active");
-    tracing::debug!();
 
     // Set up health checkers for demo components
     tracing::debug!("🏥 Setting up health checkers...");
@@ -302,7 +300,6 @@ async fn main() -> RragResult<()> {
     tracing::debug!("   - Simulating search queries and user activity");
     tracing::debug!("   - Creating performance profiles");
     tracing::debug!("   - Triggering occasional alerts");
-    tracing::debug!();
 
     let metrics_clone = metrics.clone();
     let monitoring_clone = monitoring.clone();
@@ -339,7 +336,6 @@ async fn main() -> RragResult<()> {
             if *healthy { "Healthy" } else { "Unhealthy" }
         );
     }
-    tracing::debug!();
 
     // Demonstrate metrics export
     tracing::debug!("💾 Exporting current metrics...");
@@ -360,7 +356,6 @@ async fn main() -> RragResult<()> {
         );
         tracing::debug!("   Export status: {:?}", export_result.status);
     }
-    tracing::debug!();
 
     // Demonstrate profiling analysis
     tracing::debug!("🔍 Analyzing performance bottlenecks...");
@@ -386,7 +381,6 @@ async fn main() -> RragResult<()> {
     } else {
         tracing::debug!("   No performance bottlenecks detected");
     }
-    tracing::debug!();
 
     // Show alert status
     tracing::debug!("🚨 Current Alert Status:");
@@ -409,7 +403,6 @@ async fn main() -> RragResult<()> {
             );
         }
     }
-    tracing::debug!();
 
     // Demonstrate log search
     tracing::debug!("📝 Recent Log Entries:");
@@ -430,7 +423,6 @@ async fn main() -> RragResult<()> {
             log.message
         );
     }
-    tracing::debug!();
 
     // Show health report
     tracing::debug!("🏥 System Health Report:");
@@ -442,14 +434,12 @@ async fn main() -> RragResult<()> {
         "   System Uptime: {} seconds",
         health_report.system_info.uptime_seconds
     );
-    tracing::debug!();
 
     // Keep the demo running
     tracing::debug!("🔄 Demo is running...");
     tracing::debug!("   Press Ctrl+C to stop");
     tracing::debug!("   Visit http://127.0.0.1:3000 to see the dashboard");
     tracing::debug!("   Monitor the console for real-time alerts and metrics");
-    tracing::debug!();
 
     // Run for demo duration
     let demo_duration = Duration::from_secs(300); // 5 minutes

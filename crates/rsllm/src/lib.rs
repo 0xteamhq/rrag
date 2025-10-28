@@ -7,7 +7,7 @@
 //!
 //! RSLLM embraces Rust's core principles:
 //! - **Type Safety**: Compile-time guarantees for API contracts
-//! - **Memory Safety**: Zero-copy operations where possible  
+//! - **Memory Safety**: Zero-copy operations where possible
 //! - **Async-First**: Built around async/await and streaming
 //! - **Multi-Provider**: Unified interface for OpenAI, Claude, Ollama, etc.
 //! - **Composable**: Easy integration with frameworks like RRAG
@@ -40,15 +40,15 @@
 //!         .api_key("your-api-key")
 //!         .model("gpt-4")
 //!         .build()?;
-//!     
+//!
 //!     // Simple chat completion
 //!     let messages = vec![
 //!         ChatMessage::new(MessageRole::User, "What is Rust?")
 //!     ];
-//!     
+//!
 //!     let response = client.chat_completion(messages).await?;
 //!     tracing::debug!("Response: {}", response.content);
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -65,17 +65,17 @@
 //!         .provider(Provider::OpenAI)
 //!         .api_key("your-api-key")
 //!         .build()?;
-//!     
+//!
 //!     let messages = vec![
 //!         ChatMessage::new(MessageRole::User, "Tell me a story")
 //!     ];
-//!     
+//!
 //!     let mut stream = client.chat_completion_stream(messages).await?;
-//!     
+//!
 //!     while let Some(chunk) = stream.next().await {
 //!         match chunk? {
 //!             chunk if chunk.is_delta() => {
-//!                 print!("{}", chunk.content);
+//!                 tracing::debug!("{}", chunk.content);
 //!             }
 //!             chunk if chunk.is_done() => {
 //!                 tracing::debug!("\n[DONE]");
@@ -84,7 +84,7 @@
 //!             _ => {}
 //!         }
 //!     }
-//!     
+//!
 //!     Ok(())
 //! }
 //! ```

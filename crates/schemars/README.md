@@ -31,7 +31,7 @@ pub enum MyEnum {
 }
 
 let schema = schema_for!(MyStruct);
-println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+tracing::debug!("{}", serde_json::to_string_pretty(&schema).unwrap());
 ```
 
 <details>
@@ -129,7 +129,7 @@ pub enum MyEnum {
 }
 
 let schema = schema_for!(MyStruct);
-println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+tracing::debug!("{}", serde_json::to_string_pretty(&schema).unwrap());
 ```
 
 <details>
@@ -217,7 +217,7 @@ let schema = schema_for_value!(MyStruct {
     my_bool: true,
     my_nullable_enum: Some(MyEnum::StringNewType("foo".to_string()))
 });
-println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+tracing::debug!("{}", serde_json::to_string_pretty(&schema).unwrap());
 ```
 
 <details>

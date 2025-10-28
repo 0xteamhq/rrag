@@ -365,7 +365,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         };
         tracing::debug!("   {} {} {}", status, tool_name, error_msg);
     }
-    tracing::debug!();
 
     // ═══════════════════════════════════════════════════════════════════════
     // SECTION 3: BEST PRACTICES
@@ -429,7 +428,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             r.tool_name
         );
     }
-    tracing::debug!();
 
     // 4.2: Tool Discovery
     tracing::debug!("🔍 Tool Discovery & Introspection:");

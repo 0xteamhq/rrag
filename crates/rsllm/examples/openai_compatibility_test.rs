@@ -233,7 +233,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         tracing::debug!("\n   📄 Full Schema:");
         tracing::debug!("{}", indent(&schema_str, 6));
-        tracing::debug!();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -245,7 +244,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     tracing::debug!("╚══════════════════════════════════════════════════════════╝\n");
 
     tracing::debug!("This is how you'd send to OpenAI:");
-    tracing::debug!();
 
     let openai_format = json!({
         "model": "gpt-4",
@@ -286,7 +284,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if all_tools_valid {
         tracing::debug!("🎉 ALL SCHEMAS ARE 100% OPENAI COMPATIBLE!");
-        tracing::debug!();
         tracing::debug!("✅ No $schema field");
         tracing::debug!("✅ No $ref references");
         tracing::debug!("✅ No definitions section");
@@ -294,7 +291,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         tracing::debug!("✅ All types inlined");
         tracing::debug!("✅ Proper enum handling");
         tracing::debug!("✅ Optional fields with null");
-        tracing::debug!();
         tracing::debug!("🚀 Ready for production use with:");
         tracing::debug!("   • OpenAI (GPT-4, GPT-3.5)");
         tracing::debug!("   • Claude (Anthropic)");

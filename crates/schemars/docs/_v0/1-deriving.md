@@ -25,7 +25,7 @@ fn main() {
     let schema = schema_for!(Point);
 
     let serialized = serde_json::to_string(&schema).unwrap();
-    println!("{}", serialized);
+    tracing::debug!("{}", serialized);
 }
 ```
 

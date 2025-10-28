@@ -33,7 +33,6 @@ async fn main() -> RsllmResult<()> {
 
     // Test 1: Using environment variables
     tracing::debug!("📝 Test 1: Load configuration from environment variables");
-    tracing::debug!();
 
     // Set test environment variables
     env::set_var("RSLLM_PROVIDER", "ollama");
@@ -46,14 +45,12 @@ async fn main() -> RsllmResult<()> {
     tracing::debug!("   - RSLLM_OLLAMA_BASE_URL=http://localhost:11434/api");
     tracing::debug!("   - RSLLM_OLLAMA_MODEL=llama3.2:3b");
     tracing::debug!("   - RSLLM_TEMPERATURE=0.7");
-    tracing::debug!();
 
     match Client::from_env() {
         Ok(client) => {
             tracing::debug!("   ✅ Client created from environment variables!");
             tracing::debug!("   📊 Provider: {:?}", client.provider().provider_type());
             tracing::debug!("   📊 Model: {}", client.config().model.model);
-            tracing::debug!();
 
             // Test with a simple message
             let messages = vec![ChatMessage::user(
@@ -64,32 +61,27 @@ async fn main() -> RsllmResult<()> {
                 Ok(response) => {
                     tracing::debug!("   ✅ Chat completion successful!");
                     tracing::debug!("   📤 Response: {}", response.content);
-                    tracing::debug!();
                 }
                 Err(e) => {
                     tracing::debug!("   ⚠️  Chat completion failed: {}", e);
                     tracing::debug!("   (This is expected if Ollama is not running)");
-                    tracing::debug!();
                 }
             }
         }
         Err(e) => {
             tracing::debug!("   ❌ Failed to create client: {}", e);
-            tracing::debug!();
         }
     }
 
     // Test 2: Custom model name (not in predefined list)
     tracing::debug!("📝 Test 2: Using a custom model name");
     tracing::debug!("   (Demonstrates support for fine-tuned or custom models)");
-    tracing::debug!();
 
     env::set_var("RSLLM_PROVIDER", "ollama");
     env::set_var("RSLLM_OLLAMA_BASE_URL", "http://localhost:11434/api/");
     env::set_var("RSLLM_OLLAMA_MODEL", "my-custom-fine-tuned-model:latest");
 
     tracing::debug!("   Set custom model: my-custom-fine-tuned-model:latest");
-    tracing::debug!();
 
     match Client::from_env() {
         Ok(client) => {
@@ -97,17 +89,14 @@ async fn main() -> RsllmResult<()> {
             tracing::debug!("   📊 Model: {}", client.config().model.model);
             tracing::debug!("   💡 The library does NOT validate against a predefined model list");
             tracing::debug!("      This allows flexibility for custom models.");
-            tracing::debug!();
         }
         Err(e) => {
             tracing::debug!("   ❌ Failed: {}", e);
-            tracing::debug!();
         }
     }
 
     // Test 3: Provider-specific vs generic environment variables
     tracing::debug!("📝 Test 3: Provider-specific environment variables take precedence");
-    tracing::debug!();
 
     env::set_var("RSLLM_PROVIDER", "ollama");
     env::set_var("RSLLM_BASE_URL", "http://generic-url:8080/api/");
@@ -120,7 +109,6 @@ async fn main() -> RsllmResult<()> {
     tracing::debug!("   - RSLLM_OLLAMA_BASE_URL=http://ollama-specific:11434/api/");
     tracing::debug!("   - RSLLM_MODEL=generic-model");
     tracing::debug!("   - RSLLM_OLLAMA_MODEL=ollama-specific-model");
-    tracing::debug!();
 
     match Client::from_env() {
         Ok(client) => {
@@ -135,7 +123,6 @@ async fn main() -> RsllmResult<()> {
             tracing::debug!("   ✅ Provider-specific variables take precedence!");
             tracing::debug!("   📊 Base URL used: {}", base_url);
             tracing::debug!("   📊 Model used: {}", config.model.model);
-            tracing::debug!();
 
             if base_url.contains("ollama-specific") {
                 tracing::debug!("   ✅ Correctly used RSLLM_OLLAMA_BASE_URL over RSLLM_BASE_URL");
@@ -143,34 +130,28 @@ async fn main() -> RsllmResult<()> {
             if config.model.model == "ollama-specific-model" {
                 tracing::debug!("   ✅ Correctly used RSLLM_OLLAMA_MODEL over RSLLM_MODEL");
             }
-            tracing::debug!();
         }
         Err(e) => {
             tracing::debug!("   ❌ Failed: {}", e);
-            tracing::debug!();
         }
     }
 
     // Test 4: URL with and without trailing slash
     tracing::debug!("📝 Test 4: URL normalization (trailing slash handling)");
-    tracing::debug!();
 
     env::set_var("RSLLM_PROVIDER", "ollama");
     env::set_var("RSLLM_OLLAMA_BASE_URL", "http://localhost:11434/api");
     env::set_var("RSLLM_OLLAMA_MODEL", "llama3.2:3b");
 
     tracing::debug!("   Set URL without trailing slash: http://localhost:11434/api");
-    tracing::debug!();
 
     match Client::from_env() {
         Ok(_client) => {
             tracing::debug!("   ✅ URL normalized correctly!");
             tracing::debug!("   💡 Library automatically handles trailing slashes");
-            tracing::debug!();
         }
         Err(e) => {
             tracing::debug!("   ❌ Failed: {}", e);
-            tracing::debug!();
         }
     }
 
@@ -183,7 +164,6 @@ async fn main() -> RsllmResult<()> {
     env::remove_var("RSLLM_TEMPERATURE");
 
     tracing::debug!("🎉 All environment variable tests completed!");
-    tracing::debug!();
     tracing::debug!("💡 Key Takeaways:");
     tracing::debug!("   1. Provider-specific env vars override generic ones");
     tracing::debug!("   2. Custom model names are fully supported");

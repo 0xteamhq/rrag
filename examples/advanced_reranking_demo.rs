@@ -38,7 +38,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &result.content[..100.min(result.content.len())]
         );
     }
-    tracing::debug!();
 
     // Demo 1: Cross-Encoder Reranking
     demo_cross_encoder_reranking(query, &search_results).await?;
@@ -430,12 +429,16 @@ async fn demo_reranking_comparison(
     tracing::debug!("📋 Ranking Comparison (Top 5):");
     tracing::debug!(
         "{:<15} {:<15} {:<15} {:<15} {:<15}",
-        "Rank", "Original", "Cross-Encoder", "Multi-Signal", "Neural"
+        "Rank",
+        "Original",
+        "Cross-Encoder",
+        "Multi-Signal",
+        "Neural"
     );
     tracing::debug!("{}", "─".repeat(75));
 
     for rank in 0..5.min(results.len()) {
-        print!("{:<15}", format!("#{}", rank + 1));
+        tracing::debug!("{:<15}", format!("#{}", rank + 1));
 
         for (_method_name, ranking) in &comparison_results {
             let doc_id = if rank < ranking.len() {
@@ -443,9 +446,8 @@ async fn demo_reranking_comparison(
             } else {
                 "N/A"
             };
-            print!("{:<15}", doc_id);
+            tracing::debug!("{:<15}", doc_id);
         }
-        tracing::debug!();
     }
 
     // Calculate ranking differences

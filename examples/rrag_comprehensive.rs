@@ -373,11 +373,11 @@ async fn demo_agent_interactions() -> RragResult<()> {
     let mut stream = agent
         .stream_message("Tell me about Rust in a streaming way", None)
         .await?;
-    print!("       Stream: ");
+    tracing::debug!("       Stream: ");
     while let Some(token_result) = futures::StreamExt::next(&mut stream).await {
         match token_result? {
             token if token.token_type == TokenType::Text => {
-                print!("{}", token.content);
+                tracing::debug!("{}", token.content);
                 tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
                 // Simulate real streaming
             }
@@ -479,12 +479,12 @@ async fn demo_streaming_responses() -> RragResult<()> {
     });
 
     let custom_stream = StreamingResponse::from_channel(receiver);
-    print!("       Custom stream: ");
+    tracing::debug!("       Custom stream: ");
     let mut token_stream = custom_stream;
     while let Some(token_result) = futures::StreamExt::next(&mut token_stream).await {
         match token_result? {
             token if token.token_type == TokenType::Text => {
-                print!("{} ", token.content.trim());
+                tracing::debug!("{} ", token.content.trim());
             }
             token if token.is_final => {
                 tracing::debug!("[COMPLETE]");
@@ -635,7 +635,8 @@ async fn demo_system_monitoring(system: &RragSystem) -> RragResult<()> {
     tracing::debug!("       Version: {}", config.version);
     tracing::debug!(
         "       Features enabled: async_processing={}, caching={}",
-        config.features.enable_async_processing, config.features.enable_caching
+        config.features.enable_async_processing,
+        config.features.enable_caching
     );
 
     Ok(())

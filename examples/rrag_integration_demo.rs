@@ -22,31 +22,26 @@ async fn main() -> RGraphResult<()> {
     tracing::debug!("📚 Demo 1: Basic RAG Question Answering");
     tracing::debug!("---------------------------------------");
     basic_rag_workflow().await?;
-    tracing::debug!();
 
     // Demo 2: Multi-stage RAG Pipeline
     tracing::debug!("🔬 Demo 2: Multi-stage RAG Pipeline");
     tracing::debug!("-----------------------------------");
     multi_stage_rag_pipeline().await?;
-    tracing::debug!();
 
     // Demo 3: Adaptive RAG with Context Evaluation
     tracing::debug!("🎯 Demo 3: Adaptive RAG with Context Evaluation");
     tracing::debug!("-----------------------------------------------");
     adaptive_rag_workflow().await?;
-    tracing::debug!();
 
     // Demo 4: RAG-powered Multi-Agent System
     tracing::debug!("👥 Demo 4: RAG-powered Multi-Agent System");
     tracing::debug!("-----------------------------------------");
     rag_multi_agent_system().await?;
-    tracing::debug!();
 
     // Demo 5: Knowledge-Aware Agent Orchestration
     tracing::debug!("🧠 Demo 5: Knowledge-Aware Agent Orchestration");
     tracing::debug!("----------------------------------------------");
     knowledge_aware_orchestration().await?;
-    tracing::debug!();
 
     tracing::debug!("🎉 All RRAG integration demos completed successfully!");
     Ok(())

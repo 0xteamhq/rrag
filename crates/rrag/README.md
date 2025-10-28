@@ -11,7 +11,7 @@
 ## 🎯 Why RRAG?
 
 - **🚀 Native Performance**: Zero-cost abstractions with compile-time optimizations
-- **🛡️ Memory Safety**: Rust's ownership system prevents data races and memory leaks  
+- **🛡️ Memory Safety**: Rust's ownership system prevents data races and memory leaks
 - **⚡ Async First**: Built on Tokio for maximum concurrency
 - **🎯 Type Safety**: Compile-time guarantees eliminate runtime errors
 - **🔌 Modular Design**: Pluggable architecture with swappable components
@@ -56,17 +56,17 @@ async fn main() -> RragResult<()> {
         .with_chunk_size(512)
         .build()
         .await?;
-    
+
     // Add documents
     rag.ingest_documents(vec![
         Document::new("Rust is a systems programming language..."),
         Document::new("RAG combines retrieval with generation..."),
     ]).await?;
-    
+
     // Query the system
     let response = rag.query("What is Rust?").await?;
-    println!("Response: {}", response.text);
-    
+    tracing::debug!("Response: {}", response.text);
+
     Ok(())
 }
 ```
@@ -74,22 +74,26 @@ async fn main() -> RragResult<()> {
 ## 🌟 Core Features
 
 ### 🔍 Advanced Retrieval
+
 - **Hybrid Search**: Combines semantic and keyword search with multiple fusion strategies
 - **Graph-Based Retrieval**: Knowledge graph construction with entity extraction
 - **Multi-Modal Support**: Process text, images, tables, charts, and documents
 - **Smart Reranking**: Cross-encoder models for precise result ranking
 
 ### 🧠 Intelligent Agents
+
 - **Tool Integration**: Built-in calculator, HTTP client, and custom tool support
 - **Memory Management**: Conversation buffers, token limits, and summarization
 - **Streaming Responses**: Real-time token streaming with async iterators
 
 ### ⚡ Performance & Scalability
+
 - **Intelligent Caching**: Multi-level caching with semantic similarity
 - **Incremental Indexing**: Efficient document updates without full rebuilds
 - **Batch Processing**: High-throughput document ingestion
 
 ### 📊 Production Features
+
 - **Observability Dashboard**: Real-time monitoring with web UI and metrics
 - **Security & Rate Limiting**: Authentication, authorization, and abuse prevention
 - **Health Checks**: Component monitoring and dependency tracking

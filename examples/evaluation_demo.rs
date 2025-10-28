@@ -33,31 +33,26 @@ async fn main() -> RragResult<()> {
     tracing::debug!("📊 Demo 1: RAGAS Metrics Evaluation");
     tracing::debug!("─".repeat(40));
     demo_ragas_evaluation().await?;
-    tracing::debug!();
     
     // Demo 2: Retrieval Evaluation
     tracing::debug!("🔍 Demo 2: Retrieval Metrics Evaluation");
     tracing::debug!("─".repeat(40));
     demo_retrieval_evaluation().await?;
-    tracing::debug!();
     
     // Demo 3: Generation Evaluation
     tracing::debug!("✍️ Demo 3: Generation Quality Evaluation");
     tracing::debug!("─".repeat(40));
     demo_generation_evaluation().await?;
-    tracing::debug!();
     
     // Demo 4: End-to-End Evaluation
     tracing::debug!("🚀 Demo 4: End-to-End System Evaluation");
     tracing::debug!("─".repeat(40));
     demo_end_to_end_evaluation().await?;
-    tracing::debug!();
     
     // Demo 5: Benchmark Evaluation
     tracing::debug!("🏆 Demo 5: Standard Benchmark Evaluation");
     tracing::debug!("─".repeat(40));
     demo_benchmark_evaluation().await?;
-    tracing::debug!();
     
     // Demo 6: Complete Evaluation Pipeline
     tracing::debug!("🎪 Demo 6: Complete Evaluation Pipeline");

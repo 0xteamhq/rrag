@@ -193,7 +193,6 @@ async fn demo_classifier() -> Result<(), Box<dyn std::error::Error>> {
             query, result.intent, result.query_type
         );
     }
-    tracing::debug!();
     Ok(())
 }
 
@@ -213,7 +212,6 @@ async fn demo_rewriter() -> Result<(), Box<dyn std::error::Error>> {
             tracing::debug!("  • '{}' → '{}'", query, results[0].rewritten_query);
         }
     }
-    tracing::debug!();
     Ok(())
 }
 
@@ -231,7 +229,6 @@ async fn demo_expander() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    tracing::debug!();
     Ok(())
 }
 
@@ -253,7 +250,6 @@ async fn demo_decomposer() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    tracing::debug!();
     Ok(())
 }
 
@@ -279,6 +275,5 @@ async fn demo_hyde(
             tracing::debug!("  • '{}' → {}", query, preview);
         }
     }
-    tracing::debug!();
     Ok(())
 }

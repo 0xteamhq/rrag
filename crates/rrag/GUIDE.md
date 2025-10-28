@@ -42,22 +42,22 @@ async fn main() -> RragResult<()> {
         .with_environment("development")
         .build()
         .await?;
-    
+
     // 2. Add documents
     let documents = vec![
         Document::new("Rust is a systems programming language focused on safety and performance."),
         Document::new("RRAG is a Rust framework for building RAG applications."),
         Document::new("Vector embeddings represent text as dense numerical vectors."),
     ];
-    
+
     for doc in documents {
         system.process_document(doc).await?;
     }
-    
+
     // 3. Query the system
     let response = system.search("What is Rust?".to_string(), Some(3)).await?;
-    println!("Found {} results", response.total_results);
-    
+    tracing::debug!("Found {} results", response.total_results);
+
     Ok(())
 }
 ```
@@ -84,7 +84,7 @@ let chunker = DocumentChunker::with_strategy(
 
 // Chunk the document
 let chunks = chunker.chunk_document(&document)?;
-println!("Created {} chunks", chunks.len());
+tracing::debug!("Created {} chunks", chunks.len());
 ```
 
 ### Embeddings and Vector Storage
@@ -103,7 +103,7 @@ let service = EmbeddingService::new(provider);
 let documents = vec![Document::new("Sample text")];
 let embeddings = service.embed_documents(&documents).await?;
 
-println!("Generated embedding with {} dimensions", embeddings[0].dimensions);
+tracing::debug!("Generated embedding with {} dimensions", embeddings[0].dimensions);
 ```
 
 ### Retrieval and Search
@@ -176,7 +176,7 @@ async fn main() -> RragResult<()> {
     // Create embedding service
     let provider = Arc::new(OpenAIEmbeddingProvider::new("your-api-key"));
     let embedding_service = Arc::new(EmbeddingService::new(provider));
-    
+
     // Build processing pipeline
     let pipeline = RagPipelineBuilder::new()
         .add_step(TextPreprocessingStep::new(vec![
@@ -188,17 +188,17 @@ async fn main() -> RragResult<()> {
         ))
         .add_step(EmbeddingStep::new(embedding_service))
         .build();
-    
+
     // Process documents
     let documents = vec![
         Document::new("Your document content here..."),
         // Add more documents
     ];
-    
+
     let context = PipelineContext::new(PipelineData::Documents(documents));
     let result = pipeline.execute(context).await?;
-    
-    println!("Pipeline completed in {}ms", result.total_execution_time());
+
+    tracing::debug!("Pipeline completed in {}ms", result.total_execution_time());
     Ok(())
 }
 ```
@@ -245,11 +245,11 @@ let agent = AgentBuilder::new()
 
 // Use the agent
 let response = agent.process_message(
-    "What can you tell me about Rust programming?", 
+    "What can you tell me about Rust programming?",
     Some("user-123".to_string())
 ).await?;
 
-println!("Agent: {}", response.text);
+tracing::debug!("Agent: {}", response.text);
 ```
 
 ## Advanced Features
@@ -397,9 +397,9 @@ let observability = ObservabilityBuilder::new()
 
 // Monitor system performance
 let metrics = observability.get_metrics().await?;
-println!("Current RPS: {:.2}", metrics.requests_per_second);
-println!("P95 latency: {:.2}ms", metrics.p95_response_time_ms);
-println!("Error rate: {:.2}%", metrics.error_rate * 100.0);
+tracing::debug!("Current RPS: {:.2}", metrics.requests_per_second);
+tracing::debug!("P95 latency: {:.2}ms", metrics.p95_response_time_ms);
+tracing::debug!("Error rate: {:.2}%", metrics.error_rate * 100.0);
 ```
 
 ### Security Configuration
@@ -507,11 +507,11 @@ let pool_config = ConnectionPoolConfig {
 // Monitor memory usage
 let metrics = system.get_metrics().await?;
 if metrics.resource_usage.memory_usage_mb > 1000.0 {
-    println!("High memory usage detected");
-    
+    tracing::debug!("High memory usage detected");
+
     // Clear caches
     system.clear_caches().await?;
-    
+
     // Reduce batch sizes
     system.update_config(|config| {
         config.performance.connection_pool_size = 10;
@@ -529,7 +529,7 @@ let profiler = Profiler::new()
     .with_bottleneck_analysis(true);
 
 let profile = profiler.profile_query("test query").await?;
-println!("Bottlenecks: {:?}", profile.bottlenecks);
+tracing::debug!("Bottlenecks: {:?}", profile.bottlenecks);
 ```
 
 #### 3. API Rate Limits
@@ -566,17 +566,17 @@ let system = RragSystemBuilder::new()
 let health = system.health_check().await?;
 
 match health.overall_status {
-    HealthStatus::Healthy => println!("All systems operational"),
+    HealthStatus::Healthy => tracing::debug!("All systems operational"),
     HealthStatus::Degraded => {
-        println!("Some components are degraded:");
+        tracing::debug!("Some components are degraded:");
         for (component, status) in &health.component_status {
             if *status != HealthStatus::Healthy {
-                println!("  {}: {:?}", component, status);
+                tracing::debug!("  {}: {:?}", component, status);
             }
         }
     }
     HealthStatus::Unhealthy => {
-        println!("System is unhealthy - immediate attention required");
+        tracing::debug!("System is unhealthy - immediate attention required");
         // Implement alerting logic
     }
 }
@@ -626,28 +626,31 @@ let retriever = InMemoryRetriever::new()
 #### Upgrading from v0.1 to v0.2
 
 1. **Configuration Changes**:
+
    ```rust
    // Old (v0.1)
    let config = RragConfig::new();
-   
+
    // New (v0.2)
    let config = RragSystemConfig::default();
    ```
 
 2. **API Changes**:
+
    ```rust
    // Old
    system.query("question").await?;
-   
+
    // New
    system.search("question".to_string(), Some(10)).await?;
    ```
 
 3. **Feature Flag Changes**:
+
    ```toml
    # Old
    rrag = { version = "0.1", features = ["async"] }
-   
+
    # New
    rrag = { version = "0.2", features = ["observability"] }
    ```
@@ -669,6 +672,7 @@ let retriever = InMemoryRetriever::new()
 - Follow us on [GitHub](https://github.com/rrag-team/rrag)
 
 For additional help, please:
+
 - Open an issue on GitHub
 - Check our FAQ
 - Join community discussions

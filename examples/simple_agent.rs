@@ -374,7 +374,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     for tool_name in agent.tool_registry.tool_names() {
         tracing::debug!("      - {}", tool_name);
     }
-    tracing::debug!();
 
     // Show available tools in LLM format
     tracing::debug!("   📋 Tools available to agent:");
@@ -385,7 +384,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             tool["function"]["description"].as_str().unwrap()
         );
     }
-    tracing::debug!();
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 3: Test Direct Tool Execution
@@ -455,7 +453,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         };
         tracing::debug!("   {}. {} - {}", i + 1, role, preview);
     }
-    tracing::debug!();
 
     // ═══════════════════════════════════════════════════════════════════════
     // STEP 5: Agent Patterns Demonstrated
@@ -589,13 +586,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tracing::debug!("   6. ✅ Agent loop with real LLM\n");
 
     tracing::debug!("💡 Agent = LLM Client + Tools + Memory + Loop");
-    tracing::debug!();
     tracing::debug!("🎯 Next Steps:");
     tracing::debug!("   - Move to crates/rrag/src/agent/");
     tracing::debug!("   - Add stateful conversation mode");
     tracing::debug!("   - Add streaming support");
     tracing::debug!("   - Add more agent strategies (ReAct, Plan-and-Execute)");
-    tracing::debug!();
     tracing::debug!("🚀 Ready for production agent implementation!");
 
     Ok(())

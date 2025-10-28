@@ -54,7 +54,6 @@ async fn main() -> RragResult<()> {
                 tracing::debug!("📝 This demonstrates the integration structure is correct");
             }
         }
-        tracing::debug!();
 
         // Create a complete RAG system with rsllm integration
         tracing::debug!("🏗️  Building complete RAG system...");
@@ -102,7 +101,6 @@ async fn main() -> RragResult<()> {
         tracing::debug!("📊 Search completed: {} results", search_results.query);
         tracing::debug!("⏱️  Search time: {}ms", search_results.processing_time_ms);
         tracing::debug!("✅ Search functionality verified!");
-        tracing::debug!();
 
         // Demonstrate RSLLM streaming interface (without actual connection)
         tracing::debug!("🌊 RSLLM Streaming Interface Demo...");
@@ -118,7 +116,6 @@ async fn main() -> RragResult<()> {
         tracing::debug!("📝 Pipeline integration would use RagPipelineBuilder in production");
         tracing::debug!("✅ Pipeline architecture verified!");
 
-        tracing::debug!();
     }
 
     #[cfg(not(feature = "rsllm-client"))]
@@ -126,7 +123,6 @@ async fn main() -> RragResult<()> {
         warn!("  rsllm-client feature not enabled");
         tracing::debug!("📝 To test the full integration, run with:");
         tracing::debug!("   cargo run --features=rsllm-client --example rrag_rsllm_integration");
-        tracing::debug!();
 
         // Still demonstrate RRAG-only functionality
         tracing::debug!("🏗️  Testing RRAG framework without rsllm...");
@@ -164,7 +160,6 @@ async fn main() -> RragResult<()> {
     tracing::debug!("   💾 Storage System: Ready");
     tracing::debug!("   🔍 Retrieval System: Ready");
     tracing::debug!("   🎯 Agent System: Ready");
-    tracing::debug!();
 
     tracing::debug!("🎉 Integration demo completed successfully!");
     tracing::debug!("📚 RRAG + RSLLM are ready for production RAG applications!");

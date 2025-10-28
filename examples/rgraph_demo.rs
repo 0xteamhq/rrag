@@ -26,19 +26,16 @@ async fn main() -> RragResult<()> {
     tracing::debug!("📋 Demo 1: Simple Agent with Tools");
     tracing::debug!("----------------------------------");
     simple_agent_workflow().await?;
-    tracing::debug!();
 
     // Demo 2: Calculator Integration
     tracing::debug!("🔢 Demo 2: Calculator Tool Integration");
     tracing::debug!("--------------------------------------");
     calculator_integration_demo().await?;
-    tracing::debug!();
 
     // Demo 3: Multi-step Reasoning
     tracing::debug!("🧠 Demo 3: Multi-step Reasoning");
     tracing::debug!("--------------------------------");
     multi_step_reasoning_demo().await?;
-    tracing::debug!();
 
     tracing::debug!("🎉 All RRAG agent demos completed successfully!");
     Ok(())

@@ -35,9 +35,9 @@ async fn main() -> RragResult<()> {
 
     // Query the system
     let response = system.search("What is Rust?".to_string(), Some(1)).await?;
-    
+
     if !response.results.is_empty() {
-        println!("Found: {}", response.results[0].content);
+        tracing::debug!("Found: {}", response.results[0].content);
     }
 
     Ok(())
@@ -54,7 +54,7 @@ use std::sync::Arc;
 async fn main() -> RragResult<()> {
     // Create agent with knowledge base
     let memory = Arc::new(ConversationBufferMemory::new(100));
-    
+
     let agent = AgentBuilder::new()
         .with_name("Q&A Assistant")
         .with_model("openai", "gpt-3.5-turbo")
@@ -72,9 +72,9 @@ async fn main() -> RragResult<()> {
 
     // In a real application, you would index these documents
     // and retrieve relevant ones for the agent
-    
+
     let conversation_id = "user-123";
-    
+
     // Ask questions
     let questions = vec![
         "What is the capital of France?",
@@ -87,9 +87,9 @@ async fn main() -> RragResult<()> {
             question,
             Some(conversation_id.to_string())
         ).await?;
-        
-        println!("Q: {}", question);
-        println!("A: {}\n", response.text);
+
+        tracing::debug!("Q: {}", question);
+        tracing::debug!("A: {}\n", response.text);
     }
 
     Ok(())
@@ -117,24 +117,24 @@ async fn main() -> RragResult<()> {
         ChunkingStrategy::FixedSize { size: 100, overlap: 20 }
     );
     let fixed_chunks = fixed_chunker.chunk_document(&document)?;
-    println!("Fixed chunks: {}", fixed_chunks.len());
+    tracing::debug!("Fixed chunks: {}", fixed_chunks.len());
 
     // Sentence-based chunking
     let sentence_chunker = DocumentChunker::with_strategy(
-        ChunkingStrategy::Sentence { 
-            max_sentences: 3, 
-            overlap_sentences: 1 
+        ChunkingStrategy::Sentence {
+            max_sentences: 3,
+            overlap_sentences: 1
         }
     );
     let sentence_chunks = sentence_chunker.chunk_document(&document)?;
-    println!("Sentence chunks: {}", sentence_chunks.len());
+    tracing::debug!("Sentence chunks: {}", sentence_chunks.len());
 
     // Paragraph-based chunking
     let paragraph_chunker = DocumentChunker::with_strategy(
         ChunkingStrategy::Paragraph { max_paragraphs: 2 }
     );
     let paragraph_chunks = paragraph_chunker.chunk_document(&document)?;
-    println!("Paragraph chunks: {}", paragraph_chunks.len());
+    tracing::debug!("Paragraph chunks: {}", paragraph_chunks.len());
 
     Ok(())
 }
@@ -155,14 +155,14 @@ async fn main() -> RragResult<()> {
             .with_metadata("language", "rust".into())
             .with_metadata("tags", serde_json::json!(["tutorial", "basics"]))
             .with_content_hash(),
-            
+
         Document::new("Advanced Rust concurrency patterns")
             .with_metadata("category", "programming".into())
             .with_metadata("difficulty", "advanced".into())
             .with_metadata("language", "rust".into())
             .with_metadata("tags", serde_json::json!(["concurrency", "async"]))
             .with_content_hash(),
-            
+
         Document::new("Python data science fundamentals")
             .with_metadata("category", "data-science".into())
             .with_metadata("difficulty", "intermediate".into())
@@ -173,21 +173,21 @@ async fn main() -> RragResult<()> {
 
     // Process documents
     for doc in &documents {
-        println!("Document: {}", doc.id);
-        println!("Content: {}", doc.content_str());
-        println!("Category: {:?}", doc.metadata.get("category"));
-        println!("Hash: {:?}", doc.content_hash);
-        println!("Length: {} chars\n", doc.content_length());
+        tracing::debug!("Document: {}", doc.id);
+        tracing::debug!("Content: {}", doc.content_str());
+        tracing::debug!("Category: {:?}", doc.metadata.get("category"));
+        tracing::debug!("Hash: {:?}", doc.content_hash);
+        tracing::debug!("Length: {} chars\n", doc.content_length());
     }
 
     // Check for duplicate content
     let doc1_hash = &documents[0].content_hash;
     let doc2_hash = &documents[1].content_hash;
-    
+
     if doc1_hash == doc2_hash {
-        println!("Documents have identical content");
+        tracing::debug!("Documents have identical content");
     } else {
-        println!("Documents have different content");
+        tracing::debug!("Documents have different content");
     }
 
     Ok(())
@@ -209,7 +209,7 @@ async fn main() -> RragResult<()> {
         OpenAIEmbeddingProvider::new("your-openai-key")
             .with_model("text-embedding-3-small")
     );
-    
+
     // Local provider
     let local_provider = Arc::new(
         LocalEmbeddingProvider::new("sentence-transformers/all-MiniLM-L6-v2", 384)
@@ -225,27 +225,27 @@ async fn main() -> RragResult<()> {
     let openai_embedding = openai_service.embed_document(
         &Document::new(text)
     ).await?;
-    
+
     let local_embedding = local_service.embed_document(
         &Document::new(text)
     ).await?;
 
-    println!("OpenAI embedding: {} dimensions", openai_embedding.dimensions);
-    println!("Local embedding: {} dimensions", local_embedding.dimensions);
+    tracing::debug!("OpenAI embedding: {} dimensions", openai_embedding.dimensions);
+    tracing::debug!("Local embedding: {} dimensions", local_embedding.dimensions);
 
     // Compare provider info
     let openai_info = openai_service.provider_info();
     let local_info = local_service.provider_info();
 
-    println!("\nOpenAI Provider:");
-    println!("  Name: {}", openai_info.name);
-    println!("  Max batch: {}", openai_info.max_batch_size);
-    println!("  Models: {:?}", openai_info.supported_models);
+    tracing::debug!("\nOpenAI Provider:");
+    tracing::debug!("  Name: {}", openai_info.name);
+    tracing::debug!("  Max batch: {}", openai_info.max_batch_size);
+    tracing::debug!("  Models: {:?}", openai_info.supported_models);
 
-    println!("\nLocal Provider:");
-    println!("  Name: {}", local_info.name);
-    println!("  Max batch: {}", local_info.max_batch_size);
-    println!("  Models: {:?}", local_info.supported_models);
+    tracing::debug!("\nLocal Provider:");
+    tracing::debug!("  Name: {}", local_info.name);
+    tracing::debug!("  Max batch: {}", local_info.max_batch_size);
+    tracing::debug!("  Models: {:?}", local_info.supported_models);
 
     Ok(())
 }
@@ -279,19 +279,19 @@ async fn main() -> RragResult<()> {
         })
         .collect();
 
-    println!("Processing {} documents in batches...", documents.len());
-    
+    tracing::debug!("Processing {} documents in batches...", documents.len());
+
     let start = std::time::Instant::now();
     let embeddings = service.embed_documents(&documents).await?;
     let duration = start.elapsed();
 
-    println!("Generated {} embeddings in {:.2}s", embeddings.len(), duration.as_secs_f64());
-    println!("Average: {:.2}ms per embedding", 
+    tracing::debug!("Generated {} embeddings in {:.2}s", embeddings.len(), duration.as_secs_f64());
+    tracing::debug!("Average: {:.2}ms per embedding",
         duration.as_millis() as f64 / embeddings.len() as f64);
 
     // Verify embeddings
     for (i, embedding) in embeddings.iter().enumerate() {
-        println!("Embedding {}: {} dimensions, source: {}", 
+        tracing::debug!("Embedding {}: {} dimensions, source: {}",
             i, embedding.dimensions, embedding.source_id);
     }
 
@@ -318,17 +318,17 @@ async fn main() -> RragResult<()> {
             .with_metadata("category", "AI".into())
             .with_metadata("year", 2023.into())
             .with_metadata("difficulty", "advanced".into()),
-            
+
         Document::new("Basic introduction to neural networks")
             .with_metadata("category", "AI".into())
             .with_metadata("year", 2022.into())
             .with_metadata("difficulty", "beginner".into()),
-            
+
         Document::new("Web development with Rust and WebAssembly")
             .with_metadata("category", "Programming".into())
             .with_metadata("year", 2023.into())
             .with_metadata("difficulty", "intermediate".into()),
-            
+
         Document::new("Database optimization techniques")
             .with_metadata("category", "Database".into())
             .with_metadata("year", 2021.into())
@@ -344,18 +344,18 @@ async fn main() -> RragResult<()> {
         // Basic search
         SearchQuery::new("machine learning")
             .with_limit(3),
-            
+
         // Filter by category
         SearchQuery::new("programming")
             .with_filter("category", "Programming".into())
             .with_limit(3),
-            
+
         // Filter by year and difficulty
         SearchQuery::new("advanced")
             .with_filter("year", 2023.into())
             .with_filter("difficulty", "advanced".into())
             .with_limit(3),
-            
+
         // Multiple categories
         SearchQuery::new("algorithms")
             .with_filter("category", serde_json::json!(["AI", "Programming"]))
@@ -364,18 +364,18 @@ async fn main() -> RragResult<()> {
     ];
 
     for (i, query) in queries.iter().enumerate() {
-        println!("\n--- Query {} ---", i + 1);
+        tracing::debug!("\n--- Query {} ---", i + 1);
         let results = retriever.search(query.clone()).await?;
-        
+
         for result in &results {
-            println!("Score: {:.3} - {}", result.score, result.content);
+            tracing::debug!("Score: {:.3} - {}", result.score, result.content);
             if let Some(category) = result.metadata.get("category") {
-                println!("  Category: {}", category.as_str().unwrap_or("N/A"));
+                tracing::debug!("  Category: {}", category.as_str().unwrap_or("N/A"));
             }
         }
-        
+
         if results.is_empty() {
-            println!("No results found");
+            tracing::debug!("No results found");
         }
     }
 
@@ -409,7 +409,7 @@ async fn main() -> RragResult<()> {
         .build()?;
 
     let conversation_id = "demo-conversation";
-    
+
     // Test different types of queries
     let queries = vec![
         "What is 15 multiplied by 23?",
@@ -419,28 +419,28 @@ async fn main() -> RragResult<()> {
     ];
 
     for query in queries {
-        println!("\nUser: {}", query);
-        
+        tracing::debug!("\nUser: {}", query);
+
         let response = agent.process_message(
             query,
             Some(conversation_id.to_string())
         ).await?;
-        
-        println!("Assistant: {}", response.text);
-        
+
+        tracing::debug!("Assistant: {}", response.text);
+
         // Show tool usage
         if !response.tool_calls.is_empty() {
-            println!("Tools used:");
+            tracing::debug!("Tools used:");
             for tool_call in &response.tool_calls {
-                println!("  - {}: {} -> {:?}", 
+                tracing::debug!("  - {}: {} -> {:?}",
                     tool_call.tool_name,
                     tool_call.input,
                     tool_call.result
                 );
             }
         }
-        
-        println!("Processing time: {}ms", response.metadata.duration_ms);
+
+        tracing::debug!("Processing time: {}ms", response.metadata.duration_ms);
     }
 
     Ok(())
@@ -496,17 +496,17 @@ async fn main() -> RragResult<()> {
     ];
 
     for (agent_name, agent) in agents {
-        println!("\n=== Testing {} Memory Agent ===", agent_name);
-        
+        tracing::debug!("\n=== Testing {} Memory Agent ===", agent_name);
+
         for message in &conversation {
             let response = agent.process_message(
                 message,
                 Some(format!("{}-{}", conversation_id, agent_name.to_lowercase()))
             ).await?;
-            
-            println!("User: {}", message);
-            println!("Agent: {}", response.text);
-            println!();
+
+            tracing::debug!("User: {}", message);
+            tracing::debug!("Agent: {}", response.text);
+            tracing::debug!();
         }
     }
 
@@ -535,28 +535,28 @@ async fn main() -> RragResult<()> {
     ];
 
     for query in queries {
-        println!("\nUser: {}", query);
-        print!("Assistant: ");
-        
+        tracing::debug!("\nUser: {}", query);
+        tracing::debug!("Assistant: ");
+
         // Stream the response
         let mut stream = agent.stream_message(query, None).await?;
-        
+
         while let Some(token_result) = stream.next().await {
             match token_result {
                 Ok(token) => {
-                    print!("{}", token.content);
+                    tracing::debug!("{}", token.content);
                     // Flush to show tokens immediately
                     use std::io::{self, Write};
                     io::stdout().flush().unwrap();
                 }
                 Err(e) => {
-                    eprintln!("\nStreaming error: {}", e);
+                    etracing::debug!("\nStreaming error: {}", e);
                     break;
                 }
             }
         }
-        
-        println!("\n");
+
+        tracing::debug!("\n");
     }
 
     Ok(())
@@ -603,13 +603,13 @@ async fn main() -> RragResult<()> {
              prevents segfaults, and guarantees thread safety. It accomplishes \
              these goals by being memory safe without using garbage collection."
         ).with_metadata("topic", "rust".into()),
-        
+
         Document::new(
             "Machine learning is a method of data analysis that automates \
              analytical model building. It is a branch of artificial intelligence \
              based on the idea that systems can learn from data."
         ).with_metadata("topic", "ml".into()),
-        
+
         Document::new(
             "WebAssembly (abbreviated Wasm) is a binary instruction format for \
              a stack-based virtual machine. Wasm is designed as a portable \
@@ -622,27 +622,27 @@ async fn main() -> RragResult<()> {
         .with_metadata("batch_id", "demo-batch".into())
         .with_metadata("priority", "high".into());
 
-    println!("Starting pipeline execution...");
+    tracing::debug!("Starting pipeline execution...");
     let start = std::time::Instant::now();
-    
+
     let result = pipeline.execute(context).await?;
-    
+
     let duration = start.elapsed();
-    println!("Pipeline completed in {:.2}s", duration.as_secs_f64());
-    println!("Total processing time: {}ms", result.total_execution_time());
-    
+    tracing::debug!("Pipeline completed in {:.2}s", duration.as_secs_f64());
+    tracing::debug!("Total processing time: {}ms", result.total_execution_time());
+
     // Show execution history
-    println!("\nExecution History:");
+    tracing::debug!("\nExecution History:");
     for step in &result.execution_history {
-        println!("  {}: {}ms (success: {})", 
-            step.step_id, 
-            step.duration_ms, 
+        tracing::debug!("  {}: {}ms (success: {})",
+            step.step_id,
+            step.duration_ms,
             step.success
         );
-        
+
         if !step.success {
             if let Some(error) = &step.error_message {
-                println!("    Error: {}", error);
+                tracing::debug!("    Error: {}", error);
             }
         }
     }
@@ -650,12 +650,12 @@ async fn main() -> RragResult<()> {
     // Show final data type
     match &result.data {
         PipelineData::Embeddings(embeddings) => {
-            println!("\nFinal output: {} embeddings", embeddings.len());
+            tracing::debug!("\nFinal output: {} embeddings", embeddings.len());
             for (i, embedding) in embeddings.iter().enumerate() {
-                println!("  Embedding {}: {} dimensions", i, embedding.dimensions);
+                tracing::debug!("  Embedding {}: {} dimensions", i, embedding.dimensions);
             }
         }
-        _ => println!("Unexpected final data type"),
+        _ => tracing::debug!("Unexpected final data type"),
     }
 
     Ok(())
@@ -706,7 +706,7 @@ impl PipelineStep for ContentValidationStep {
     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
         let start_time = std::time::Instant::now();
         let step_start = chrono::Utc::now();
-        
+
         let validation_result = match &context.data {
             PipelineData::Document(doc) => {
                 self.validate_document(doc)?;
@@ -749,7 +749,7 @@ impl PipelineStep for ContentValidationStep {
 impl ContentValidationStep {
     fn validate_document(&self, doc: &Document) -> RragResult<()> {
         let content_length = doc.content_length();
-        
+
         // Check length constraints
         if content_length < self.min_length {
             return Err(RragError::validation(
@@ -758,7 +758,7 @@ impl ContentValidationStep {
                 content_length.to_string(),
             ));
         }
-        
+
         if content_length > self.max_length {
             return Err(RragError::validation(
                 "content_length",
@@ -806,7 +806,7 @@ impl PipelineStep for MetadataEnrichmentStep {
 
     async fn execute(&self, mut context: PipelineContext) -> RragResult<PipelineContext> {
         let start_time = std::time::Instant::now();
-        
+
         let enriched_data = match context.data {
             PipelineData::Document(mut doc) => {
                 self.enrich_document(&mut doc).await?;
@@ -824,7 +824,7 @@ impl PipelineStep for MetadataEnrichmentStep {
         };
 
         context.data = enriched_data;
-        
+
         // Record successful execution
         context.record_step(StepExecution {
             step_id: self.name().to_string(),
@@ -865,7 +865,7 @@ impl MetadataEnrichmentStep {
         } else {
             "general"
         };
-        
+
         doc.metadata.insert("inferred_type".to_string(), content_type.into());
 
         Ok(())
@@ -894,11 +894,11 @@ async fn main() -> RragResult<()> {
              Rust is a systems programming language that focuses on safety and performance. \
              It prevents common bugs like null pointer dereferences and buffer overflows."
         ),
-        
+
         Document::new(
             "Short text" // This should fail validation
         ),
-        
+
         Document::new(
             "A detailed tutorial on web development using various technologies. \
              This covers HTML, CSS, JavaScript, and modern frameworks for building \
@@ -914,35 +914,35 @@ async fn main() -> RragResult<()> {
 
     match pipeline.execute(context).await {
         Ok(result) => {
-            println!("Pipeline completed successfully!");
-            println!("Total time: {}ms", result.total_execution_time());
-            
+            tracing::debug!("Pipeline completed successfully!");
+            tracing::debug!("Total time: {}ms", result.total_execution_time());
+
             if result.has_failures() {
-                println!("\nSome steps failed:");
+                tracing::debug!("\nSome steps failed:");
                 for step in &result.execution_history {
                     if !step.success {
-                        println!("  {}: {}", step.step_id, 
+                        tracing::debug!("  {}: {}", step.step_id,
                             step.error_message.as_ref().unwrap_or(&"Unknown error".to_string()));
                     }
                 }
             }
-            
+
             // Show enriched documents
             if let PipelineData::Documents(docs) = &result.data {
-                println!("\nProcessed documents:");
+                tracing::debug!("\nProcessed documents:");
                 for (i, doc) in docs.iter().enumerate() {
-                    println!("  Document {}: {} chars", i, doc.content_length());
+                    tracing::debug!("  Document {}: {} chars", i, doc.content_length());
                     if let Some(word_count) = doc.metadata.get("word_count") {
-                        println!("    Words: {}", word_count);
+                        tracing::debug!("    Words: {}", word_count);
                     }
                     if let Some(content_type) = doc.metadata.get("inferred_type") {
-                        println!("    Type: {}", content_type.as_str().unwrap_or("unknown"));
+                        tracing::debug!("    Type: {}", content_type.as_str().unwrap_or("unknown"));
                     }
                 }
             }
         }
         Err(e) => {
-            println!("Pipeline failed: {}", e);
+            tracing::debug!("Pipeline failed: {}", e);
         }
     }
 
@@ -979,7 +979,7 @@ async fn main() -> RragResult<()> {
         Document::new("Initial document 3").with_metadata("version", 1.into()),
     ];
 
-    println!("Processing initial documents...");
+    tracing::debug!("Processing initial documents...");
     let initial_context = PipelineContext::new(PipelineData::Documents(initial_docs));
     service.process_initial_batch(initial_context).await?;
 
@@ -990,17 +990,17 @@ async fn main() -> RragResult<()> {
             Document::new("New document added later")
                 .with_metadata("version", 2.into())
         ),
-        
+
         // Modify existing documents
         DocumentChange::Modified(
             "doc-1".to_string(),
             Document::new("Updated content for document 1")
                 .with_metadata("version", 2.into())
         ),
-        
+
         // Delete documents
         DocumentChange::Deleted("doc-2".to_string()),
-        
+
         // Bulk changes
         DocumentChange::BulkUpdate(vec![
             Document::new("Bulk update 1").with_metadata("batch", "bulk-1".into()),
@@ -1008,32 +1008,32 @@ async fn main() -> RragResult<()> {
         ]),
     ];
 
-    println!("\nProcessing incremental changes...");
+    tracing::debug!("\nProcessing incremental changes...");
     for (i, change) in changes.iter().enumerate() {
-        println!("  Processing change {}: {:?}", i + 1, change);
-        
+        tracing::debug!("  Processing change {}: {:?}", i + 1, change);
+
         let result = service.process_change(change.clone()).await?;
-        println!("    Result: {:?}", result);
-        
+        tracing::debug!("    Result: {:?}", result);
+
         // Check system health after each change
         let health = service.check_integrity().await?;
         if health.overall_status != HealthStatus::Healthy {
-            println!("    Warning: System health degraded: {:?}", health);
+            tracing::debug!("    Warning: System health degraded: {:?}", health);
         }
     }
 
     // Show final metrics
     let metrics = service.get_metrics().await?;
-    println!("\nFinal Metrics:");
-    println!("  Documents processed: {}", metrics.total_documents_processed);
-    println!("  Updates processed: {}", metrics.total_updates_processed);
-    println!("  Errors encountered: {}", metrics.total_errors);
-    println!("  Average processing time: {:.2}ms", metrics.average_processing_time_ms);
+    tracing::debug!("\nFinal Metrics:");
+    tracing::debug!("  Documents processed: {}", metrics.total_documents_processed);
+    tracing::debug!("  Updates processed: {}", metrics.total_updates_processed);
+    tracing::debug!("  Errors encountered: {}", metrics.total_errors);
+    tracing::debug!("  Average processing time: {:.2}ms", metrics.average_processing_time_ms);
 
     // Demonstrate rollback capability
-    println!("\nTesting rollback...");
+    tracing::debug!("\nTesting rollback...");
     let rollback_point = service.create_rollback_point("before_bulk_update").await?;
-    
+
     // Make some changes we might want to rollback
     let test_change = DocumentChange::Added(
         Document::new("Test document to rollback")
@@ -1042,7 +1042,7 @@ async fn main() -> RragResult<()> {
 
     // Rollback to previous state
     let rollback_result = service.rollback_to_point(rollback_point).await?;
-    println!("Rollback result: {:?}", rollback_result);
+    tracing::debug!("Rollback result: {:?}", rollback_result);
 
     Ok(())
 }
@@ -1076,17 +1076,17 @@ async fn main() -> RragResult<()> {
             "Rust is a systems programming language developed by Mozilla. \
              It focuses on memory safety and performance."
         ).with_metadata("type", "programming_language".into()),
-        
+
         Document::new(
             "Mozilla Firefox is a web browser developed by Mozilla Corporation. \
              It uses the Gecko rendering engine."
         ).with_metadata("type", "software".into()),
-        
+
         Document::new(
             "WebAssembly (Wasm) is a binary instruction format that can run \
              in web browsers. Rust has excellent WebAssembly support."
         ).with_metadata("type", "technology".into()),
-        
+
         Document::new(
             "Memory safety prevents buffer overflows and null pointer dereferences. \
              Rust achieves memory safety without garbage collection."
@@ -1094,13 +1094,13 @@ async fn main() -> RragResult<()> {
     ];
 
     // Build knowledge graph
-    println!("Building knowledge graph...");
+    tracing::debug!("Building knowledge graph...");
     for doc in &documents {
         graph_retriever.index_document(doc).await?;
     }
 
     let graph_stats = graph_retriever.get_graph_stats().await?;
-    println!("Graph built: {} nodes, {} edges", 
+    tracing::debug!("Graph built: {} nodes, {} edges",
         graph_stats.node_count, graph_stats.edge_count);
 
     // Perform graph-based queries
@@ -1112,8 +1112,8 @@ async fn main() -> RragResult<()> {
     ];
 
     for query in queries {
-        println!("\n--- Query: {} ---", query);
-        
+        tracing::debug!("\n--- Query: {} ---", query);
+
         let results = graph_retriever.query_with_graph_traversal(
             query,
             GraphTraversalConfig {
@@ -1126,13 +1126,13 @@ async fn main() -> RragResult<()> {
         ).await?;
 
         for result in &results {
-            println!("Score: {:.3} - {}", result.score, result.content);
-            
+            tracing::debug!("Score: {:.3} - {}", result.score, result.content);
+
             // Show relationship path if available
             if let Some(path) = result.metadata.get("relationship_path") {
-                println!("  Path: {}", path.as_str().unwrap_or(""));
+                tracing::debug!("  Path: {}", path.as_str().unwrap_or(""));
             }
-            
+
             // Show connected entities
             if let Some(entities) = result.metadata.get("connected_entities") {
                 if let Some(entity_list) = entities.as_array() {
@@ -1140,27 +1140,27 @@ async fn main() -> RragResult<()> {
                         .iter()
                         .filter_map(|e| e.as_str().map(|s| s.to_string()))
                         .collect();
-                    println!("  Entities: {}", entity_names.join(", "));
+                    tracing::debug!("  Entities: {}", entity_names.join(", "));
                 }
             }
         }
     }
 
     // Analyze graph structure
-    println!("\n--- Graph Analysis ---");
+    tracing::debug!("\n--- Graph Analysis ---");
     let central_nodes = graph_retriever.get_most_central_nodes(5).await?;
-    println!("Most central nodes:");
+    tracing::debug!("Most central nodes:");
     for (i, node) in central_nodes.iter().enumerate() {
-        println!("  {}: {} (centrality: {:.3})", 
+        tracing::debug!("  {}: {} (centrality: {:.3})",
             i + 1, node.label, node.centrality_score);
     }
 
     let communities = graph_retriever.detect_communities().await?;
-    println!("\nDetected communities: {}", communities.len());
+    tracing::debug!("\nDetected communities: {}", communities.len());
     for (i, community) in communities.iter().enumerate() {
-        println!("  Community {}: {} nodes", i + 1, community.node_count);
+        tracing::debug!("  Community {}: {} nodes", i + 1, community.node_count);
         if let Some(primary_topic) = &community.primary_topic {
-            println!("    Primary topic: {}", primary_topic);
+            tracing::debug!("    Primary topic: {}", primary_topic);
         }
     }
 
@@ -1199,7 +1199,7 @@ async fn main() -> RragResult<()> {
         MultiModalContent::Text(
             "This is plain text content about machine learning algorithms."
         ),
-        
+
         MultiModalContent::Image(
             ImageContent {
                 data: std::fs::read("examples/sample_chart.png")
@@ -1211,7 +1211,7 @@ async fn main() -> RragResult<()> {
                 ].into_iter().collect(),
             }
         ),
-        
+
         MultiModalContent::Pdf(
             PdfContent {
                 data: std::fs::read("examples/technical_doc.pdf")
@@ -1222,7 +1222,7 @@ async fn main() -> RragResult<()> {
                 ].into_iter().collect(),
             }
         ),
-        
+
         MultiModalContent::Structured(
             StructuredContent {
                 data: serde_json::json!({
@@ -1239,18 +1239,18 @@ async fn main() -> RragResult<()> {
         ),
     ];
 
-    println!("Processing {} multi-modal content items...", content_items.len());
+    tracing::debug!("Processing {} multi-modal content items...", content_items.len());
 
     for (i, content) in content_items.iter().enumerate() {
-        println!("\n--- Processing item {} ---", i + 1);
-        
+        tracing::debug!("\n--- Processing item {} ---", i + 1);
+
         let start_time = std::time::Instant::now();
         let result = processor.process_content(content.clone()).await?;
         let processing_time = start_time.elapsed();
-        
-        println!("Content type: {}", result.content_type);
-        println!("Processing time: {:.2}s", processing_time.as_secs_f64());
-        
+
+        tracing::debug!("Content type: {}", result.content_type);
+        tracing::debug!("Processing time: {:.2}s", processing_time.as_secs_f64());
+
         // Show extracted text
         if !result.extracted_text.is_empty() {
             let preview = if result.extracted_text.len() > 100 {
@@ -1258,36 +1258,36 @@ async fn main() -> RragResult<()> {
             } else {
                 result.extracted_text.clone()
             };
-            println!("Extracted text: {}", preview);
+            tracing::debug!("Extracted text: {}", preview);
         }
-        
+
         // Show detected entities
         if !result.entities.is_empty() {
-            println!("Detected entities:");
+            tracing::debug!("Detected entities:");
             for entity in &result.entities {
-                println!("  {}: {} (confidence: {:.2})", 
+                tracing::debug!("  {}: {} (confidence: {:.2})",
                     entity.entity_type, entity.text, entity.confidence);
             }
         }
-        
+
         // Show generated embeddings
         if let Some(embedding) = &result.embedding {
-            println!("Generated embedding: {} dimensions", embedding.dimensions);
+            tracing::debug!("Generated embedding: {} dimensions", embedding.dimensions);
         }
-        
+
         // Show metadata
         if !result.metadata.is_empty() {
-            println!("Metadata:");
+            tracing::debug!("Metadata:");
             for (key, value) in &result.metadata {
-                println!("  {}: {}", key, value);
+                tracing::debug!("  {}: {}", key, value);
             }
         }
     }
 
     // Demonstrate cross-modal search
-    println!("\n--- Cross-Modal Search ---");
+    tracing::debug!("\n--- Cross-Modal Search ---");
     let query = "Show me content related to performance and technical specifications";
-    
+
     let search_results = processor.cross_modal_search(
         query,
         CrossModalSearchConfig {
@@ -1300,7 +1300,7 @@ async fn main() -> RragResult<()> {
     ).await?;
 
     for result in &search_results {
-        println!("Score: {:.3} | Type: {} | Content: {}", 
+        tracing::debug!("Score: {:.3} | Type: {} | Content: {}",
             result.relevance_score,
             result.content_type,
             result.summary.chars().take(80).collect::<String>() + "..."
@@ -1404,12 +1404,12 @@ async fn main() -> RragResult<()> {
                 .condition(AlertCondition::ErrorRateAbove(0.05))
                 .severity(AlertSeverity::Critical)
                 .notification(AlertNotification::Email("ops@company.com".to_string())),
-                
+
             AlertRule::new("high_latency")
                 .condition(AlertCondition::ResponseTimeAbove(5000))
                 .severity(AlertSeverity::Warning)
                 .notification(AlertNotification::Slack("#alerts".to_string())),
-                
+
             AlertRule::new("low_disk_space")
                 .condition(AlertCondition::DiskUsageAbove(0.85))
                 .severity(AlertSeverity::Warning),
@@ -1422,40 +1422,40 @@ async fn main() -> RragResult<()> {
         let mut interval = tokio::time::interval(
             std::time::Duration::from_secs(30)
         );
-        
+
         loop {
             interval.tick().await;
-            
+
             match system.health_check().await {
                 Ok(health) => {
                     match health.overall_status {
                         HealthStatus::Healthy => {
-                            println!("System healthy - uptime: {}s", health.uptime_seconds);
+                            tracing::debug!("System healthy - uptime: {}s", health.uptime_seconds);
                         }
                         HealthStatus::Degraded => {
-                            println!("System degraded:");
+                            tracing::debug!("System degraded:");
                             for (component, status) in &health.component_status {
                                 if *status != HealthStatus::Healthy {
-                                    println!("  {}: {:?}", component, status);
+                                    tracing::debug!("  {}: {:?}", component, status);
                                 }
                             }
                         }
                         HealthStatus::Unhealthy => {
-                            eprintln!("CRITICAL: System unhealthy!");
+                            etracing::debug!("CRITICAL: System unhealthy!");
                             // Trigger alerts, potentially restart services
                         }
                     }
-                    
+
                     // Log metrics
                     let metrics = system.get_metrics().await;
-                    println!("Metrics - RPS: {:.2}, P95: {:.2}ms, Error Rate: {:.2}%",
+                    tracing::debug!("Metrics - RPS: {:.2}, P95: {:.2}ms, Error Rate: {:.2}%",
                         metrics.performance.requests_per_second,
                         metrics.performance.p95_response_time_ms,
                         metrics.performance.error_rate * 100.0
                     );
                 }
                 Err(e) => {
-                    eprintln!("Health check failed: {}", e);
+                    etracing::debug!("Health check failed: {}", e);
                 }
             }
         }
@@ -1464,7 +1464,7 @@ async fn main() -> RragResult<()> {
     // Simulate production workload
     let num_concurrent_requests = 50;
     let mut handles = Vec::new();
-    
+
     for i in 0..num_concurrent_requests {
         let system_clone = Arc::new(system.clone());
         let handle = tokio::spawn(async move {
@@ -1473,26 +1473,26 @@ async fn main() -> RragResult<()> {
                 format!("Question {} about data processing", i),
                 format!("Inquiry {} about system architecture", i),
             ];
-            
+
             for query in queries {
                 let start = std::time::Instant::now();
-                
+
                 match system_clone.search(query.clone(), Some(5)).await {
                     Ok(response) => {
                         let latency = start.elapsed().as_millis();
-                        println!("Query '{}' completed in {}ms, {} results", 
+                        tracing::debug!("Query '{}' completed in {}ms, {} results",
                             query, latency, response.results.len());
                     }
                     Err(e) => {
-                        eprintln!("Query '{}' failed: {}", query, e);
+                        etracing::debug!("Query '{}' failed: {}", query, e);
                     }
                 }
-                
+
                 // Small delay to simulate realistic usage
                 tokio::time::sleep(std::time::Duration::from_millis(100)).await;
             }
         });
-        
+
         handles.push(handle);
     }
 
@@ -1501,18 +1501,18 @@ async fn main() -> RragResult<()> {
 
     // Final system metrics
     let final_metrics = system.get_metrics().await;
-    println!("\n=== Final System Metrics ===");
-    println!("Total requests: {}", final_metrics.request_counts.total_requests);
-    println!("Success rate: {:.2}%", 
-        (final_metrics.request_counts.successful_requests as f64 / 
+    tracing::debug!("\n=== Final System Metrics ===");
+    tracing::debug!("Total requests: {}", final_metrics.request_counts.total_requests);
+    tracing::debug!("Success rate: {:.2}%",
+        (final_metrics.request_counts.successful_requests as f64 /
          final_metrics.request_counts.total_requests as f64) * 100.0);
-    println!("Average response time: {:.2}ms", final_metrics.performance.average_response_time_ms);
-    println!("Memory usage: {:.2}MB", final_metrics.resource_usage.memory_usage_mb);
+    tracing::debug!("Average response time: {:.2}ms", final_metrics.performance.average_response_time_ms);
+    tracing::debug!("Memory usage: {:.2}MB", final_metrics.resource_usage.memory_usage_mb);
 
     // Graceful shutdown
-    println!("\nShutting down system gracefully...");
+    tracing::debug!("\nShutting down system gracefully...");
     system.shutdown().await?;
-    
+
     Ok(())
 }
 ```
@@ -1520,6 +1520,7 @@ async fn main() -> RragResult<()> {
 This examples file provides comprehensive demonstrations of RRAG's capabilities, from basic usage to advanced production scenarios. Each example is self-contained and includes detailed explanations of the features being demonstrated.
 
 The examples cover:
+
 - Basic RAG system setup
 - Document processing and chunking
 - Multiple embedding providers
