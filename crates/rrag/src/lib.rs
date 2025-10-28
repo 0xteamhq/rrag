@@ -205,7 +205,7 @@ pub mod incremental;
 pub mod observability;
 
 // Re-exports for convenience
-pub use agent::{AgentBuilder, AgentConfig, AgentResponse, ModelConfig, RragAgent, ToolCall};
+pub use agent::{Agent, AgentBuilder, AgentConfig, ConversationMemory, ConversationMode, ToolExecutor};
 pub use document::{ChunkingStrategy, Document, DocumentChunk, DocumentChunker, Metadata};
 pub use embeddings::{
     Embedding, EmbeddingBatch, EmbeddingProvider, EmbeddingRequest, EmbeddingService,
@@ -238,7 +238,8 @@ pub use system::{
 };
 #[cfg(feature = "http")]
 pub use tools::HttpTool;
-pub use tools::{Calculator, EchoTool, Tool, ToolRegistry, ToolResult};
+// Tools module is kept for backward compatibility but agents use rsllm::tools now
+pub use tools::{Calculator, EchoTool, Tool, ToolResult};
 
 // rsllm re-exports when feature is enabled
 #[cfg(feature = "rsllm-client")]
@@ -293,7 +294,7 @@ pub use observability::{
 /// - Core system components ([`RragSystem`], [`RragSystemBuilder`])
 /// - Document processing ([`Document`], [`DocumentChunk`], [`ChunkingStrategy`])
 /// - Error handling ([`RragError`], [`RragResult`])
-/// - Agents and tools ([`RragAgent`], [`Tool`], [`Calculator`])
+/// - Agents and tools ([`Agent`], [`Tool`], [`Calculator`])
 /// - Memory management ([`Memory`], [`ConversationBufferMemory`])
 /// - Streaming support ([`StreamingResponse`], [`StreamToken`])
 /// - Pipeline processing ([`Pipeline`], [`RagPipelineBuilder`])
@@ -341,8 +342,7 @@ pub mod prelude {
 
     // Agents and tools
     pub use crate::{
-        AgentBuilder, AgentConfig, AgentResponse, Calculator, RragAgent, Tool, ToolRegistry,
-        ToolResult,
+        Agent, AgentBuilder, AgentConfig, ConversationMemory, ConversationMode, ToolExecutor,
     };
 
     // HTTP tools when feature is enabled

@@ -404,6 +404,111 @@ impl LLMProvider for OpenAIProvider {
 
         Ok(Box::new(stream))
     }
+
+    async fn chat_completion_with_tools(
+        &self,
+        messages: Vec<ChatMessage>,
+        tools: Vec<crate::tools::ToolDefinition>,
+        model: Option<&str>,
+        temperature: Option<f32>,
+        max_tokens: Option<u32>,
+    ) -> RsllmResult<ChatResponse> {
+        let url = self.base_url.join("chat/completions")?;
+
+        // Build tools in OpenAI format
+        let tools_json: Vec<serde_json::Value> = tools
+            .iter()
+            .map(|tool| {
+                serde_json::json!({
+                    "type": "function",
+                    "function": {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.parameters
+                    }
+                })
+            })
+            .collect();
+
+        let mut request_body = serde_json::json!({
+            "model": model.unwrap_or(Provider::OpenAI.default_model()),
+            "messages": messages,
+            "tools": tools_json,
+        });
+
+        if let Some(temp) = temperature {
+            request_body["temperature"] = temp.into();
+        }
+
+        if let Some(max_tokens) = max_tokens {
+            request_body["max_tokens"] = max_tokens.into();
+        }
+
+        let response = self
+            .client
+            .post(url)
+            .headers(self.build_headers())
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(RsllmError::api(
+                "OpenAI",
+                format!("API request failed: {}", error_text),
+                status.as_str(),
+            ));
+        }
+
+        let response_data: serde_json::Value = response.json().await?;
+
+        // Extract content
+        let content = response_data["choices"][0]["message"]["content"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+
+        // Parse tool calls if present (OpenAI format)
+        let tool_calls = if let Some(calls_array) = response_data["choices"][0]["message"]["tool_calls"].as_array() {
+            let parsed_calls: Vec<crate::message::ToolCall> = calls_array
+                .iter()
+                .filter_map(|call| {
+                    Some(crate::message::ToolCall {
+                        id: call["id"].as_str()?.to_string(),
+                        call_type: crate::message::ToolCallType::Function,
+                        function: crate::message::ToolFunction {
+                            name: call["function"]["name"].as_str()?.to_string(),
+                            arguments: serde_json::from_str(call["function"]["arguments"].as_str()?).ok()?,
+                        },
+                    })
+                })
+                .collect();
+
+            if parsed_calls.is_empty() {
+                None
+            } else {
+                Some(parsed_calls)
+            }
+        } else {
+            None
+        };
+
+        let mut response = ChatResponse::new(
+            content,
+            model.unwrap_or(Provider::OpenAI.default_model())
+        ).with_finish_reason("stop");
+
+        if let Some(calls) = tool_calls {
+            response = response.with_tool_calls(calls);
+        }
+
+        Ok(response)
+    }
 }
 
 /// Ollama provider implementation  

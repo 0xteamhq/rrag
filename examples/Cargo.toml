@@ -67,6 +67,10 @@ path = "test_ollama_integration.rs"
 name = "simple_agent"
 path = "simple_agent.rs"
 
+[[bin]]
+name = "agent_demo"
+path = "agent_demo.rs"
+
 [features]
 default = ["rsllm-client"]
 rsllm-client = ["rrag/rsllm-client"]

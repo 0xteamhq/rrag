@@ -529,3 +529,14 @@ mod tests {
         }
     }
 }
+
+// Implement From<RsllmError> for RragError
+#[cfg(feature = "rsllm-client")]
+impl From<rsllm::RsllmError> for RragError {
+    fn from(err: rsllm::RsllmError) -> Self {
+        RragError::RsllmClient {
+            operation: "LLM operation".to_string(),
+            source: Box::new(err),
+        }
+    }
+}

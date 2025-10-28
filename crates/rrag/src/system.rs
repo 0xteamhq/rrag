@@ -4,7 +4,7 @@
 //! Designed for production deployment with monitoring, configuration, and lifecycle management.
 
 use crate::{
-    Document, EmbeddingService, MemoryService, Pipeline, RetrievalService, RragAgent, RragError,
+    Document, EmbeddingService, MemoryService, Pipeline, RetrievalService, Agent, RragError,
     RragResult, SearchResult, StorageService,
 };
 use serde::{Deserialize, Serialize};
@@ -385,7 +385,7 @@ pub struct SystemServices {
     pub memory: Option<Arc<MemoryService>>,
 
     /// Agent instances
-    pub agents: HashMap<String, Arc<RragAgent>>,
+    pub agents: HashMap<String, Arc<Agent>>,
 
     /// Pipeline instances
     pub pipelines: HashMap<String, Arc<Pipeline>>,
