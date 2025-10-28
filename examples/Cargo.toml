@@ -59,6 +59,10 @@ path = "getting_started_guide.rs"
 name = "rgraph_demo"
 path = "rgraph_demo.rs"
 
+[[bin]]
+name = "test_ollama_integration"
+path = "test_ollama_integration.rs"
+
 [features]
 default = ["rsllm-client"]
 rsllm-client = ["rrag/rsllm-client"]
@@ -78,3 +82,4 @@ tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 rand = "0.8"
+reqwest = { version = "0.12", features = ["json"] }

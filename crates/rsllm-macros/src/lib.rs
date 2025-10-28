@@ -25,18 +25,48 @@ impl Parse for ToolArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut args = ToolArgs::default();
 
-        while !input.is_empty() {
-            let ident: syn::Ident = input.parse()?;
-            let _: Token![=] = input.parse()?;
-            let value: LitStr = input.parse()?;
+        // Handle empty attribute like #[tool]
+        if input.is_empty() {
+            return Err(syn::Error::new(
+                proc_macro2::Span::call_site(),
+                "description is required: use #[tool(description = \"your description here\")]",
+            ));
+        }
 
-            match ident.to_string().as_str() {
+        while !input.is_empty() {
+            // Parse the identifier (name or description)
+            let ident: syn::Ident = input.parse().map_err(|e| {
+                syn::Error::new(
+                    e.span(),
+                    format!("Expected 'name' or 'description', got parse error: {}", e),
+                )
+            })?;
+
+            let ident_str = ident.to_string();
+
+            // Parse the equals sign
+            let _: Token![=] = input.parse().map_err(|e| {
+                syn::Error::new(
+                    e.span(),
+                    format!("Expected '=' after '{}', use syntax: {} = \"...\"", ident_str, ident_str),
+                )
+            })?;
+
+            // Parse the string value
+            let value: LitStr = input.parse().map_err(|e| {
+                syn::Error::new(
+                    e.span(),
+                    format!("Expected string literal after '{} =', got parse error: {}", ident_str, e),
+                )
+            })?;
+
+            match ident_str.as_str() {
                 "name" => args.name = Some(value.value()),
                 "description" => args.description = Some(value.value()),
                 _ => {
                     return Err(syn::Error::new_spanned(
                         ident,
-                        "Unknown attribute. Expected 'name' or 'description'",
+                        format!("Unknown attribute '{}'. Expected 'name' or 'description'", ident_str),
                     ))
                 }
             }
@@ -49,8 +79,8 @@ impl Parse for ToolArgs {
 
         if args.description.is_none() {
             return Err(syn::Error::new(
-                input.span(),
-                "description is required: #[tool(description = \"...\")]",
+                proc_macro2::Span::call_site(),
+                "description is required: use #[tool(description = \"your description here\")]",
             ));
         }
 
