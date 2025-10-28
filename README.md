@@ -1,8 +1,8 @@
-# 🚀 LEVAL RAG Workspace
+# 🚀 RRAG - Rust RAG Framework
 
-**The most comprehensive, production-ready RAG (Retrieval-Augmented Generation) toolkit in Rust.**
+**A comprehensive, production-ready RAG (Retrieval-Augmented Generation) toolkit in Rust.**
 
-Build end-to-end RAG systems with multi-provider LLM support, advanced retrieval strategies, and production-grade infrastructure.
+Build intelligent agents with multi-provider LLM support, tool calling, and RAG capabilities.
 
 ## 🌟 Features
 
@@ -34,20 +34,15 @@ Build end-to-end RAG systems with multi-provider LLM support, advanced retrieval
 This workspace consists of specialized crates that work together to provide a complete RAG solution:
 
 ```
-leval-rag-workspace/
+rrag-workspace/
 ├── crates/
-│   ├── rsllm/              🤖 LLM client library
-│   ├── rag-core/           🧠 RAG orchestration engine
-│   ├── rag-retrieval/      🔍 Document search and retrieval
-│   ├── rag-embeddings/     📊 Vector embedding management
-│   ├── rag-storage/        💾 Vector database abstraction
-│   ├── rag-indexing/       📇 Document processing and chunking
-│   ├── rag-eval/           📈 Evaluation and benchmarking
-│   ├── rag-server/         🌐 HTTP API server
-│   └── rag-cli/            ⚡ Command-line interface
-├── examples/               📚 End-to-end RAG examples
-├── benchmarks/             🏃 Performance benchmarks
-└── docs/                   📖 Comprehensive documentation
+│   ├── rsllm/              🤖 Multi-provider LLM client library
+│   ├── rrag/               🧠 RAG framework with agent system
+│   ├── rgraph/             📊 Graph-based agent orchestration
+│   ├── rsllm-macros/       🔧 Procedural macros for tools
+│   └── schemars/           📋 Vendored JSON Schema library
+├── examples/               📚 End-to-end examples
+└── docs/                   📖 Documentation
 ```
 
 ## 🚀 **Quick Start**
@@ -62,54 +57,51 @@ curl -fsSL https://ollama.ai/install.sh | sh
 ollama pull llama3.1
 ```
 
-### **Basic RAG System**
+### **Basic Agent with Tool Calling**
 ```rust
-use rag_core::{RagSystem, RagConfig};
-use rag_storage::SqliteStorage;
+use rrag::{AgentBuilder, RragResult};
 use rsllm::Client;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Configure the RAG system
-    let config = RagConfig::builder()
-        .llm_provider("openai")
-        .model("gpt-4")
-        .embedding_provider("openai")
-        .storage_backend("sqlite")
+async fn main() -> RragResult<()> {
+    // Create an LLM client
+    let client = Client::from_env()?;
+    
+    // Build an agent with tools
+    let mut agent = AgentBuilder::new()
+        .with_llm(client)
+        .with_system_prompt("You are a helpful AI assistant.")
+        .stateless()
         .build()?;
     
-    // Initialize the RAG system
-    let rag = RagSystem::new(config).await?;
-    
-    // Index documents
-    rag.index_document("path/to/document.pdf").await?;
-    
-    // Query the system
-    let response = rag.query("What is the main topic of the document?").await?;
-    println!("Answer: {}", response.content);
+    // Query the agent
+    let response = agent.run("What is 2 + 2?").await?;
+    println!("Answer: {}", response);
     
     Ok(())
 }
 ```
 
-### **Local-First RAG (Complete Privacy)**
+### **Local-First with Ollama**
 ```rust
-use rag_core::{RagSystem, RagConfig};
+use rrag::{AgentBuilder, RragResult};
+use rsllm::Client;
 
 #[tokio::main] 
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let config = RagConfig::builder()
-        .llm_provider("ollama")
-        .model("llama3.1")
-        .embedding_provider("local")
-        .embedding_model("all-MiniLM-L6-v2")
-        .storage_backend("sqlite")
+async fn main() -> RragResult<()> {
+    // Configure for local Ollama
+    std::env::set_var("RSLLM_PROVIDER", "ollama");
+    std::env::set_var("RSLLM_MODEL", "llama3.2:3b");
+    
+    let client = Client::from_env()?;
+    let mut agent = AgentBuilder::new()
+        .with_llm(client)
+        .stateful() // Maintains conversation history
         .build()?;
     
-    let rag = RagSystem::new(config).await?;
-    
     // Everything runs locally - no external API calls
-    let response = rag.query("Your sensitive question here").await?;
+    let response = agent.run("Your sensitive question here").await?;
+    println!("Answer: {}", response);
     
     Ok(())
 }
@@ -122,19 +114,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 | Crate | Description | Status |
 |-------|-------------|--------|
 | [`rsllm`](./crates/rsllm/) | Multi-provider LLM client | ✅ Ready |
-| [`rag-core`](./crates/rag-core/) | RAG orchestration engine | 🚧 In Progress |
-| [`rag-retrieval`](./crates/rag-retrieval/) | Search and retrieval | 🚧 In Progress |
-| [`rag-embeddings`](./crates/rag-embeddings/) | Vector embeddings | 📝 Planned |
-| [`rag-storage`](./crates/rag-storage/) | Database abstraction | 📝 Planned |
-| [`rag-indexing`](./crates/rag-indexing/) | Document processing | 📝 Planned |
-
-### **Production Crates**
-
-| Crate | Description | Status |
-|-------|-------------|--------|
-| [`rag-server`](./crates/rag-server/) | HTTP API server | 📝 Planned |
-| [`rag-cli`](./crates/rag-cli/) | Command-line tools | 📝 Planned |
-| [`rag-eval`](./crates/rag-eval/) | Evaluation framework | 📝 Planned |
+| [`rrag`](./crates/rrag/) | RAG framework with agents | ✅ Ready |
+| [`rgraph`](./crates/rgraph/) | Graph-based orchestration | 🚧 In Progress |
+| [`rsllm-macros`](./crates/rsllm-macros/) | Tool macros | ✅ Ready |
+| [`schemars`](./crates/schemars/) | JSON Schema (vendored) | ✅ Ready |
 
 ## 🎯 **Use Cases**
 
@@ -175,10 +158,10 @@ cd leval-rag-workspace
 cargo build
 
 # Run tests
-cargo test
+cargo test --workspace
 
 # Run examples
-cargo run --example basic-rag
+cargo run --bin agent_demo
 
 # Build documentation
 cargo doc --open
@@ -186,17 +169,20 @@ cargo doc --open
 
 ### **Running Examples**
 ```bash
-# Basic RAG with OpenAI
-OPENAI_API_KEY=your-key cargo run --example openai-rag
+# Agent with tool calling
+cargo run --bin agent_demo
 
-# Local RAG with Ollama
-cargo run --example local-rag
+# Simple agent prototype
+cargo run --bin simple_agent
 
-# Advanced RAG with evaluation
-cargo run --example evaluated-rag
+# Graph-based orchestration
+cargo run --bin rgraph_demo
 
-# Production API server
-cargo run --bin rag-server
+# Comprehensive demo
+cargo run --bin rrag_comprehensive
+
+# Test Ollama integration
+cargo run --bin test_ollama_integration
 ```
 
 ## 📊 **Benchmarks**

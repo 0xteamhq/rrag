@@ -109,14 +109,12 @@ async fn simple_agent_workflow() -> RragResult<()> {
 
 async fn calculator_integration_demo() -> RragResult<()> {
     // Create an agent with calculator tool
-    let calculator_tool = calculator;
-
     let mut agent = AgentBuilder::new()
         .with_llm(rsllm::Client::from_env()?)
         .with_system_prompt(
             "You are a mathematics assistant. Use the calculator tool for computations.",
         )
-        .with_tool(Box::new(calculator_tool))
+        .with_tool(Box::new(CalculatorTool) as Box<dyn Tool>)
         .stateless()
         .build()?;
 
@@ -155,5 +153,4 @@ async fn multi_step_reasoning_demo() -> RragResult<()> {
     );
 
     Ok(())
-}
 }
