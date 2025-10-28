@@ -1,0 +1,124 @@
+name: Publish to crates.io
+
+on:
+  push:
+    tags:
+      - 'rsllm-v*'
+      - 'rsllm-macros-v*'
+  workflow_dispatch:
+    inputs:
+      crate:
+        description: 'Which crate to publish'
+        required: true
+        type: choice
+        options:
+          - rsllm
+          - rsllm-macros
+          - both
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Publish Crates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all-features --workspace -- -D warnings
+
+      - name: Run tests
+        run: cargo test --all-features --workspace
+
+      - name: Determine which crate to publish
+        id: determine-crate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_INPUT: ${{ github.event.inputs.crate }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            CRATE="$WORKFLOW_INPUT"
+          else
+            if [[ "$TAG_NAME" == rsllm-macros-v* ]]; then
+              CRATE="rsllm-macros"
+            elif [[ "$TAG_NAME" == rsllm-v* ]]; then
+              CRATE="rsllm"
+            else
+              CRATE="both"
+            fi
+          fi
+          echo "crate=$CRATE" >> $GITHUB_OUTPUT
+          echo "Publishing: $CRATE"
+
+      - name: Publish rsllm-macros
+        if: steps.determine-crate.outputs.crate == 'rsllm-macros' || steps.determine-crate.outputs.crate == 'both'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          echo "Publishing rsllm-macros to crates.io..."
+          cd crates/rsllm-macros
+          cargo publish --no-verify
+
+      - name: Wait for rsllm-macros to propagate
+        if: steps.determine-crate.outputs.crate == 'both'
+        run: |
+          echo "Waiting 90 seconds for rsllm-macros to be available on crates.io..."
+          sleep 90
+
+      - name: Publish rsllm
+        if: steps.determine-crate.outputs.crate == 'rsllm' || steps.determine-crate.outputs.crate == 'both'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          echo "Publishing rsllm to crates.io..."
+          cd crates/rsllm
+          cargo publish --no-verify
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          body: |
+            Published to crates.io:
+            - rsllm: https://crates.io/crates/rsllm
+            - rsllm-macros: https://crates.io/crates/rsllm-macros
+
+            Install with:
+            ```toml
+            [dependencies]
+            rsllm = "0.1"
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
