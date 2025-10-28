@@ -5,6 +5,8 @@ members = [
     "crates/rgraph",    # RGraph - Graph-based Agent Orchestration
     "crates/rsllm",
     "crates/rsllm-macros",  # RSLLM Procedural Macros
+    "crates/schemars/schemars",  # Local schemars (vendored)
+    "crates/schemars/schemars_derive",  # Local schemars_derive (vendored)
     "examples",
 ]
 

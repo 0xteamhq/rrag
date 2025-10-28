@@ -1,0 +1,39 @@
+// Reposition/resize top-right nav buttons
+.aux-nav a, .aux-nav a:hover {
+    background: none;
+    padding: 5px;
+}
+.aux-nav a img {
+    height: 22px;
+}
+
+// Enlarge and compress embedded code
+pre.highlight, figure.highlight {
+    line-height: 1.2em;
+}
+code {
+    font-size: 0.85em;
+}
+
+// Always expand nav menu items
+.nav-list:not(.nav-category-list) .nav-list-item > .nav-list {
+    display: block;
+}
+.nav-list:not(.nav-category-list) .nav-list-expander {
+    display: none;
+}
+
+// Indent text on attributes page
+.indented > p {
+    margin-left: 20px;
+}
+
+// Hide ugly summary outline that chrome adds
+.main-content summary:focus {
+    outline: none;
+}
+
+.main-content summary {
+    display: list-item;
+    font-style: italic;
+}
