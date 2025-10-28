@@ -101,7 +101,7 @@ pub mod tools;
 
 // Re-export proc macros
 #[cfg(feature = "macros")]
-pub use rsllm_macros::tool;
+pub use rsllm_macros::{arg, context, tool};
 
 // Re-exports for convenience
 pub use client::{Client, ClientBuilder};

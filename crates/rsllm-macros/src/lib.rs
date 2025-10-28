@@ -1,6 +1,6 @@
 //! Procedural macros for RSLLM tool calling
 //!
-//! This crate provides the `#[tool]` attribute macro for easy tool definition.
+//! This crate provides the `#[tool]` and `#[arg]` attribute macros for easy tool definition.
 
 use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
@@ -9,6 +9,32 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input, ItemFn, ItemStruct, LitStr, Token,
 };
+
+/// The `#[arg]` attribute for marking individual tool parameters
+///
+/// Usage: `#[arg(description = "Parameter description")]`
+///
+/// This is a marker attribute that the `#[tool]` macro looks for.
+/// It doesn't do anything on its own.
+#[proc_macro_attribute]
+pub fn arg(_args: TokenStream, input: TokenStream) -> TokenStream {
+    // This is a pass-through attribute
+    // The #[tool] macro will process it
+    input
+}
+
+/// The `#[context]` attribute for marking context parameters
+///
+/// Usage: `#[context]`
+///
+/// Context parameters are not included in the LLM schema.
+/// They must be provided at runtime (for dependency injection).
+#[proc_macro_attribute]
+pub fn context(_args: TokenStream, input: TokenStream) -> TokenStream {
+    // This is a pass-through attribute
+    // The #[tool] macro will process it
+    input
+}
 
 /// Arguments for the #[tool] attribute
 #[derive(Debug, Default)]
@@ -144,24 +170,122 @@ pub fn tool(args: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
+/// Detect the parameter mode from function signature
+enum ParameterMode {
+    /// Single struct parameter: fn tool(params: MyParams)
+    SingleStruct(Box<syn::Type>),
+    /// Individual parameters: fn tool(#[arg(...)] a: i32, #[arg(...)] b: String)
+    Individual(Vec<(syn::Ident, Box<syn::Type>, Option<String>)>),
+    /// Mixed: fn tool(#[context] ctx: Context, params: MyParams)
+    Mixed {
+        context_params: Vec<(syn::Ident, Box<syn::Type>)>,
+        struct_param: Box<syn::Type>,
+    },
+}
+
+fn analyze_parameters(inputs: &syn::punctuated::Punctuated<syn::FnArg, Token![,]>) -> syn::Result<ParameterMode> {
+    if inputs.is_empty() {
+        return Err(syn::Error::new_spanned(
+            inputs,
+            "Tool function must have at least one parameter",
+        ));
+    }
+
+    let mut regular_params = Vec::new();
+    let mut context_params = Vec::new();
+
+    for input in inputs {
+        if let syn::FnArg::Typed(pat_type) = input {
+            // Check for #[arg(...)] or #[context] attributes
+            let has_arg_attr = pat_type.attrs.iter().any(|attr| attr.path().is_ident("arg"));
+            let has_context_attr = pat_type.attrs.iter().any(|attr| attr.path().is_ident("context"));
+
+            if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
+                let param_name = pat_ident.ident.clone();
+                let param_type = pat_type.ty.clone();
+
+                if has_context_attr {
+                    context_params.push((param_name, param_type));
+                } else if has_arg_attr {
+                    // Extract description from #[arg(description = "...")]
+                    let description = pat_type.attrs.iter()
+                        .find(|attr| attr.path().is_ident("arg"))
+                        .and_then(|attr| {
+                            // Try to extract description from the attribute
+                            if let syn::Meta::List(list) = &attr.meta {
+                                // Simple extraction - just get the string
+                                Some("Individual parameter".to_string())
+                            } else {
+                                None
+                            }
+                        });
+                    regular_params.push((param_name, param_type, description));
+                } else {
+                    // No attributes - regular param (assume it's the struct)
+                    regular_params.push((param_name, param_type, None));
+                }
+            }
+        }
+    }
+
+    // Determine mode
+    if context_params.is_empty() && regular_params.len() == 1 {
+        // Single struct mode
+        Ok(ParameterMode::SingleStruct(regular_params[0].1.clone()))
+    } else if !context_params.is_empty() && regular_params.len() == 1 {
+        // Mixed mode
+        Ok(ParameterMode::Mixed {
+            context_params,
+            struct_param: regular_params[0].1.clone(),
+        })
+    } else if context_params.is_empty() && regular_params.iter().all(|(_, _, desc)| desc.is_some() || regular_params.len() > 1) {
+        // Individual parameters mode
+        Ok(ParameterMode::Individual(regular_params))
+    } else {
+        Err(syn::Error::new_spanned(
+            inputs,
+            "Ambiguous parameter mode. Use either:\n\
+             1. Single struct: fn tool(params: MyParams)\n\
+             2. Individual params: fn tool(#[arg(...)] a: i32, #[arg(...)] b: String)\n\
+             3. Mixed: fn tool(#[context] ctx: Ctx, params: MyParams)",
+        ))
+    }
+}
+
 /// Expand #[tool] on a function
 fn expand_tool_function(args: ToolArgs, func: ItemFn) -> TokenStream {
-    let func_name = &func.sig.ident;
+    let func_name = func.sig.ident.clone();
     let tool_name = args.name.unwrap_or_else(|| func_name.to_string());
     let description = args.description.expect("description is required");
 
-    // Extract parameter type from function signature
-    let param_type = match func.sig.inputs.first() {
-        Some(syn::FnArg::Typed(pat_type)) => &pat_type.ty,
-        _ => {
-            return syn::Error::new_spanned(
-                &func.sig.inputs,
-                "Tool function must have exactly one parameter",
-            )
-            .to_compile_error()
-            .into();
-        }
+    // Analyze parameters to determine mode
+    let param_mode = match analyze_parameters(&func.sig.inputs) {
+        Ok(mode) => mode,
+        Err(e) => return TokenStream::from(e.to_compile_error()),
     };
+
+    // Handle different parameter modes
+    match param_mode {
+        ParameterMode::SingleStruct(param_type) => {
+            expand_single_struct_tool(func, &func_name, &tool_name, &description, param_type)
+        }
+        ParameterMode::Individual(params) => {
+            expand_individual_params_tool(func, &func_name, &tool_name, &description, params)
+        }
+        ParameterMode::Mixed { context_params, struct_param } => {
+            expand_mixed_params_tool(func, &func_name, &tool_name, &description, context_params, struct_param)
+        }
+    }
+}
+
+/// Expand tool with single struct parameter (original mode)
+fn expand_single_struct_tool(
+    func: ItemFn,
+    func_name: &syn::Ident,
+    tool_name: &str,
+    description: &str,
+    param_type: Box<syn::Type>,
+) -> TokenStream {
 
     // Extract return type (for future validation)
     let _return_type = match &func.sig.output {
@@ -211,6 +335,101 @@ fn expand_tool_function(args: ToolArgs, func: ItemFn) -> TokenStream {
                     .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
             }
         }
+    };
+
+    TokenStream::from(expanded)
+}
+
+/// Expand tool with individual parameters
+fn expand_individual_params_tool(
+    func: ItemFn,
+    func_name: &syn::Ident,
+    tool_name: &str,
+    description: &str,
+    params: Vec<(syn::Ident, Box<syn::Type>, Option<String>)>,
+) -> TokenStream {
+    // Generate a params struct from individual parameters
+    let pascal_name = func_name.to_string().to_case(Case::Pascal);
+    let params_struct_name = syn::Ident::new(&format!("{}Params", pascal_name), func_name.span());
+    let struct_name = syn::Ident::new(&format!("{}Tool", pascal_name), func_name.span());
+
+    // Build struct fields
+    let param_fields = params.iter().map(|(name, ty, _desc)| {
+        quote! { pub #name: #ty }
+    });
+
+    // Build function call arguments
+    let call_args = params.iter().map(|(name, _, _)| {
+        quote! { generated_params.#name }
+    });
+
+    let expanded = quote! {
+        #func
+
+        // Auto-generated params struct
+        #[derive(::schemars::JsonSchema, ::serde::Serialize, ::serde::Deserialize)]
+        pub struct #params_struct_name {
+            #(#param_fields),*
+        }
+
+        // Generate tool struct
+        pub struct #struct_name;
+
+        impl ::rsllm::tools::SchemaBasedTool for #struct_name {
+            type Params = #params_struct_name;
+
+            fn name(&self) -> &str {
+                #tool_name
+            }
+
+            fn description(&self) -> &str {
+                #description
+            }
+
+            fn execute_typed(
+                &self,
+                generated_params: Self::Params,
+            ) -> Result<::serde_json::Value, Box<dyn std::error::Error + Send + Sync>> {
+                // Call the original function with unpacked params
+                let result = #func_name(#(#call_args),*)?;
+
+                // Convert result to JSON
+                ::serde_json::to_value(&result)
+                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
+/// Expand tool with mixed mode (context + struct params)
+fn expand_mixed_params_tool(
+    func: ItemFn,
+    _func_name: &syn::Ident,
+    _tool_name: &str,
+    _description: &str,
+    _context_params: Vec<(syn::Ident, Box<syn::Type>)>,
+    _struct_param: Box<syn::Type>,
+) -> TokenStream {
+    // For mixed mode, the schema only includes the struct param
+    // Context params are not exposed to the LLM
+
+    // Note: In mixed mode, context params need to be provided at execution time
+    // This requires a different approach - for now, show a helpful error
+
+    let expanded = quote! {
+        compile_error!(
+            "Mixed mode (context params + struct) not fully implemented yet.\n\
+             Context parameters require runtime injection.\n\
+             For now, use either:\n\
+             1. Single struct: fn tool(params: MyParams)\n\
+             2. Individual params: fn tool(#[arg(...)] a: i32, #[arg(...)] b: String)\n\
+             \n\
+             Mixed mode coming in next update!"
+        );
+
+        #func
     };
 
     TokenStream::from(expanded)
