@@ -51,6 +51,8 @@ Used by:
 - `crates/rsllm` - For automatic JSON Schema generation from Rust types
 - `crates/rsllm-macros` - For #[tool] macro schema generation
 
+Part of the RRAG project: https://github.com/0xteamhq/rrag
+
 ## Benefits for RSLLM
 
 - Automatic JSON Schema generation from `#[derive(JsonSchema)]`

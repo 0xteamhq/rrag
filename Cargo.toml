@@ -13,11 +13,11 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["LEVAL Team"]
+authors = ["vasanth <vasanth@0xteam.io>"]
 license = "MIT"
 repository = "https://github.com/0xteamhq/rrag"
 homepage = "https://github.com/0xteamhq/rrag"
-documentation = "https://docs.rs/0xllm"
+documentation = "https://docs.rs/rrag"
 keywords = ["rag", "llm", "ai", "retrieval", "generation"]
 categories = ["api-bindings", "web-programming", "science"]
 

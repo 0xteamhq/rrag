@@ -2,10 +2,10 @@
 name = "rsllm"
 version = "0.1.0"
 edition = "2021"
-authors = ["LEVAL Team"]
+authors = ["vasanth <vasanth@0xteam.io>"]
 license = "MIT"
-repository = "https://github.com/levalhq/rrag"
-homepage = "https://github.com/levalhq/rrag/tree/main/crates/rsllm"
+repository = "https://github.com/0xteamhq/rrag"
+homepage = "https://github.com/0xteamhq/rrag/tree/main/crates/rsllm"
 documentation = "https://docs.rs/rsllm"
 description = "Rust-native LLM client library with multi-provider support and streaming capabilities"
 keywords = ["llm", "ai", "openai", "claude", "ollama"]

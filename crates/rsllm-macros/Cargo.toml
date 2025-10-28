@@ -2,7 +2,11 @@
 name = "rsllm-macros"
 version = "0.1.0"
 edition = "2021"
+authors = ["vasanth <vasanth@0xteam.io>"]
 license = "MIT"
+repository = "https://github.com/0xteamhq/rrag"
+homepage = "https://github.com/0xteamhq/rrag/tree/main/crates/rsllm-macros"
+documentation = "https://docs.rs/rsllm-macros"
 description = "Procedural macros for RSLLM tool calling"
 keywords = ["llm", "ai", "macros", "tools"]
 
