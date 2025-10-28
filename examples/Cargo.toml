@@ -63,6 +63,10 @@ path = "rgraph_demo.rs"
 name = "test_ollama_integration"
 path = "test_ollama_integration.rs"
 
+[[bin]]
+name = "simple_agent"
+path = "simple_agent.rs"
+
 [features]
 default = ["rsllm-client"]
 rsllm-client = ["rrag/rsllm-client"]
@@ -70,6 +74,8 @@ rsllm-client = ["rrag/rsllm-client"]
 [dependencies]
 rrag = { path = "../crates/rrag", features = ["rsllm-client", "observability"] }
 rrag-graph = { path = "../crates/rgraph" }
+rsllm = { path = "../crates/rsllm", features = ["ollama", "macros"] }
+schemars = { path = "../crates/schemars/schemars" }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 serde = { workspace = true }
