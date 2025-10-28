@@ -84,13 +84,13 @@ impl SchemaSettings {
     pub fn draft07() -> SchemaSettings {
         SchemaSettings {
             definitions_path: "/definitions".into(),
-            meta_schema: None,  // No $schema field for LLM API compatibility
+            meta_schema: None, // No $schema field for LLM API compatibility
             transforms: vec![
                 Box::new(ReplaceUnevaluatedProperties),
                 Box::new(RemoveRefSiblings),
                 Box::new(ReplacePrefixItems),
             ],
-            inline_subschemas: true,  // Inline all schemas for OpenAI compatibility (no $ref)
+            inline_subschemas: true, // Inline all schemas for OpenAI compatibility (no $ref)
             contract: Contract::Deserialize,
             untagged_enum_variant_titles: false,
         }

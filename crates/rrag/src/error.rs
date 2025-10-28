@@ -111,29 +111,29 @@ pub enum RragError {
 
     /// Timeout errors
     #[error("Operation timed out after {duration_ms}ms: {operation}")]
-    Timeout { 
+    Timeout {
         /// Operation that timed out
-        operation: String, 
+        operation: String,
         /// Duration in milliseconds before timeout
-        duration_ms: u64 
+        duration_ms: u64,
     },
 
     /// Memory/conversation errors
     #[error("Memory operation failed: {operation}")]
-    Memory { 
+    Memory {
         /// Memory operation that failed
-        operation: String, 
+        operation: String,
         /// Error message describing the failure
-        message: String 
+        message: String,
     },
 
     /// Streaming errors
     #[error("Stream error in {context}: {message}")]
-    Stream { 
+    Stream {
         /// Context where the stream error occurred
-        context: String, 
+        context: String,
         /// Error message describing the stream failure
-        message: String 
+        message: String,
     },
 
     /// Agent execution errors

@@ -15,7 +15,7 @@ async fn main() -> RsllmResult<()> {
     let client = Client::builder()
         .provider(Provider::Ollama)
         .model("llama3.2:3b")
-        .base_url("http://localhost:11434/api/")?  // Testing with trailing slash
+        .base_url("http://localhost:11434/api/")? // Testing with trailing slash
         .temperature(0.7)
         .build()?;
 

@@ -15,8 +15,8 @@
 //!
 //! 📖 This is the ONLY tool calling example you need!
 
-use rsllm::{simple_tool, tool};
 use rsllm::tools::{SchemaBasedTool, Tool, ToolCall as ToolCallExec, ToolRegistry};
+use rsllm::{simple_tool, tool};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -304,7 +304,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("✅ Created a tool in just 13 lines!");
     println!("   Code: Define params (4) + result (3) + function (5) = 13 lines");
 
-    let result = registry.execute(&ToolCallExec::new("q1", "quick_add", json!({"a": 10, "b": 20})));
+    let result = registry.execute(&ToolCallExec::new(
+        "q1",
+        "quick_add",
+        json!({"a": 10, "b": 20}),
+    ));
     println!("   Test: quick_add(10, 20) = {}\n", result.content);
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -316,10 +320,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("└─────────────────────────────────────────────────────────┘\n");
 
     // Register all approaches
-    registry.register(Box::new(CalculatorTool))?;  // Approach 1: #[tool] macro
-    registry.register(Box::new(Counter::new()))?;   // Approach 2: SchemaBasedTool
-    registry.register(create_text_tool())?;         // Approach 3: simple_tool!
-    registry.register(Box::new(EchoTool))?;         // Approach 4: Manual JSON
+    registry.register(Box::new(CalculatorTool))?; // Approach 1: #[tool] macro
+    registry.register(Box::new(Counter::new()))?; // Approach 2: SchemaBasedTool
+    registry.register(create_text_tool())?; // Approach 3: simple_tool!
+    registry.register(Box::new(EchoTool))?; // Approach 4: Manual JSON
 
     println!("📊 Comparison Table:");
     println!("┌──────────────────┬──────┬───────────┬─────────────┐");
@@ -337,8 +341,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("🚀 Testing all approaches execute correctly:");
     for tool_name in &["calculator", "counter", "text_analyzer", "echo"] {
         let call = match *tool_name {
-            "calculator" => ToolCallExec::new("t1", *tool_name, json!({"operation": "add", "a": 5, "b": 3})),
-            "counter" => ToolCallExec::new("t2", *tool_name, json!({"action": "increment", "amount": 5})),
+            "calculator" => ToolCallExec::new(
+                "t1",
+                *tool_name,
+                json!({"operation": "add", "a": 5, "b": 3}),
+            ),
+            "counter" => ToolCallExec::new(
+                "t2",
+                *tool_name,
+                json!({"action": "increment", "amount": 5}),
+            ),
             "text_analyzer" => ToolCallExec::new("t3", *tool_name, json!({"text": "Hello World"})),
             "echo" => ToolCallExec::new("t4", *tool_name, json!({"message": "test"})),
             _ => continue,
@@ -379,7 +391,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .find(|d| d.name == "best_practice_search")
         .unwrap();
 
-    println!("{}\n", serde_json::to_string_pretty(&search_def.parameters)?);
+    println!(
+        "{}\n",
+        serde_json::to_string_pretty(&search_def.parameters)?
+    );
 
     // ═══════════════════════════════════════════════════════════════════════
     // SECTION 4: ADVANCED FEATURES
@@ -392,15 +407,27 @@ fn main() -> Result<(), Box<dyn Error>> {
     // 4.1: Batch Execution
     println!("📦 Batch Execution (multiple tools at once):");
     let batch_calls = vec![
-        ToolCallExec::new("b1", "calculator", json!({"operation": "multiply", "a": 6, "b": 7})),
-        ToolCallExec::new("b2", "counter", json!({"action": "increment", "amount": 10})),
+        ToolCallExec::new(
+            "b1",
+            "calculator",
+            json!({"operation": "multiply", "a": 6, "b": 7}),
+        ),
+        ToolCallExec::new(
+            "b2",
+            "counter",
+            json!({"action": "increment", "amount": 10}),
+        ),
         ToolCallExec::new("b3", "text_analyzer", json!({"text": "Batch processing!"})),
     ];
 
     let batch_results = registry.execute_batch(&batch_calls);
     println!("   Executed {} tools in batch:", batch_results.len());
     for r in &batch_results {
-        println!("      {} {}", if r.success { "✅" } else { "❌" }, r.tool_name);
+        println!(
+            "      {} {}",
+            if r.success { "✅" } else { "❌" },
+            r.tool_name
+        );
     }
     println!();
 
@@ -408,18 +435,36 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("🔍 Tool Discovery & Introspection:");
     println!("   Total tools: {}", registry.len());
     println!("   Available: {:?}", registry.tool_names());
-    println!("   'calculator' exists: {}", registry.contains("calculator"));
-    println!("   'nonexistent' exists: {}\n", registry.contains("nonexistent"));
+    println!(
+        "   'calculator' exists: {}",
+        registry.contains("calculator")
+    );
+    println!(
+        "   'nonexistent' exists: {}\n",
+        registry.contains("nonexistent")
+    );
 
     // 4.3: Stateful Tool
     println!("🔄 Stateful Tool (Counter maintains state):");
-    let c1 = registry.execute(&ToolCallExec::new("s1", "counter", json!({"action": "increment", "amount": 5})));
+    let c1 = registry.execute(&ToolCallExec::new(
+        "s1",
+        "counter",
+        json!({"action": "increment", "amount": 5}),
+    ));
     println!("   Increment by 5: {}", c1.content);
 
-    let c2 = registry.execute(&ToolCallExec::new("s2", "counter", json!({"action": "increment", "amount": 3})));
+    let c2 = registry.execute(&ToolCallExec::new(
+        "s2",
+        "counter",
+        json!({"action": "increment", "amount": 3}),
+    ));
     println!("   Increment by 3: {}", c2.content);
 
-    let c3 = registry.execute(&ToolCallExec::new("s3", "counter", json!({"action": "get"})));
+    let c3 = registry.execute(&ToolCallExec::new(
+        "s3",
+        "counter",
+        json!({"action": "get"}),
+    ));
     println!("   Get current: {}", c3.content);
     println!("   Notice: State is maintained between calls!\n");
 
@@ -438,7 +483,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         "calculator",
         json!({"operation": "divide", "a": 10, "b": 0}),
     ));
-    let err1_msg = err1.error.unwrap_or_else(|| "unexpected success".to_string());
+    let err1_msg = err1
+        .error
+        .unwrap_or_else(|| "unexpected success".to_string());
     println!("   Result: {}", err1_msg);
 
     // Error 2: Invalid tool
@@ -448,7 +495,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Error 3: Missing required parameter
     println!("\n🔴 Error 3: Missing required parameter");
-    let err3 = registry.execute(&ToolCallExec::new("e3", "calculator", json!({"operation": "add"})));
+    let err3 = registry.execute(&ToolCallExec::new(
+        "e3",
+        "calculator",
+        json!({"operation": "add"}),
+    ));
     println!("   Result: {}", err3.error.unwrap());
 
     // Error 4: Validation failure
@@ -471,7 +522,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("Scenario: Calculate average of counter value and multiply by 2\n");
 
     println!("Step 1: Get counter value");
-    let step1 = registry.execute(&ToolCallExec::new("w1", "counter", json!({"action": "get"})));
+    let step1 = registry.execute(&ToolCallExec::new(
+        "w1",
+        "counter",
+        json!({"action": "get"}),
+    ));
     let counter_val = step1.content["value"].as_i64().unwrap_or(0) as f64;
     println!("   Counter value: {}", counter_val);
 

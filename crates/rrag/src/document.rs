@@ -186,11 +186,11 @@ impl DocumentChunk {
 #[derive(Debug, Clone)]
 pub enum ChunkingStrategy {
     /// Fixed size chunking with overlap
-    FixedSize { 
+    FixedSize {
         /// Size of each chunk in characters
-        size: usize, 
+        size: usize,
         /// Number of characters to overlap between chunks
-        overlap: usize 
+        overlap: usize,
     },
 
     /// Sentence-based chunking
@@ -202,15 +202,15 @@ pub enum ChunkingStrategy {
     },
 
     /// Paragraph-based chunking
-    Paragraph { 
+    Paragraph {
         /// Maximum number of paragraphs per chunk
-        max_paragraphs: usize 
+        max_paragraphs: usize,
     },
 
     /// Semantic chunking (requires embeddings)
-    Semantic { 
+    Semantic {
         /// Similarity threshold for semantic boundaries
-        similarity_threshold: f32 
+        similarity_threshold: f32,
     },
 }
 

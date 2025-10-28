@@ -36,7 +36,10 @@ async fn main() -> RragResult<()> {
     // Test 1: Simple question
     println!("💬 Test 1: Simple Question");
     println!("Question: What is Rust?");
-    match agent.process_message("What is Rust programming language in one sentence?", None).await {
+    match agent
+        .process_message("What is Rust programming language in one sentence?", None)
+        .await
+    {
         Ok(response) => {
             println!("🤖 Response: {}", response.text);
             println!("⏱️  Duration: {}ms", response.metadata.duration_ms);
@@ -51,13 +54,22 @@ async fn main() -> RragResult<()> {
     // Test 2: Conversation with context
     println!("💬 Test 2: Multi-turn Conversation");
     println!("Question 1: Tell me about memory safety");
-    match agent.process_message("Tell me about memory safety in programming in one sentence.", None).await {
+    match agent
+        .process_message(
+            "Tell me about memory safety in programming in one sentence.",
+            None,
+        )
+        .await
+    {
         Ok(response) => {
             println!("🤖 Response: {}", response.text);
 
             // Follow-up question
             println!("\nQuestion 2: How does Rust achieve this?");
-            match agent.process_message("How does Rust achieve this?", None).await {
+            match agent
+                .process_message("How does Rust achieve this?", None)
+                .await
+            {
                 Ok(followup) => {
                     println!("🤖 Response: {}", followup.text);
                     println!("✅ Test 2 passed!\n");
@@ -76,7 +88,10 @@ async fn main() -> RragResult<()> {
     // Test 3: Technical question
     println!("💬 Test 3: Technical Question");
     println!("Question: Explain borrowing");
-    match agent.process_message("Explain Rust's borrowing concept in one sentence.", None).await {
+    match agent
+        .process_message("Explain Rust's borrowing concept in one sentence.", None)
+        .await
+    {
         Ok(response) => {
             println!("🤖 Response: {}", response.text);
             println!("⏱️  Duration: {}ms", response.metadata.duration_ms);

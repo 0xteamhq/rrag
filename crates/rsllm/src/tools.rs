@@ -102,7 +102,10 @@ pub trait SchemaBasedTool: Send + Sync {
     fn description(&self) -> &str;
 
     /// Execute with strongly-typed parameters
-    fn execute_typed(&self, params: Self::Params) -> Result<JsonValue, Box<dyn Error + Send + Sync>>;
+    fn execute_typed(
+        &self,
+        params: Self::Params,
+    ) -> Result<JsonValue, Box<dyn Error + Send + Sync>>;
 
     /// Optional: Validate typed parameters before execution
     fn validate_typed(&self, _params: &Self::Params) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -171,7 +174,11 @@ fn default_tool_type() -> String {
 
 impl ToolDefinition {
     /// Create a new tool definition
-    pub fn new(name: impl Into<String>, description: impl Into<String>, parameters: JsonValue) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        description: impl Into<String>,
+        parameters: JsonValue,
+    ) -> Self {
         Self {
             name: name.into(),
             description: description.into(),
@@ -231,7 +238,11 @@ pub struct ToolResult {
 
 impl ToolResult {
     /// Create a successful tool result
-    pub fn success(tool_call_id: impl Into<String>, tool_name: impl Into<String>, content: JsonValue) -> Self {
+    pub fn success(
+        tool_call_id: impl Into<String>,
+        tool_name: impl Into<String>,
+        content: JsonValue,
+    ) -> Self {
         Self {
             tool_call_id: tool_call_id.into(),
             tool_name: tool_name.into(),
@@ -242,7 +253,11 @@ impl ToolResult {
     }
 
     /// Create a failed tool result
-    pub fn error(tool_call_id: impl Into<String>, tool_name: impl Into<String>, error: impl Into<String>) -> Self {
+    pub fn error(
+        tool_call_id: impl Into<String>,
+        tool_name: impl Into<String>,
+        error: impl Into<String>,
+    ) -> Self {
         Self {
             tool_call_id: tool_call_id.into(),
             tool_name: tool_name.into(),

@@ -74,7 +74,10 @@ impl Parse for ToolArgs {
             let _: Token![=] = input.parse().map_err(|e| {
                 syn::Error::new(
                     e.span(),
-                    format!("Expected '=' after '{}', use syntax: {} = \"...\"", ident_str, ident_str),
+                    format!(
+                        "Expected '=' after '{}', use syntax: {} = \"...\"",
+                        ident_str, ident_str
+                    ),
                 )
             })?;
 
@@ -82,7 +85,10 @@ impl Parse for ToolArgs {
             let value: LitStr = input.parse().map_err(|e| {
                 syn::Error::new(
                     e.span(),
-                    format!("Expected string literal after '{} =', got parse error: {}", ident_str, e),
+                    format!(
+                        "Expected string literal after '{} =', got parse error: {}",
+                        ident_str, e
+                    ),
                 )
             })?;
 
@@ -92,7 +98,10 @@ impl Parse for ToolArgs {
                 _ => {
                     return Err(syn::Error::new_spanned(
                         ident,
-                        format!("Unknown attribute '{}'. Expected 'name' or 'description'", ident_str),
+                        format!(
+                            "Unknown attribute '{}'. Expected 'name' or 'description'",
+                            ident_str
+                        ),
                     ))
                 }
             }
@@ -176,7 +185,7 @@ struct ParamInfo {
     name: syn::Ident,
     param_type: Box<syn::Type>,
     description: Option<String>,
-    is_individual: bool,  // Has #[arg] attribute
+    is_individual: bool, // Has #[arg] attribute
 }
 
 /// Analyze function parameters flexibly
@@ -196,7 +205,10 @@ fn analyze_flexible_parameters(
     for input in inputs {
         if let syn::FnArg::Typed(pat_type) = input {
             // Check for #[arg(...)] attribute
-            let arg_attr = pat_type.attrs.iter().find(|attr| attr.path().is_ident("arg"));
+            let arg_attr = pat_type
+                .attrs
+                .iter()
+                .find(|attr| attr.path().is_ident("arg"));
 
             if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
                 let param_name = pat_ident.ident.clone();
@@ -204,7 +216,8 @@ fn analyze_flexible_parameters(
 
                 let (is_individual, description) = if let Some(attr) = arg_attr {
                     // Extract description from #[arg(description = "...")]
-                    let desc = extract_arg_description(attr).unwrap_or_else(|| param_name.to_string());
+                    let desc =
+                        extract_arg_description(attr).unwrap_or_else(|| param_name.to_string());
                     (true, Some(desc))
                 } else {
                     // No #[arg] attribute - treat as struct parameter
@@ -259,10 +272,21 @@ fn expand_tool_function(args: ToolArgs, func: ItemFn) -> TokenStream {
 
     // Separate individual args from struct params
     let individual_params: Vec<_> = params.iter().filter(|p| p.is_individual).cloned().collect();
-    let struct_params: Vec<_> = params.iter().filter(|p| !p.is_individual).cloned().collect();
+    let struct_params: Vec<_> = params
+        .iter()
+        .filter(|p| !p.is_individual)
+        .cloned()
+        .collect();
 
     // Generate the appropriate expansion
-    expand_flexible_tool(func, &func_name, &tool_name, &description, individual_params, struct_params)
+    expand_flexible_tool(
+        func,
+        &func_name,
+        &tool_name,
+        &description,
+        individual_params,
+        struct_params,
+    )
 }
 
 /// Expand tool with flexible parameter combination
@@ -327,12 +351,9 @@ fn expand_flexible_tool(
     }
 
     // Fallback error
-    syn::Error::new_spanned(
-        &func.sig.inputs,
-        "Unable to determine parameter mode",
-    )
-    .to_compile_error()
-    .into()
+    syn::Error::new_spanned(&func.sig.inputs, "Unable to determine parameter mode")
+        .to_compile_error()
+        .into()
 }
 
 /// Expand tool with single struct parameter (original mode)
@@ -343,17 +364,13 @@ fn expand_single_struct_tool(
     description: &str,
     param_type: Box<syn::Type>,
 ) -> TokenStream {
-
     // Extract return type (for future validation)
     let _return_type = match &func.sig.output {
         syn::ReturnType::Type(_, ty) => ty,
         _ => {
-            return syn::Error::new_spanned(
-                &func.sig.output,
-                "Tool function must return a Result",
-            )
-            .to_compile_error()
-            .into();
+            return syn::Error::new_spanned(&func.sig.output, "Tool function must return a Result")
+                .to_compile_error()
+                .into();
         }
     };
 
@@ -470,7 +487,9 @@ fn expand_individual_params_tool(
 /// Expand #[tool] on a struct
 fn expand_tool_struct(args: ToolArgs, struct_item: ItemStruct) -> TokenStream {
     let struct_name = &struct_item.ident;
-    let tool_name = args.name.unwrap_or_else(|| struct_name.to_string().to_lowercase());
+    let tool_name = args
+        .name
+        .unwrap_or_else(|| struct_name.to_string().to_lowercase());
     let description = args.description.expect("description is required");
 
     // For struct, we expect the user to implement an execute method manually

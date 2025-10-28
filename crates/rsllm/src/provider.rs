@@ -18,7 +18,9 @@ fn normalize_base_url(url: &Url) -> Url {
         url.clone()
     } else {
         // Add trailing slash
-        format!("{}/", url_str).parse().unwrap_or_else(|_| url.clone())
+        format!("{}/", url_str)
+            .parse()
+            .unwrap_or_else(|_| url.clone())
     }
 }
 

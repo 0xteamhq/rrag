@@ -16,7 +16,7 @@ async fn main() -> RsllmResult<()> {
     let client1 = Client::builder()
         .provider(Provider::Ollama)
         .model("llama3.2:3b")
-        .base_url("http://localhost:11434/api")?  // NO trailing slash
+        .base_url("http://localhost:11434/api")? // NO trailing slash
         .temperature(0.7)
         .build()?;
 
@@ -29,7 +29,9 @@ async fn main() -> RsllmResult<()> {
         }
     }
 
-    let messages1 = vec![ChatMessage::user("Say 'Hello from test 1' in one sentence.")];
+    let messages1 = vec![ChatMessage::user(
+        "Say 'Hello from test 1' in one sentence.",
+    )];
     match client1.chat_completion(messages1).await {
         Ok(response) => {
             println!("   ✅ Chat completion succeeded!");
@@ -48,7 +50,7 @@ async fn main() -> RsllmResult<()> {
     let client2 = Client::builder()
         .provider(Provider::Ollama)
         .model("llama3.2:3b")
-        .base_url("http://localhost:11434/api/")?  // WITH trailing slash
+        .base_url("http://localhost:11434/api/")? // WITH trailing slash
         .temperature(0.7)
         .build()?;
 
@@ -61,7 +63,9 @@ async fn main() -> RsllmResult<()> {
         }
     }
 
-    let messages2 = vec![ChatMessage::user("Say 'Hello from test 2' in one sentence.")];
+    let messages2 = vec![ChatMessage::user(
+        "Say 'Hello from test 2' in one sentence.",
+    )];
     match client2.chat_completion(messages2).await {
         Ok(response) => {
             println!("   ✅ Chat completion succeeded!");
@@ -92,7 +96,9 @@ async fn main() -> RsllmResult<()> {
         }
     }
 
-    let messages3 = vec![ChatMessage::user("Say 'Hello from test 3' in one sentence.")];
+    let messages3 = vec![ChatMessage::user(
+        "Say 'Hello from test 3' in one sentence.",
+    )];
     match client3.chat_completion(messages3).await {
         Ok(response) => {
             println!("   ✅ Chat completion succeeded!");

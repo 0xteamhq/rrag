@@ -156,15 +156,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Check 1: No $schema field
         let has_schema_field = schema_str.contains("\"$schema\"");
         println!("   ✓ Check 1: No $schema field");
-        println!("      Result: {} {}",
-            if has_schema_field { "❌ FAILED" } else { "✅ PASSED" },
-            if has_schema_field { "(found $schema)" } else { "" }
+        println!(
+            "      Result: {} {}",
+            if has_schema_field {
+                "❌ FAILED"
+            } else {
+                "✅ PASSED"
+            },
+            if has_schema_field {
+                "(found $schema)"
+            } else {
+                ""
+            }
         );
 
         // Check 2: No $ref references
         let has_ref = schema_str.contains("\"$ref\"");
         println!("\n   ✓ Check 2: No $ref references");
-        println!("      Result: {} {}",
+        println!(
+            "      Result: {} {}",
             if has_ref { "❌ FAILED" } else { "✅ PASSED" },
             if has_ref { "(found $ref)" } else { "" }
         );
@@ -172,15 +182,25 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Check 3: No definitions section
         let has_definitions = schema_str.contains("\"definitions\"");
         println!("\n   ✓ Check 3: No definitions section");
-        println!("      Result: {} {}",
-            if has_definitions { "❌ FAILED" } else { "✅ PASSED" },
-            if has_definitions { "(found definitions)" } else { "" }
+        println!(
+            "      Result: {} {}",
+            if has_definitions {
+                "❌ FAILED"
+            } else {
+                "✅ PASSED"
+            },
+            if has_definitions {
+                "(found definitions)"
+            } else {
+                ""
+            }
         );
 
         // Check 4: No $defs section
         let has_defs = schema_str.contains("\"$defs\"");
         println!("\n   ✓ Check 4: No $defs section");
-        println!("      Result: {} {}",
+        println!(
+            "      Result: {} {}",
             if has_defs { "❌ FAILED" } else { "✅ PASSED" },
             if has_defs { "(found $defs)" } else { "" }
         );
@@ -188,7 +208,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Check 5: Has type field
         let has_type = schema_str.contains("\"type\"");
         println!("\n   ✓ Check 5: Has type field");
-        println!("      Result: {} {}",
+        println!(
+            "      Result: {} {}",
             if has_type { "✅ PASSED" } else { "❌ FAILED" },
             if !has_type { "(missing type)" } else { "" }
         );
@@ -196,9 +217,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Check 6: Has properties field
         let has_properties = schema_str.contains("\"properties\"");
         println!("\n   ✓ Check 6: Has properties field");
-        println!("      Result: {} {}",
-            if has_properties { "✅ PASSED" } else { "❌ FAILED" },
-            if !has_properties { "(missing properties)" } else { "" }
+        println!(
+            "      Result: {} {}",
+            if has_properties {
+                "✅ PASSED"
+            } else {
+                "❌ FAILED"
+            },
+            if !has_properties {
+                "(missing properties)"
+            } else {
+                ""
+            }
         );
 
         println!("\n   📄 Full Schema:");
