@@ -397,6 +397,7 @@ pub mod retrieval_eval;
 use crate::{RragError, RragResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::{error, info};
 
 /// Main evaluation service
 pub struct EvaluationService {
@@ -886,7 +887,7 @@ impl EvaluationService {
                     );
                 }
                 Err(e) => {
-                    eerror!(" {} evaluation failed: {}", evaluator.name(), e);
+                    error!(" {} evaluation failed: {}", evaluator.name(), e);
                     self.metrics_collector.record_metric(
                         "evaluation_errors",
                         1.0,

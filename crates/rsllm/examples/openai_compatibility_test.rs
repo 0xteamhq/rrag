@@ -18,6 +18,7 @@ use rsllm::tools::ToolRegistry;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::error;
 use std::error::Error;
 
 // ============================================================================

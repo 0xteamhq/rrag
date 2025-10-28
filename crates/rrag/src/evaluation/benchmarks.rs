@@ -10,6 +10,7 @@ use super::{
 use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::{error, info, warn};
 
 /// Benchmark evaluator
 pub struct BenchmarkEvaluator {
@@ -219,7 +220,7 @@ impl BenchmarkEvaluator {
                     info!(" {} completed", benchmark.name());
                 }
                 Err(e) => {
-                    eerror!(" {} failed: {}", benchmark.name(), e);
+                    error!(" {} failed: {}", benchmark.name(), e);
                 }
             }
         }
@@ -273,7 +274,7 @@ impl Evaluator for BenchmarkEvaluator {
                     overall_scores.insert(benchmark.name().to_string(), result.overall_score);
                 }
                 Err(e) => {
-                    ewarn!(" Benchmark {} failed: {}", benchmark.name(), e);
+                    warn!(" Benchmark {} failed: {}", benchmark.name(), e);
                 }
             }
         }

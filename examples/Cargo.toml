@@ -71,6 +71,14 @@ path = "simple_agent.rs"
 name = "agent_demo"
 path = "agent_demo.rs"
 
+[[bin]]
+name = "evaluation_demo"
+path = "evaluation_demo.rs"
+
+[[bin]]
+name = "rrag_integration_demo"
+path = "rrag_integration_demo.rs"
+
 [features]
 default = ["rsllm-client"]
 rsllm-client = ["rrag/rsllm-client"]

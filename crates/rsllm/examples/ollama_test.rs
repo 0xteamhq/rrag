@@ -3,6 +3,7 @@
 //! Run with: cargo run -p rsllm --example ollama_test --features ollama
 
 use rsllm::prelude::*;
+use tracing::{error, warn};
 
 #[tokio::main]
 async fn main() -> RsllmResult<()> {

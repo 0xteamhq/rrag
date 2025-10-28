@@ -31,32 +31,32 @@ async fn main() -> RragResult<()> {
     
     // Demo 1: RAGAS Evaluation
     tracing::debug!("📊 Demo 1: RAGAS Metrics Evaluation");
-    tracing::debug!("─".repeat(40));
+    tracing::debug!("{}", "─".repeat(40));
     demo_ragas_evaluation().await?;
-    
+
     // Demo 2: Retrieval Evaluation
     tracing::debug!("🔍 Demo 2: Retrieval Metrics Evaluation");
-    tracing::debug!("─".repeat(40));
+    tracing::debug!("{}", "─".repeat(40));
     demo_retrieval_evaluation().await?;
-    
+
     // Demo 3: Generation Evaluation
     tracing::debug!("✍️ Demo 3: Generation Quality Evaluation");
-    tracing::debug!("─".repeat(40));
+    tracing::debug!("{}", "─".repeat(40));
     demo_generation_evaluation().await?;
-    
+
     // Demo 4: End-to-End Evaluation
     tracing::debug!("🚀 Demo 4: End-to-End System Evaluation");
-    tracing::debug!("─".repeat(40));
+    tracing::debug!("{}", "─".repeat(40));
     demo_end_to_end_evaluation().await?;
-    
+
     // Demo 5: Benchmark Evaluation
     tracing::debug!("🏆 Demo 5: Standard Benchmark Evaluation");
-    tracing::debug!("─".repeat(40));
+    tracing::debug!("{}", "─".repeat(40));
     demo_benchmark_evaluation().await?;
     
     // Demo 6: Complete Evaluation Pipeline
     tracing::debug!("🎪 Demo 6: Complete Evaluation Pipeline");
-    tracing::debug!("─".repeat(40));
+    tracing::debug!("{}", "─".repeat(40));
     
     // Create comprehensive test data
     let evaluation_data = create_comprehensive_test_data();

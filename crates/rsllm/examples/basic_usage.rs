@@ -4,6 +4,7 @@
 //! with mocked responses (no real API calls needed).
 
 use rsllm::prelude::*;
+use tracing::warn;
 
 #[tokio::main]
 async fn main() -> RsllmResult<()> {

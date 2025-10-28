@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::RwLock;
+use tracing::info;
 
 /// System configuration for RRAG
 #[derive(Debug, Clone, Serialize, Deserialize)]

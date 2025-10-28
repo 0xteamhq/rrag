@@ -18,6 +18,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::error::Error;
+use tracing::{error, warn};
 
 // ============================================================================
 // AGENT FRAMEWORK - Core Abstractions
