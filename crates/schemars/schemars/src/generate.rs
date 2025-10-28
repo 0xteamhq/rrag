@@ -64,11 +64,18 @@ pub struct SchemaSettings {
 }
 
 impl Default for SchemaSettings {
-    /// The default settings currently conform to [JSON Schema 2020-12](https://json-schema.org/specification-links#2020-12),
-    /// but this is liable to change in a future version of Schemars if support for other JSON Schema versions is added.
-    /// If you rely on generated schemas conforming to draft 2020-12, consider using [`SchemaSettings::draft2020_12()`] instead.
+    /// The default settings now conform to [JSON Schema Draft 7](https://json-schema.org/specification-links#draft-7)
+    /// for maximum compatibility with LLM APIs (OpenAI, Claude, etc.).
+    ///
+    /// This uses:
+    /// - `definitions` instead of `$defs`
+    /// - `#/definitions/Type` references
+    /// - No `$schema` metadata field
+    ///
+    /// This ensures compatibility with OpenAI function calling and similar APIs.
+    /// For newer JSON Schema versions, use [`SchemaSettings::draft2020_12()`] explicitly.
     fn default() -> SchemaSettings {
-        SchemaSettings::draft2020_12()
+        SchemaSettings::draft07()
     }
 }
 
@@ -77,7 +84,7 @@ impl SchemaSettings {
     pub fn draft07() -> SchemaSettings {
         SchemaSettings {
             definitions_path: "/definitions".into(),
-            meta_schema: Some(meta_schemas::DRAFT07.into()),
+            meta_schema: None,  // No $schema field for LLM API compatibility
             transforms: vec![
                 Box::new(ReplaceUnevaluatedProperties),
                 Box::new(RemoveRefSiblings),
