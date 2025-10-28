@@ -88,7 +88,7 @@ anyhow = { workspace = true }
 thiserror = { workspace = true }
 futures = { workspace = true }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true }
 chrono = { workspace = true }
 rand = "0.8"

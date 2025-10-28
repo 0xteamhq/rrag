@@ -3,6 +3,7 @@
 use super::{AgentConfig, ConversationMemory, ConversationMode, ToolExecutor};
 use crate::error::RragResult;
 use rsllm::{ChatMessage, ChatResponse, Client};
+use tracing::{debug, error, info, warn};
 
 /// Agent that can use tools and maintain conversation
 pub struct Agent {
@@ -46,8 +47,10 @@ impl Agent {
     pub async fn run(&mut self, user_input: impl Into<String>) -> RragResult<String> {
         let input = user_input.into();
 
+        info!(user_input = %input, "Agent received user input");
+
         if self.config.verbose {
-            println!("\n🤔 User: {}", input);
+            debug!(input = %input, "Processing user query");
         }
 
         // Prepare conversation based on mode
@@ -68,9 +71,7 @@ impl Agent {
 
         // Agent loop: iterate until we get a final answer
         for iteration in 1..=self.config.max_iterations {
-            if self.config.verbose {
-                println!("\n🔄 Agent iteration {}", iteration);
-            }
+            debug!(iteration, max_iterations = self.config.max_iterations, "Agent iteration");
 
             // Call LLM with tools
             let response = self.llm_step(&conversation).await?;
@@ -78,9 +79,11 @@ impl Agent {
             // Check for tool calls
             if let Some(tool_calls) = &response.tool_calls {
                 if !tool_calls.is_empty() {
-                    if self.config.verbose {
-                        println!("🛠️  Agent wants to use {} tool(s)", tool_calls.len());
-                    }
+                    info!(
+                        tool_count = tool_calls.len(),
+                        tools = ?tool_calls.iter().map(|t| &t.function.name).collect::<Vec<_>>(),
+                        "Agent requesting tool calls"
+                    );
 
                     // Add assistant message with tool calls to conversation
                     let mut assistant_msg = ChatMessage::assistant(response.content.clone());
@@ -92,10 +95,8 @@ impl Agent {
 
                     // Add tool results to conversation
                     for result in tool_results {
-                        if self.config.verbose {
-                            if let rsllm::MessageContent::Text(ref content) = result.content {
-                                println!("   ✅ Tool result: {}", content);
-                            }
+                        if let rsllm::MessageContent::Text(ref content) = result.content {
+                            debug!(tool_result = %content, "Tool execution completed");
                         }
                         conversation.push(result);
                     }
@@ -106,9 +107,11 @@ impl Agent {
             }
 
             // No tool calls - this is the final answer
-            if self.config.verbose {
-                println!("✅ Agent: {}", response.content);
-            }
+            info!(
+                response = %response.content,
+                iterations = iteration,
+                "Agent generated final answer"
+            );
 
             // Update memory in stateful mode
             if self.config.conversation_mode == ConversationMode::Stateful {
@@ -119,6 +122,11 @@ impl Agent {
         }
 
         // Exceeded max iterations
+        error!(
+            max_iterations = self.config.max_iterations,
+            "Agent exceeded maximum iterations without reaching final answer"
+        );
+
         Err(crate::error::RragError::Agent {
             agent_id: "default".to_string(),
             message: format!("Agent exceeded maximum iterations ({})", self.config.max_iterations),
@@ -131,9 +139,11 @@ impl Agent {
         // Get tool definitions
         let tools = self.tool_executor.registry().tool_definitions();
 
-        if self.config.verbose {
-            println!("   🔧 Calling LLM with {} tools", tools.len());
-        }
+        debug!(
+            tool_count = tools.len(),
+            message_count = conversation.len(),
+            "Calling LLM with tools"
+        );
 
         // Call LLM
         let response = self
@@ -141,13 +151,12 @@ impl Agent {
             .chat_completion_with_tools(conversation.to_vec(), tools)
             .await?;
 
-        if self.config.verbose {
-            println!(
-                "   📥 LLM Response: content='{}', tool_calls={:?}",
-                response.content,
-                response.tool_calls.as_ref().map(|t| t.len())
-            );
-        }
+        debug!(
+            content_length = response.content.len(),
+            has_tool_calls = response.tool_calls.is_some(),
+            tool_call_count = response.tool_calls.as_ref().map(|t| t.len()).unwrap_or(0),
+            "LLM response received"
+        );
 
         Ok(response)
     }

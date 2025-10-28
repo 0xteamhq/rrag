@@ -56,6 +56,9 @@ bytes = "1.0"
 config = "0.14"
 dotenv = "0.15"
 
+# Logging
+tracing = "0.1"
+
 [dev-dependencies]
 tokio-test = "0.4"
 wiremock = "0.6"

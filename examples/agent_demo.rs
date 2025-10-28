@@ -106,9 +106,18 @@ fn get_weather(_params: WeatherParams) -> Result<WeatherResult, Box<dyn Error + 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    // Initialize tracing
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+        )
+        .init();
+
     println!("╔══════════════════════════════════════════════════════╗");
     println!("║  🤖 RRAG Agent Demo - Production Framework          ║");
     println!("╚══════════════════════════════════════════════════════╝\n");
+    println!("💡 Set RUST_LOG=debug for detailed logs\n");
 
     println!("✅ Initializing LLM clients...\n");
 
