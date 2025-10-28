@@ -34,7 +34,7 @@ pub struct CalculatorResult {
     pub result: f64,
 }
 
-#[tool(description = "Performs arithmetic calculations")]
+#[tool(description = "Performs arithmetic calculations: add, subtract, multiply, divide")]
 fn calculator(params: CalculatorParams) -> Result<CalculatorResult, Box<dyn Error + Send + Sync>> {
     let result = match params.operation.as_str() {
         "add" => params.a + params.b,
@@ -42,9 +42,42 @@ fn calculator(params: CalculatorParams) -> Result<CalculatorResult, Box<dyn Erro
         "multiply" => params.a * params.b,
         "divide" if params.b != 0.0 => params.a / params.b,
         "divide" => return Err("Cannot divide by zero".into()),
-        _ => return Err(format!("Unknown operation: {}", params.operation).into()),
+        _ => return Err(format!("Unknown operation: '{}'. Valid operations: add, subtract, multiply, divide", params.operation).into()),
     };
     Ok(CalculatorResult { result })
+}
+
+#[derive(JsonSchema, Serialize, Deserialize)]
+pub struct TempConvertParams {
+    /// Temperature value to convert
+    pub temperature: f64,
+    /// Source unit: "celsius" or "fahrenheit"
+    pub from_unit: String,
+    /// Target unit: "celsius" or "fahrenheit"
+    pub to_unit: String,
+}
+
+#[derive(JsonSchema, Serialize, Deserialize)]
+pub struct TempConvertResult {
+    /// Converted temperature value
+    pub temperature: f64,
+    /// Unit of the result
+    pub unit: String,
+}
+
+#[tool(description = "Convert temperature between Celsius and Fahrenheit")]
+fn convert_temperature(params: TempConvertParams) -> Result<TempConvertResult, Box<dyn Error + Send + Sync>> {
+    let result = match (params.from_unit.as_str(), params.to_unit.as_str()) {
+        ("celsius", "fahrenheit") => (params.temperature * 9.0 / 5.0) + 32.0,
+        ("fahrenheit", "celsius") => (params.temperature - 32.0) * 5.0 / 9.0,
+        ("celsius", "celsius") | ("fahrenheit", "fahrenheit") => params.temperature,
+        _ => return Err(format!("Invalid units: {} to {}. Use 'celsius' or 'fahrenheit'", params.from_unit, params.to_unit).into()),
+    };
+
+    Ok(TempConvertResult {
+        temperature: result,
+        unit: params.to_unit,
+    })
 }
 
 #[derive(JsonSchema, Serialize, Deserialize)]
@@ -133,6 +166,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_tools(vec![
             Box::new(CalculatorTool) as Box<dyn Tool>,
             Box::new(GetWeatherTool) as Box<dyn Tool>,
+            Box::new(ConvertTemperatureTool) as Box<dyn Tool>,
         ])
         .stateful() // ← Key difference!
         .verbose(true)
