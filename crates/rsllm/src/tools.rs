@@ -46,6 +46,40 @@ use std::fmt;
 #[cfg(feature = "json-schema")]
 use schemars::{schema_for, JsonSchema};
 
+/// Helper function to recursively fix $ref pointers from #/$defs/ to #/definitions/
+/// This ensures compatibility with OpenAI and other LLM APIs
+#[cfg(feature = "json-schema")]
+fn fix_refs(value: &mut serde_json::Map<String, JsonValue>) {
+    for (_key, val) in value.iter_mut() {
+        fix_refs_in_value(val);
+    }
+}
+
+#[cfg(feature = "json-schema")]
+fn fix_refs_in_value(val: &mut JsonValue) {
+    match val {
+        JsonValue::Object(obj) => {
+            // Fix $ref if it points to $defs
+            if let Some(JsonValue::String(ref_str)) = obj.get_mut("$ref") {
+                if ref_str.starts_with("#/$defs/") {
+                    *ref_str = ref_str.replace("#/$defs/", "#/definitions/");
+                }
+            }
+            // Recursively fix all nested objects
+            for (_k, v) in obj.iter_mut() {
+                fix_refs_in_value(v);
+            }
+        }
+        JsonValue::Array(arr) => {
+            // Fix refs in all array items
+            for item in arr {
+                fix_refs_in_value(item);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// A tool that can be called by an LLM
 pub trait Tool: Send + Sync {
     /// The name of the tool (must be unique)
@@ -124,7 +158,23 @@ impl<T: SchemaBasedTool> Tool for T {
     fn parameters_schema(&self) -> JsonValue {
         // Automatically generate schema from the Params type!
         let schema = schema_for!(T::Params);
-        serde_json::to_value(&schema).unwrap_or_else(|_| JsonValue::Null)
+        let mut schema_value = serde_json::to_value(&schema).unwrap_or_else(|_| JsonValue::Null);
+
+        // OpenAI compatibility: Remove $schema field and convert $defs to definitions
+        // Most LLM APIs expect just the schema object without metadata
+        if let JsonValue::Object(ref mut obj) = schema_value {
+            obj.remove("$schema");
+
+            // Convert $defs to definitions for better compatibility
+            if let Some(defs) = obj.remove("$defs") {
+                obj.insert("definitions".to_string(), defs);
+            }
+
+            // Also update all $ref pointers from #/$defs/ to #/definitions/
+            fix_refs(obj);
+        }
+
+        schema_value
     }
 
     fn execute(&self, args: JsonValue) -> Result<JsonValue, Box<dyn Error + Send + Sync>> {
