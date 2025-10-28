@@ -10,7 +10,7 @@
 //! Run with: `cargo run --bin caching_performance_demo`
 
 use rrag::caching::{
-    CacheConfig, CacheMetrics, CacheService, EmbeddingCacheConfig, EvictionPolicy,
+    CacheConfig, CacheService, EmbeddingCacheConfig, EvictionPolicy,
     QueryCacheConfig, SemanticCacheConfig,
 };
 use rrag::prelude::*;

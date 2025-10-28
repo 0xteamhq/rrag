@@ -474,7 +474,9 @@ impl LLMProvider for OpenAIProvider {
             .to_string();
 
         // Parse tool calls if present (OpenAI format)
-        let tool_calls = if let Some(calls_array) = response_data["choices"][0]["message"]["tool_calls"].as_array() {
+        let tool_calls = if let Some(calls_array) =
+            response_data["choices"][0]["message"]["tool_calls"].as_array()
+        {
             let parsed_calls: Vec<crate::message::ToolCall> = calls_array
                 .iter()
                 .filter_map(|call| {
@@ -483,7 +485,10 @@ impl LLMProvider for OpenAIProvider {
                         call_type: crate::message::ToolCallType::Function,
                         function: crate::message::ToolFunction {
                             name: call["function"]["name"].as_str()?.to_string(),
-                            arguments: serde_json::from_str(call["function"]["arguments"].as_str()?).ok()?,
+                            arguments: serde_json::from_str(
+                                call["function"]["arguments"].as_str()?,
+                            )
+                            .ok()?,
                         },
                     })
                 })
@@ -498,10 +503,9 @@ impl LLMProvider for OpenAIProvider {
             None
         };
 
-        let mut response = ChatResponse::new(
-            content,
-            model.unwrap_or(Provider::OpenAI.default_model())
-        ).with_finish_reason("stop");
+        let mut response =
+            ChatResponse::new(content, model.unwrap_or(Provider::OpenAI.default_model()))
+                .with_finish_reason("stop");
 
         if let Some(calls) = tool_calls {
             response = response.with_tool_calls(calls);
@@ -726,57 +730,59 @@ impl LLMProvider for OllamaProvider {
             .to_string();
 
         // Parse tool calls if present
-        let tool_calls = if let Some(calls_array) = response_data["message"]["tool_calls"].as_array() {
-            let parsed_calls: Vec<crate::message::ToolCall> = calls_array
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, call)| {
-                    let function_name = call["function"]["name"].as_str()?;
+        let tool_calls =
+            if let Some(calls_array) = response_data["message"]["tool_calls"].as_array() {
+                let parsed_calls: Vec<crate::message::ToolCall> = calls_array
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(idx, call)| {
+                        let function_name = call["function"]["name"].as_str()?;
 
-                    // Ollama returns arguments as an object, sometimes with string values
-                    // Convert string numbers to actual numbers for compatibility
-                    let mut arguments = call["function"]["arguments"].clone();
-                    if let serde_json::Value::Object(ref mut args_obj) = arguments {
-                        for (_key, value) in args_obj.iter_mut() {
-                            if let serde_json::Value::String(s) = value {
-                                // Try to parse as number
-                                if let Ok(num) = s.parse::<f64>() {
-                                    *value = serde_json::json!(num);
-                                } else if let Ok(int_num) = s.parse::<i64>() {
-                                    *value = serde_json::json!(int_num);
+                        // Ollama returns arguments as an object, sometimes with string values
+                        // Convert string numbers to actual numbers for compatibility
+                        let mut arguments = call["function"]["arguments"].clone();
+                        if let serde_json::Value::Object(ref mut args_obj) = arguments {
+                            for (_key, value) in args_obj.iter_mut() {
+                                if let serde_json::Value::String(s) = value {
+                                    // Try to parse as number
+                                    if let Ok(num) = s.parse::<f64>() {
+                                        *value = serde_json::json!(num);
+                                    } else if let Ok(int_num) = s.parse::<i64>() {
+                                        *value = serde_json::json!(int_num);
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    // Ollama doesn't provide an ID, so generate one
-                    let id = call["id"]
-                        .as_str()
-                        .map(|s| s.to_string())
-                        .unwrap_or_else(|| format!("call_{}", idx));
+                        // Ollama doesn't provide an ID, so generate one
+                        let id = call["id"]
+                            .as_str()
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| format!("call_{}", idx));
 
-                    Some(crate::message::ToolCall {
-                        id,
-                        call_type: crate::message::ToolCallType::Function,
-                        function: crate::message::ToolFunction {
-                            name: function_name.to_string(),
-                            arguments,
-                        },
+                        Some(crate::message::ToolCall {
+                            id,
+                            call_type: crate::message::ToolCallType::Function,
+                            function: crate::message::ToolFunction {
+                                name: function_name.to_string(),
+                                arguments,
+                            },
+                        })
                     })
-                })
-                .collect();
+                    .collect();
 
-            if parsed_calls.is_empty() {
-                None
+                if parsed_calls.is_empty() {
+                    None
+                } else {
+                    Some(parsed_calls)
+                }
             } else {
-                Some(parsed_calls)
-            }
-        } else {
-            None
-        };
+                None
+            };
 
-        let mut response = ChatResponse::new(content, model.unwrap_or(Provider::Ollama.default_model()))
-            .with_finish_reason("stop");
+        let mut response =
+            ChatResponse::new(content, model.unwrap_or(Provider::Ollama.default_model()))
+                .with_finish_reason("stop");
 
         if let Some(calls) = tool_calls {
             response = response.with_tool_calls(calls);

@@ -1,6 +1,6 @@
 //! Tool execution for agents
 
-use rsllm::tools::{ToolCall as ToolExec, ToolRegistry, ToolResult};
+use rsllm::tools::{ToolCall as ToolExec, ToolRegistry};
 use rsllm::{ChatMessage, ToolCall};
 
 /// Handles tool execution for the agent

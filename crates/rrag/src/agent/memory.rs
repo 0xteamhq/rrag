@@ -33,11 +33,15 @@ impl ConversationMemory {
         // Trim if exceeds max length (keep system message)
         if self.messages.len() > self.max_length {
             let system_msg = self.messages.first().cloned();
-            self.messages.drain(1..self.messages.len() - self.max_length + 1);
+            self.messages
+                .drain(1..self.messages.len() - self.max_length + 1);
             if let Some(sys_msg) = system_msg {
                 if matches!(sys_msg.role, rsllm::MessageRole::System) {
                     // System message was removed, restore it
-                    if !matches!(self.messages.first().unwrap().role, rsllm::MessageRole::System) {
+                    if !matches!(
+                        self.messages.first().unwrap().role,
+                        rsllm::MessageRole::System
+                    ) {
                         self.messages.insert(0, sys_msg);
                     }
                 }

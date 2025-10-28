@@ -205,7 +205,9 @@ pub mod incremental;
 pub mod observability;
 
 // Re-exports for convenience
-pub use agent::{Agent, AgentBuilder, AgentConfig, ConversationMemory, ConversationMode, ToolExecutor};
+pub use agent::{
+    Agent, AgentBuilder, AgentConfig, ConversationMemory, ConversationMode, ToolExecutor,
+};
 pub use document::{ChunkingStrategy, Document, DocumentChunk, DocumentChunker, Metadata};
 pub use embeddings::{
     Embedding, EmbeddingBatch, EmbeddingProvider, EmbeddingRequest, EmbeddingService,

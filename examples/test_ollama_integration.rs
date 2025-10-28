@@ -24,11 +24,11 @@ async fn main() -> RragResult<()> {
 
     // Create RRAG agent with Ollama
     println!("🤖 Creating RRAG agent with Ollama...");
-    let agent = RragAgent::builder()
-        .with_name("Ollama Test Agent")
-        .with_model("ollama", "llama3.2:3b")
+    let client = rsllm::Client::from_env()?;
+    let mut agent = rrag::AgentBuilder::new()
+        .with_llm(client)
         .with_system_prompt("You are a helpful AI assistant. Be concise and clear.")
-        .with_temperature(0.7)
+        .stateless()
         .build()?;
 
     println!("✅ Agent created successfully!\n");
@@ -37,12 +37,11 @@ async fn main() -> RragResult<()> {
     println!("💬 Test 1: Simple Question");
     println!("Question: What is Rust?");
     match agent
-        .process_message("What is Rust programming language in one sentence?", None)
+        .run("What is Rust programming language in one sentence?")
         .await
     {
         Ok(response) => {
-            println!("🤖 Response: {}", response.text);
-            println!("⏱️  Duration: {}ms", response.metadata.duration_ms);
+            println!("🤖 Response: {}", response);
             println!("✅ Test 1 passed!\n");
         }
         Err(e) => {
@@ -55,23 +54,20 @@ async fn main() -> RragResult<()> {
     println!("💬 Test 2: Multi-turn Conversation");
     println!("Question 1: Tell me about memory safety");
     match agent
-        .process_message(
-            "Tell me about memory safety in programming in one sentence.",
-            None,
-        )
+        .run("Tell me about memory safety in programming in one sentence.")
         .await
     {
         Ok(response) => {
-            println!("🤖 Response: {}", response.text);
+            println!("🤖 Response: {}", response);
 
             // Follow-up question
             println!("\nQuestion 2: How does Rust achieve this?");
             match agent
-                .process_message("How does Rust achieve this?", None)
+                .run("How does Rust achieve this?")
                 .await
             {
                 Ok(followup) => {
-                    println!("🤖 Response: {}", followup.text);
+                    println!("🤖 Response: {}", followup);
                     println!("✅ Test 2 passed!\n");
                 }
                 Err(e) => {
@@ -89,12 +85,11 @@ async fn main() -> RragResult<()> {
     println!("💬 Test 3: Technical Question");
     println!("Question: Explain borrowing");
     match agent
-        .process_message("Explain Rust's borrowing concept in one sentence.", None)
+        .run("Explain Rust's borrowing concept in one sentence.")
         .await
     {
         Ok(response) => {
-            println!("🤖 Response: {}", response.text);
-            println!("⏱️  Duration: {}ms", response.metadata.duration_ms);
+            println!("🤖 Response: {}", response);
             println!("✅ Test 3 passed!\n");
         }
         Err(e) => {

@@ -4,7 +4,7 @@
 //! Designed for production deployment with monitoring, configuration, and lifecycle management.
 
 use crate::{
-    Document, EmbeddingService, MemoryService, Pipeline, RetrievalService, Agent, RragError,
+    Agent, Document, EmbeddingService, MemoryService, Pipeline, RetrievalService, RragError,
     RragResult, SearchResult, StorageService,
 };
 use serde::{Deserialize, Serialize};
