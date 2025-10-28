@@ -170,20 +170,20 @@ pub fn tool(args: TokenStream, input: TokenStream) -> TokenStream {
     .into()
 }
 
-/// Detect the parameter mode from function signature
-enum ParameterMode {
-    /// Single struct parameter: fn tool(params: MyParams)
-    SingleStruct(Box<syn::Type>),
-    /// Individual parameters: fn tool(#[arg(...)] a: i32, #[arg(...)] b: String)
-    Individual(Vec<(syn::Ident, Box<syn::Type>, Option<String>)>),
-    /// Mixed: fn tool(#[context] ctx: Context, params: MyParams)
-    Mixed {
-        context_params: Vec<(syn::Ident, Box<syn::Type>)>,
-        struct_param: Box<syn::Type>,
-    },
+/// Parameter information extracted from function signature
+#[derive(Debug, Clone)]
+struct ParamInfo {
+    name: syn::Ident,
+    param_type: Box<syn::Type>,
+    description: Option<String>,
+    is_individual: bool,  // Has #[arg] attribute
 }
 
-fn analyze_parameters(inputs: &syn::punctuated::Punctuated<syn::FnArg, Token![,]>) -> syn::Result<ParameterMode> {
+/// Analyze function parameters flexibly
+/// Supports any combination of individual args and struct params in any order
+fn analyze_flexible_parameters(
+    inputs: &syn::punctuated::Punctuated<syn::FnArg, Token![,]>,
+) -> syn::Result<Vec<ParamInfo>> {
     if inputs.is_empty() {
         return Err(syn::Error::new_spanned(
             inputs,
@@ -191,64 +191,57 @@ fn analyze_parameters(inputs: &syn::punctuated::Punctuated<syn::FnArg, Token![,]
         ));
     }
 
-    let mut regular_params = Vec::new();
-    let mut context_params = Vec::new();
+    let mut params = Vec::new();
 
     for input in inputs {
         if let syn::FnArg::Typed(pat_type) = input {
-            // Check for #[arg(...)] or #[context] attributes
-            let has_arg_attr = pat_type.attrs.iter().any(|attr| attr.path().is_ident("arg"));
-            let has_context_attr = pat_type.attrs.iter().any(|attr| attr.path().is_ident("context"));
+            // Check for #[arg(...)] attribute
+            let arg_attr = pat_type.attrs.iter().find(|attr| attr.path().is_ident("arg"));
 
             if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
                 let param_name = pat_ident.ident.clone();
                 let param_type = pat_type.ty.clone();
 
-                if has_context_attr {
-                    context_params.push((param_name, param_type));
-                } else if has_arg_attr {
+                let (is_individual, description) = if let Some(attr) = arg_attr {
                     // Extract description from #[arg(description = "...")]
-                    let description = pat_type.attrs.iter()
-                        .find(|attr| attr.path().is_ident("arg"))
-                        .and_then(|attr| {
-                            // Try to extract description from the attribute
-                            if let syn::Meta::List(_list) = &attr.meta {
-                                // Simple extraction - just get the string
-                                Some("Individual parameter".to_string())
-                            } else {
-                                None
-                            }
-                        });
-                    regular_params.push((param_name, param_type, description));
+                    let desc = extract_arg_description(attr).unwrap_or_else(|| param_name.to_string());
+                    (true, Some(desc))
                 } else {
-                    // No attributes - regular param (assume it's the struct)
-                    regular_params.push((param_name, param_type, None));
-                }
+                    // No #[arg] attribute - treat as struct parameter
+                    (false, None)
+                };
+
+                params.push(ParamInfo {
+                    name: param_name,
+                    param_type,
+                    description,
+                    is_individual,
+                });
             }
         }
     }
 
-    // Determine mode
-    if context_params.is_empty() && regular_params.len() == 1 {
-        // Single struct mode
-        Ok(ParameterMode::SingleStruct(regular_params[0].1.clone()))
-    } else if !context_params.is_empty() && regular_params.len() == 1 {
-        // Mixed mode
-        Ok(ParameterMode::Mixed {
-            context_params,
-            struct_param: regular_params[0].1.clone(),
-        })
-    } else if context_params.is_empty() && regular_params.iter().all(|(_, _, desc)| desc.is_some() || regular_params.len() > 1) {
-        // Individual parameters mode
-        Ok(ParameterMode::Individual(regular_params))
+    Ok(params)
+}
+
+/// Extract description from #[arg(description = "...")] attribute
+fn extract_arg_description(attr: &syn::Attribute) -> Option<String> {
+    if let syn::Meta::List(list) = &attr.meta {
+        // Try to parse nested meta
+        let mut desc = None;
+        let _ = list.parse_nested_meta(|meta| {
+            if meta.path.is_ident("description") {
+                if let Ok(value) = meta.value() {
+                    if let Ok(lit) = value.parse::<LitStr>() {
+                        desc = Some(lit.value());
+                    }
+                }
+            }
+            Ok(())
+        });
+        desc
     } else {
-        Err(syn::Error::new_spanned(
-            inputs,
-            "Ambiguous parameter mode. Use either:\n\
-             1. Single struct: fn tool(params: MyParams)\n\
-             2. Individual params: fn tool(#[arg(...)] a: i32, #[arg(...)] b: String)\n\
-             3. Mixed: fn tool(#[context] ctx: Ctx, params: MyParams)",
-        ))
+        None
     }
 }
 
@@ -258,24 +251,88 @@ fn expand_tool_function(args: ToolArgs, func: ItemFn) -> TokenStream {
     let tool_name = args.name.unwrap_or_else(|| func_name.to_string());
     let description = args.description.expect("description is required");
 
-    // Analyze parameters to determine mode
-    let param_mode = match analyze_parameters(&func.sig.inputs) {
-        Ok(mode) => mode,
+    // Analyze all parameters flexibly
+    let params = match analyze_flexible_parameters(&func.sig.inputs) {
+        Ok(params) => params,
         Err(e) => return TokenStream::from(e.to_compile_error()),
     };
 
-    // Handle different parameter modes
-    match param_mode {
-        ParameterMode::SingleStruct(param_type) => {
-            expand_single_struct_tool(func, &func_name, &tool_name, &description, param_type)
-        }
-        ParameterMode::Individual(params) => {
-            expand_individual_params_tool(func, &func_name, &tool_name, &description, params)
-        }
-        ParameterMode::Mixed { context_params, struct_param } => {
-            expand_mixed_params_tool(func, &func_name, &tool_name, &description, context_params, struct_param)
-        }
+    // Separate individual args from struct params
+    let individual_params: Vec<_> = params.iter().filter(|p| p.is_individual).cloned().collect();
+    let struct_params: Vec<_> = params.iter().filter(|p| !p.is_individual).cloned().collect();
+
+    // Generate the appropriate expansion
+    expand_flexible_tool(func, &func_name, &tool_name, &description, individual_params, struct_params)
+}
+
+/// Expand tool with flexible parameter combination
+/// Supports 0-n individual args + 0-n struct params in any order
+fn expand_flexible_tool(
+    func: ItemFn,
+    func_name: &syn::Ident,
+    tool_name: &str,
+    description: &str,
+    individual_params: Vec<ParamInfo>,
+    struct_params: Vec<ParamInfo>,
+) -> TokenStream {
+    let pascal_name = func_name.to_string().to_case(Case::Pascal);
+    let struct_name = syn::Ident::new(&format!("{}Tool", pascal_name), func_name.span());
+
+    // Case 1: Only struct params (1 or more)
+    if individual_params.is_empty() && struct_params.len() == 1 {
+        // Simple case: single struct parameter (original mode)
+        return expand_single_struct_tool(
+            func,
+            func_name,
+            tool_name,
+            description,
+            struct_params[0].param_type.clone(),
+        );
     }
+
+    // Case 2: Only individual params (1 or more)
+    if struct_params.is_empty() && !individual_params.is_empty() {
+        return expand_individual_params_tool(
+            func,
+            func_name,
+            tool_name,
+            description,
+            individual_params,
+        );
+    }
+
+    // Case 3: Mixed (both individual and struct params)
+    // Case 4: Multiple struct params
+    // For now, these advanced cases are not fully implemented
+    // Show a helpful error message
+
+    if !individual_params.is_empty() && !struct_params.is_empty() {
+        return syn::Error::new_spanned(
+            &func.sig.inputs,
+            "Mixed parameters (individual + struct) not yet supported.\n\
+             Use either all individual params with #[arg(...)] OR single struct param.",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    if struct_params.len() > 1 {
+        return syn::Error::new_spanned(
+            &func.sig.inputs,
+            "Multiple struct parameters not yet supported.\n\
+             Combine all params into a single struct.",
+        )
+        .to_compile_error()
+        .into();
+    }
+
+    // Fallback error
+    syn::Error::new_spanned(
+        &func.sig.inputs,
+        "Unable to determine parameter mode",
+    )
+    .to_compile_error()
+    .into()
 }
 
 /// Expand tool with single struct parameter (original mode)
@@ -340,26 +397,33 @@ fn expand_single_struct_tool(
     TokenStream::from(expanded)
 }
 
-/// Expand tool with individual parameters
+/// Expand tool with individual parameters only
 fn expand_individual_params_tool(
     func: ItemFn,
     func_name: &syn::Ident,
     tool_name: &str,
     description: &str,
-    params: Vec<(syn::Ident, Box<syn::Type>, Option<String>)>,
+    params: Vec<ParamInfo>,
 ) -> TokenStream {
     // Generate a params struct from individual parameters
     let pascal_name = func_name.to_string().to_case(Case::Pascal);
     let params_struct_name = syn::Ident::new(&format!("{}Params", pascal_name), func_name.span());
     let struct_name = syn::Ident::new(&format!("{}Tool", pascal_name), func_name.span());
 
-    // Build struct fields
-    let param_fields = params.iter().map(|(name, ty, _desc)| {
-        quote! { pub #name: #ty }
+    // Build struct fields with doc comments
+    let param_fields = params.iter().map(|p| {
+        let name = &p.name;
+        let ty = &p.param_type;
+        let doc = p.description.as_deref().unwrap_or("");
+        quote! {
+            #[doc = #doc]
+            pub #name: #ty
+        }
     });
 
-    // Build function call arguments
-    let call_args = params.iter().map(|(name, _, _)| {
+    // Build function call arguments in the original order
+    let call_args = params.iter().map(|p| {
+        let name = &p.name;
         quote! { generated_params.#name }
     });
 
@@ -398,38 +462,6 @@ fn expand_individual_params_tool(
                     .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
             }
         }
-    };
-
-    TokenStream::from(expanded)
-}
-
-/// Expand tool with mixed mode (context + struct params)
-fn expand_mixed_params_tool(
-    func: ItemFn,
-    _func_name: &syn::Ident,
-    _tool_name: &str,
-    _description: &str,
-    _context_params: Vec<(syn::Ident, Box<syn::Type>)>,
-    _struct_param: Box<syn::Type>,
-) -> TokenStream {
-    // For mixed mode, the schema only includes the struct param
-    // Context params are not exposed to the LLM
-
-    // Note: In mixed mode, context params need to be provided at execution time
-    // This requires a different approach - for now, show a helpful error
-
-    let expanded = quote! {
-        compile_error!(
-            "Mixed mode (context params + struct) not fully implemented yet.\n\
-             Context parameters require runtime injection.\n\
-             For now, use either:\n\
-             1. Single struct: fn tool(params: MyParams)\n\
-             2. Individual params: fn tool(#[arg(...)] a: i32, #[arg(...)] b: String)\n\
-             \n\
-             Mixed mode coming in next update!"
-        );
-
-        #func
     };
 
     TokenStream::from(expanded)

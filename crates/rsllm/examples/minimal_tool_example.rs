@@ -18,7 +18,9 @@ use std::error::Error;
 
 #[derive(JsonSchema, Serialize, Deserialize)]
 pub struct AddParams {
+    /// First number to add
     pub a: f64,
+    /// Second number to add
     pub b: f64,
 }
 
