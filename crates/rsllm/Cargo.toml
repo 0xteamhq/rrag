@@ -12,7 +12,7 @@ keywords = ["llm", "ai", "openai", "claude", "ollama"]
 categories = ["api-bindings", "web-programming", "network-programming"]
 
 [features]
-default = ["openai", "streaming"]
+default = ["openai", "streaming", "json-schema"]
 openai = ["dep:reqwest"]
 claude = ["dep:reqwest"]
 ollama = ["dep:reqwest"]

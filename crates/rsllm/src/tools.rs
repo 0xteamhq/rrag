@@ -43,6 +43,9 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 
+#[cfg(feature = "json-schema")]
+use schemars::{schema_for, JsonSchema};
+
 /// A tool that can be called by an LLM
 pub trait Tool: Send + Sync {
     /// The name of the tool (must be unique)
@@ -60,6 +63,87 @@ pub trait Tool: Send + Sync {
     /// Optional: Validate arguments before execution
     fn validate(&self, _args: &JsonValue) -> Result<(), Box<dyn Error + Send + Sync>> {
         Ok(())
+    }
+}
+
+/// Schema-based tool with automatic JSON Schema generation
+///
+/// This trait provides automatic schema generation using `schemars`.
+/// Your parameter types just need to derive `JsonSchema`:
+///
+/// ```rust,ignore
+/// #[derive(JsonSchema, Serialize, Deserialize)]
+/// struct MyParams {
+///     name: String,
+///     age: u32,
+/// }
+///
+/// impl SchemaBasedTool for MyTool {
+///     type Params = MyParams;
+///
+///     fn name(&self) -> &str { "my_tool" }
+///     fn description(&self) -> &str { "Does something" }
+///
+///     fn execute_typed(&self, params: Self::Params) -> Result<JsonValue, Box<dyn Error + Send + Sync>> {
+///         // Work with strongly-typed params!
+///         Ok(json!({"result": params.name}))
+///     }
+/// }
+/// ```
+#[cfg(feature = "json-schema")]
+pub trait SchemaBasedTool: Send + Sync {
+    /// The parameter type (must derive JsonSchema, Serialize, Deserialize)
+    type Params: JsonSchema + for<'de> Deserialize<'de>;
+
+    /// Tool name
+    fn name(&self) -> &str;
+
+    /// Tool description
+    fn description(&self) -> &str;
+
+    /// Execute with strongly-typed parameters
+    fn execute_typed(&self, params: Self::Params) -> Result<JsonValue, Box<dyn Error + Send + Sync>>;
+
+    /// Optional: Validate typed parameters before execution
+    fn validate_typed(&self, _params: &Self::Params) -> Result<(), Box<dyn Error + Send + Sync>> {
+        Ok(())
+    }
+}
+
+/// Blanket implementation: SchemaBasedTool automatically implements Tool
+#[cfg(feature = "json-schema")]
+impl<T: SchemaBasedTool> Tool for T {
+    fn name(&self) -> &str {
+        SchemaBasedTool::name(self)
+    }
+
+    fn description(&self) -> &str {
+        SchemaBasedTool::description(self)
+    }
+
+    fn parameters_schema(&self) -> JsonValue {
+        // Automatically generate schema from the Params type!
+        let schema = schema_for!(T::Params);
+        serde_json::to_value(&schema).unwrap_or_else(|_| JsonValue::Null)
+    }
+
+    fn execute(&self, args: JsonValue) -> Result<JsonValue, Box<dyn Error + Send + Sync>> {
+        // Deserialize to strongly-typed params
+        let params: T::Params = serde_json::from_value(args)
+            .map_err(|e| format!("Failed to deserialize parameters: {}", e))?;
+
+        // Validate typed params
+        self.validate_typed(&params)?;
+
+        // Execute with typed params
+        self.execute_typed(params)
+    }
+
+    fn validate(&self, args: &JsonValue) -> Result<(), Box<dyn Error + Send + Sync>> {
+        // Deserialize and validate
+        let params: T::Params = serde_json::from_value(args.clone())
+            .map_err(|e| format!("Invalid parameters: {}", e))?;
+        self.validate_typed(&params)
     }
 }
 
