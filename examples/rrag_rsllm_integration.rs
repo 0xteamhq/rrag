@@ -24,13 +24,13 @@ async fn main() -> RragResult<()> {
         // For demo, we'll skip actual client creation to avoid connection errors
         println!("✅ RSLLM client interface ready (demo mode)!\n");
 
-        // Create RRAG agent (without rsllm client for demo)
+        // Create RRAG agent (with rsllm client)
         println!("🤖 Creating RRAG agent...");
-        let agent = RragAgent::builder()
-            .with_name("RRAG Demo Agent")
-            .with_model("openai", "gpt-3.5-turbo")  // Example configuration
+        let client = rsllm::Client::from_env()?;
+        let mut agent = rrag::AgentBuilder::new()
+            .with_llm(client)
+            .stateless()  // Example configuration
             .with_system_prompt("You are a helpful AI assistant with access to a knowledge base. Use the provided context to answer questions accurately.")
-            .with_temperature(0.7)
             .build()?;
 
         println!("✅ RRAG agent created successfully!\n");
@@ -38,13 +38,11 @@ async fn main() -> RragResult<()> {
         // Test agent capabilities
         println!("💬 Testing agent chat capabilities...");
         match agent
-            .process_message("Hello! Can you tell me about Rust programming?", None)
+            .run("Hello! Can you tell me about Rust programming?")
             .await
         {
             Ok(response) => {
-                println!("🤖 Agent Response: {}", response.text);
-                println!("⏱️  Processing time: {}ms", response.metadata.duration_ms);
-                println!("🔧 Tool calls: {}", response.tool_calls.len());
+                println!("🤖 Agent Response: {}", response);
             }
             Err(e) => {
                 println!(

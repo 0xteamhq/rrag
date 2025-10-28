@@ -3,7 +3,7 @@
 use super::{AgentConfig, ConversationMemory, ConversationMode, ToolExecutor};
 use crate::error::RragResult;
 use rsllm::{ChatMessage, ChatResponse, Client};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, info};
 
 /// Agent that can use tools and maintain conversation
 pub struct Agent {
@@ -71,7 +71,11 @@ impl Agent {
 
         // Agent loop: iterate until we get a final answer
         for iteration in 1..=self.config.max_iterations {
-            debug!(iteration, max_iterations = self.config.max_iterations, "Agent iteration");
+            debug!(
+                iteration,
+                max_iterations = self.config.max_iterations,
+                "Agent iteration"
+            );
 
             // Call LLM with tools
             let response = self.llm_step(&conversation).await?;
@@ -115,7 +119,8 @@ impl Agent {
 
             // Update memory in stateful mode
             if self.config.conversation_mode == ConversationMode::Stateful {
-                self.memory.add_message(ChatMessage::assistant(response.content.clone()));
+                self.memory
+                    .add_message(ChatMessage::assistant(response.content.clone()));
             }
 
             return Ok(response.content);
@@ -129,7 +134,10 @@ impl Agent {
 
         Err(crate::error::RragError::Agent {
             agent_id: "default".to_string(),
-            message: format!("Agent exceeded maximum iterations ({})", self.config.max_iterations),
+            message: format!(
+                "Agent exceeded maximum iterations ({})",
+                self.config.max_iterations
+            ),
             source: None,
         })
     }

@@ -13,14 +13,67 @@
 //! Run with: `cargo run --example rrag_comprehensive`
 
 use rrag::prelude::*;
-use rrag::{
-    Calculator, ConversationSummaryMemory, ConversationTokenBufferMemory, DocumentChunkingStep,
-    EchoTool, EmbeddingProvider, EmbeddingStep, InMemoryRetriever, InMemoryStorage,
-    LocalEmbeddingProvider, Retriever, SearchAlgorithm, SearchConfig, TextOperation,
-    TextPreprocessingStep, TokenStreamBuilder, TokenType,
-};
+use rsllm::tool;
+use rsllm::tools::Tool;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use std::error::Error;
 use std::sync::Arc;
 use tokio;
+
+// ============================================================================
+// TOOL DEFINITIONS (using rsllm tool system)
+// ============================================================================
+
+#[derive(JsonSchema, Serialize, Deserialize)]
+pub struct CalculatorParams {
+    /// Operation: add, subtract, multiply, divide
+    pub operation: String,
+    pub a: f64,
+    pub b: f64,
+}
+
+#[derive(JsonSchema, Serialize, Deserialize)]
+pub struct CalculatorResult {
+    pub result: f64,
+}
+
+#[tool(description = "Performs arithmetic calculations: add, subtract, multiply, divide")]
+fn calculator(params: CalculatorParams) -> Result<CalculatorResult, Box<dyn Error + Send + Sync>> {
+    let result = match params.operation.as_str() {
+        "add" => params.a + params.b,
+        "subtract" => params.a - params.b,
+        "multiply" => params.a * params.b,
+        "divide" if params.b != 0.0 => params.a / params.b,
+        "divide" => return Err("Cannot divide by zero".into()),
+        _ => {
+            return Err(format!(
+                "Unknown operation: '{}'. Valid operations: add, subtract, multiply, divide",
+                params.operation
+            )
+            .into())
+        }
+    };
+    Ok(CalculatorResult { result })
+}
+
+#[derive(JsonSchema, Serialize, Deserialize)]
+pub struct EchoParams {
+    /// Message to echo back
+    pub message: String,
+}
+
+#[derive(JsonSchema, Serialize, Deserialize)]
+pub struct EchoResult {
+    pub echoed: String,
+}
+
+#[tool(description = "Echo back the provided message")]
+fn echo_tool(params: EchoParams) -> Result<EchoResult, Box<dyn Error + Send + Sync>> {
+    Ok(EchoResult {
+        echoed: format!("Echo: {}", params.message),
+    })
+}
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
@@ -344,50 +397,33 @@ async fn demo_agent_interactions() -> RragResult<()> {
     println!("   🤖 Setting up intelligent agent...");
 
     // Create agent with tools
-    let agent = RragAgent::builder()
-        .with_name("RRAG Demo Agent")
-        .with_tool(Arc::new(Calculator))
-        .with_tool(Arc::new(EchoTool))
-        .with_temperature(0.7)
-        .with_verbose(true)
+    let llm_client = rsllm::Client::from_env()?;
+    let mut agent = rrag::AgentBuilder::new()
+        .with_llm(llm_client)
+        .with_tool(Box::new(CalculatorTool) as Box<dyn Tool>)
+        .with_tool(Box::new(EchoToolTool) as Box<dyn Tool>)
+        .verbose(true)
+        .stateless()
         .build()?;
 
     // Test calculations
     println!("     - Testing calculator tool...");
-    let calc_response = agent.process_message("Calculate 15 * 8 + 42", None).await?;
-    println!("       Agent: {}", calc_response.text);
-    println!("       Tools used: {}", calc_response.tool_calls.len());
+    let calc_response = agent.run("Calculate 15 * 8 + 42").await?;
+    println!("       Agent: {}", calc_response);
 
     // Test echo tool
     println!("     - Testing echo tool...");
     let echo_response = agent
-        .process_message(
-            "Echo: Hello from RRAG!",
-            Some(calc_response.metadata.turn_id.clone()),
-        )
+        .run("Echo: Hello from RRAG!")
         .await?;
-    println!("       Agent: {}", echo_response.text);
+    println!("       Agent: {}", echo_response);
 
-    // Test streaming response
-    println!("     - Testing streaming response...");
-    let mut stream = agent
-        .stream_message("Tell me about Rust in a streaming way", None)
+    // Test streaming response (simulated since agent doesn't have streaming)
+    println!("     - Testing response...");
+    let response = agent
+        .run("Tell me about Rust in a few sentences")
         .await?;
-    print!("       Stream: ");
-    while let Some(token_result) = futures::StreamExt::next(&mut stream).await {
-        match token_result? {
-            token if token.token_type == TokenType::Text => {
-                print!("{}", token.content);
-                tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-                // Simulate real streaming
-            }
-            token if token.is_final => {
-                println!(" [DONE]");
-                break;
-            }
-            _ => {}
-        }
-    }
+    println!("       Response: {}", response.chars().take(200).collect::<String>() + "...");
 
     Ok(())
 }

@@ -42,7 +42,13 @@ fn calculator(params: CalculatorParams) -> Result<CalculatorResult, Box<dyn Erro
         "multiply" => params.a * params.b,
         "divide" if params.b != 0.0 => params.a / params.b,
         "divide" => return Err("Cannot divide by zero".into()),
-        _ => return Err(format!("Unknown operation: '{}'. Valid operations: add, subtract, multiply, divide", params.operation).into()),
+        _ => {
+            return Err(format!(
+                "Unknown operation: '{}'. Valid operations: add, subtract, multiply, divide",
+                params.operation
+            )
+            .into())
+        }
     };
     Ok(CalculatorResult { result })
 }
@@ -66,12 +72,20 @@ pub struct TempConvertResult {
 }
 
 #[tool(description = "Convert temperature between Celsius and Fahrenheit")]
-fn convert_temperature(params: TempConvertParams) -> Result<TempConvertResult, Box<dyn Error + Send + Sync>> {
+fn convert_temperature(
+    params: TempConvertParams,
+) -> Result<TempConvertResult, Box<dyn Error + Send + Sync>> {
     let result = match (params.from_unit.as_str(), params.to_unit.as_str()) {
         ("celsius", "fahrenheit") => (params.temperature * 9.0 / 5.0) + 32.0,
         ("fahrenheit", "celsius") => (params.temperature - 32.0) * 5.0 / 9.0,
         ("celsius", "celsius") | ("fahrenheit", "fahrenheit") => params.temperature,
-        _ => return Err(format!("Invalid units: {} to {}. Use 'celsius' or 'fahrenheit'", params.from_unit, params.to_unit).into()),
+        _ => {
+            return Err(format!(
+                "Invalid units: {} to {}. Use 'celsius' or 'fahrenheit'",
+                params.from_unit, params.to_unit
+            )
+            .into())
+        }
     };
 
     Ok(TempConvertResult {
@@ -110,7 +124,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
 
@@ -151,7 +165,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("📤 Final: {}\n", response1);
 
     println!("🧪 Query 2: What was my previous question?");
-    let response2 = stateless_agent.run("What was my previous question?").await?;
+    let response2 = stateless_agent
+        .run("What was my previous question?")
+        .await?;
     println!("📤 Final: {}", response2);
     println!("   💡 Stateless mode: Agent doesn't remember previous question!\n");
 
@@ -195,7 +211,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("📤 Final: {}\n", response5);
 
     println!("🧪 Query 4: How warm is that in Fahrenheit?");
-    let response6 = stateful_agent.run("How warm is that in Fahrenheit?").await?;
+    let response6 = stateful_agent
+        .run("How warm is that in Fahrenheit?")
+        .await?;
     println!("📤 Final: {}", response6);
     println!("   💡 Stateful mode: Agent remembers the temperature!\n");
 
