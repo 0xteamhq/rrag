@@ -5,7 +5,7 @@
 //!
 //! Run with: cargo run -p rsllm --example tool_calling_auto_schema --features ollama
 
-use rsllm::tools::{SchemaBasedTool, ToolRegistry, ToolCall as ToolCallExec};
+use rsllm::tools::{SchemaBasedTool, ToolCall as ToolCallExec, ToolRegistry};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -242,14 +242,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     registry.register(Box::new(WeatherTool))?;
     registry.register(Box::new(SearchTool))?;
 
-    println!("   ✅ Registered {} tools with AUTOMATIC schemas!\n", registry.len());
+    println!(
+        "   ✅ Registered {} tools with AUTOMATIC schemas!\n",
+        registry.len()
+    );
 
     // Step 2: Show auto-generated schemas
     println!("🔍 Step 2: Auto-generated JSON schemas:");
     for def in registry.tool_definitions() {
         println!("\n   📝 Tool: {}", def.name);
         println!("      Description: {}", def.description);
-        println!("      Schema: {}", serde_json::to_string_pretty(&def.parameters)?);
+        println!(
+            "      Schema: {}",
+            serde_json::to_string_pretty(&def.parameters)?
+        );
     }
     println!();
 
@@ -265,7 +271,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
     let calc_result = registry.execute(&calc_call);
     if calc_result.success {
-        println!("   ✅ Result: {}", serde_json::to_string_pretty(&calc_result.content)?);
+        println!(
+            "   ✅ Result: {}",
+            serde_json::to_string_pretty(&calc_result.content)?
+        );
     }
     println!();
 
@@ -282,20 +291,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
     let weather_result = registry.execute(&weather_call);
     if weather_result.success {
-        println!("   ✅ Result: {}", serde_json::to_string_pretty(&weather_result.content)?);
+        println!(
+            "   ✅ Result: {}",
+            serde_json::to_string_pretty(&weather_result.content)?
+        );
     }
     println!();
 
     // Example 3: Search with defaults
     println!("   Example 3: Search (using default limit)");
-    let search_call = ToolCallExec::new(
-        "call-3",
-        "search",
-        json!({"query": "Rust programming"}),
-    );
+    let search_call = ToolCallExec::new("call-3", "search", json!({"query": "Rust programming"}));
     let search_result = registry.execute(&search_call);
     if search_result.success {
-        println!("   ✅ Result: {}", serde_json::to_string_pretty(&search_result.content)?);
+        println!(
+            "   ✅ Result: {}",
+            serde_json::to_string_pretty(&search_result.content)?
+        );
     }
     println!();
 

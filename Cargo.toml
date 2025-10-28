@@ -4,6 +4,7 @@ members = [
     "crates/rrag",      # RRAG - Rust RAG Framework
     "crates/rgraph",    # RGraph - Graph-based Agent Orchestration
     "crates/rsllm",
+    "crates/rsllm-macros",  # RSLLM Procedural Macros
     "examples",
 ]
 

@@ -1,0 +1,19 @@
+[package]
+name = "rsllm-macros"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Procedural macros for RSLLM tool calling"
+keywords = ["llm", "ai", "macros", "tools"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+# Proc macro dependencies
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+
+# For string case conversion
+convert_case = "0.6"

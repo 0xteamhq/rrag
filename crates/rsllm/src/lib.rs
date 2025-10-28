@@ -99,6 +99,10 @@ pub mod response;
 pub mod streaming;
 pub mod tools;
 
+// Re-export proc macros
+#[cfg(feature = "macros")]
+pub use rsllm_macros::tool;
+
 // Re-exports for convenience
 pub use client::{Client, ClientBuilder};
 pub use config::{ClientConfig, ModelConfig};
