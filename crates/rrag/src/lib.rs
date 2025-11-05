@@ -172,6 +172,7 @@ pub mod memory;
 pub mod pipeline;
 pub mod retrieval_core;
 pub mod storage;
+pub mod storage_legacy;
 pub mod streaming;
 pub mod system;
 pub mod tools;

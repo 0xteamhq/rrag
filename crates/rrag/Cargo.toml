@@ -80,6 +80,7 @@ tower = { version = "0.4", features = ["full"], optional = true }
 tower-http = { version = "0.5", features = ["full"], optional = true }
 memcache = { version = "0.17", optional = true }
 redis = { version = "0.24", features = ["tokio-comp"], optional = true }
+toasty = { version = "0.1", optional = true }
 argon2 = "0.5"
 ring = "0.17"
 x509-parser = "0.15"
@@ -97,6 +98,7 @@ concurrent = ["dashmap"]
 observability = ["reqwest", "dashmap"]
 security = ["hyper", "hyper-util", "tower", "tower-http", "cookie", "async-session"]
 security-full = ["security", "redis", "memcache", "totp-rs", "webauthn-rs"]
+database = ["toasty"]  # EXPERIMENTAL: Toasty v0.1 is incubating, uses in-memory fallback
 
 [dev-dependencies]
 tokio-test = "0.4"
