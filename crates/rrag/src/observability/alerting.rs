@@ -254,7 +254,7 @@ impl NotificationChannel for ConsoleNotificationChannel {
             AlertSeverity::Low => "\x1b[32m",      // Green
         };
 
-        println!(
+        tracing::debug!(
             "{} {}[{}]\x1b[0m {} - {} ({})",
             status_symbol,
             severity_color,
@@ -265,7 +265,7 @@ impl NotificationChannel for ConsoleNotificationChannel {
         );
 
         if !notification.details.is_empty() {
-            println!("   Details: {:?}", notification.details);
+            tracing::debug!("   Details: {:?}", notification.details);
         }
 
         Ok(())

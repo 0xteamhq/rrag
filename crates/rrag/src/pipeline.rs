@@ -40,7 +40,7 @@
 //! ));
 //!
 //! let result = pipeline.execute(context).await?;
-//! println!("Pipeline completed in {}ms", result.total_execution_time());
+//! tracing::debug!("Pipeline completed in {}ms", result.total_execution_time());
 //! # Ok(())
 //! # }
 //! ```
@@ -86,7 +86,7 @@
 //!     .with_metadata("priority", "high".into());
 //!
 //! let result = pipeline.execute(context).await?;
-//! println!("Processed {} documents", result.execution_history.len());
+//! tracing::debug!("Processed {} documents", result.execution_history.len());
 //! # Ok(())
 //! # }
 //! ```
@@ -165,23 +165,23 @@
 //! # async fn main() {
 //! match pipeline.execute(context).await {
 //!     Ok(result) => {
-//!         println!("Pipeline completed successfully");
-//!         println!("Total time: {}ms", result.total_execution_time());
+//!         tracing::debug!("Pipeline completed successfully");
+//!         tracing::debug!("Total time: {}ms", result.total_execution_time());
 //!         
 //!         if result.has_failures() {
-//!             println!("Some steps failed but pipeline continued");
+//!             tracing::debug!("Some steps failed but pipeline continued");
 //!             for step in &result.execution_history {
 //!                 if !step.success {
-//!                     println!("Step '{}' failed: {:?}", step.step_id, step.error_message);
+//!                     tracing::debug!("Step '{}' failed: {:?}", step.step_id, step.error_message);
 //!                 }
 //!             }
 //!         }
 //!     }
 //!     Err(RragError::Timeout { operation, duration_ms }) => {
-//!         eprintln!("Pipeline timed out in {}: {}ms", operation, duration_ms);
+//!         tracing::debug!("Pipeline timed out in {}: {}ms", operation, duration_ms);
 //!     }
 //!     Err(e) => {
-//!         eprintln!("Pipeline failed: {}", e);
+//!         tracing::debug!("Pipeline failed: {}", e);
 //!     }
 //! }
 //! # }
@@ -232,7 +232,7 @@ use std::time::Instant;
 /// .with_metadata("source", "api".into())
 /// .with_metadata("priority", "high".into());
 ///
-/// println!("Processing execution: {}", context.execution_id);
+/// tracing::debug!("Processing execution: {}", context.execution_id);
 /// ```
 #[derive(Debug, Clone)]
 pub struct PipelineContext {

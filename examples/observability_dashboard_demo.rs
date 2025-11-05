@@ -48,8 +48,8 @@ async fn main() -> RragResult<()> {
         .with_target(false)
         .init();
 
-    println!("🚀 Starting RRAG Observability Dashboard Demo");
-    println!("===============================================");
+    tracing::debug!("🚀 Starting RRAG Observability Dashboard Demo");
+    tracing::debug!("===============================================");
 
     // Create observability system with comprehensive configuration
     let observability_config = ObservabilityConfig {
@@ -206,7 +206,7 @@ async fn main() -> RragResult<()> {
     // Initialize the observability system
     let observability = ObservabilitySystem::new(observability_config).await?;
 
-    println!("📊 Starting observability system components...");
+    tracing::debug!("📊 Starting observability system components...");
     observability.start().await?;
 
     // Get references to individual components
@@ -219,17 +219,15 @@ async fn main() -> RragResult<()> {
     let profiling = observability.profiling().clone();
     let export = observability.export().clone();
 
-    println!("✅ Observability system started successfully!");
-    println!();
-    println!("🌐 Dashboard available at: http://127.0.0.1:3000");
-    println!("📈 Real-time metrics and charts will be displayed");
-    println!("🚨 Alerts will be shown in the console and dashboard");
-    println!("📝 Logs are being aggregated and searchable");
-    println!("💾 Data export and retention policies are active");
-    println!();
+    tracing::debug!("✅ Observability system started successfully!");
+    tracing::debug!("🌐 Dashboard available at: http://127.0.0.1:3000");
+    tracing::debug!("📈 Real-time metrics and charts will be displayed");
+    tracing::debug!("🚨 Alerts will be shown in the console and dashboard");
+    tracing::debug!("📝 Logs are being aggregated and searchable");
+    tracing::debug!("💾 Data export and retention policies are active");
 
     // Set up health checkers for demo components
-    println!("🏥 Setting up health checkers...");
+    tracing::debug!("🏥 Setting up health checkers...");
 
     // Add various health checkers to demonstrate monitoring
     health
@@ -276,7 +274,7 @@ async fn main() -> RragResult<()> {
         .await?;
 
     // Add custom alert rules for demo
-    println!("🚨 Setting up custom alert rules...");
+    tracing::debug!("🚨 Setting up custom alert rules...");
 
     let custom_alert = AlertRule::new(
         "demo_high_search_latency",
@@ -297,12 +295,11 @@ async fn main() -> RragResult<()> {
     alerting.add_alert_rule(custom_alert).await?;
 
     // Start simulating realistic system activity
-    println!("🎭 Starting system activity simulation...");
-    println!("   - Generating metrics, logs, and health data");
-    println!("   - Simulating search queries and user activity");
-    println!("   - Creating performance profiles");
-    println!("   - Triggering occasional alerts");
-    println!();
+    tracing::debug!("🎭 Starting system activity simulation...");
+    tracing::debug!("   - Generating metrics, logs, and health data");
+    tracing::debug!("   - Simulating search queries and user activity");
+    tracing::debug!("   - Creating performance profiles");
+    tracing::debug!("   - Triggering occasional alerts");
 
     let metrics_clone = metrics.clone();
     let monitoring_clone = monitoring.clone();
@@ -323,26 +320,25 @@ async fn main() -> RragResult<()> {
     sleep(Duration::from_secs(5)).await;
 
     // Demonstrate dashboard features
-    println!("📊 Dashboard Features Demo:");
-    println!("=========================");
+    tracing::debug!("📊 Dashboard Features Demo:");
+    tracing::debug!("=========================");
 
     // Show current system status
     let status = observability.status().await;
-    println!("System Status: {:?}", status.running);
-    println!("Component Health:");
+    tracing::debug!("System Status: {:?}", status.running);
+    tracing::debug!("Component Health:");
     for (component, healthy) in &status.components {
         let status_icon = if *healthy { "✅" } else { "❌" };
-        println!(
+        tracing::debug!(
             "  {} {}: {}",
             status_icon,
             component,
             if *healthy { "Healthy" } else { "Unhealthy" }
         );
     }
-    println!();
 
     // Demonstrate metrics export
-    println!("💾 Exporting current metrics...");
+    tracing::debug!("💾 Exporting current metrics...");
     let all_metrics = observability.metrics().get_all_metrics().await;
     if !all_metrics.is_empty() {
         let export_result = export
@@ -354,48 +350,46 @@ async fn main() -> RragResult<()> {
             )
             .await?;
 
-        println!(
+        tracing::debug!(
             "   Exported {} metrics to: {:?}",
             export_result.record_count, export_result.file_path
         );
-        println!("   Export status: {:?}", export_result.status);
+        tracing::debug!("   Export status: {:?}", export_result.status);
     }
-    println!();
 
     // Demonstrate profiling analysis
-    println!("🔍 Analyzing performance bottlenecks...");
+    tracing::debug!("🔍 Analyzing performance bottlenecks...");
     let bottleneck_analysis = profiling.analyze_bottlenecks(5).await;
     if !bottleneck_analysis.bottlenecks.is_empty() {
-        println!(
+        tracing::debug!(
             "   Detected {} bottlenecks:",
             bottleneck_analysis.bottlenecks.len()
         );
         for bottleneck in &bottleneck_analysis.bottlenecks {
-            println!(
+            tracing::debug!(
                 "   - {}: {:.2}ms avg (Impact: {:.2})",
                 bottleneck.operation, bottleneck.average_duration_ms, bottleneck.impact_score
             );
         }
 
         if !bottleneck_analysis.recommendations.is_empty() {
-            println!("   Recommendations:");
+            tracing::debug!("   Recommendations:");
             for rec in &bottleneck_analysis.recommendations {
-                println!("   * {} (Priority: {:?})", rec.recommendation, rec.priority);
+                tracing::debug!("   * {} (Priority: {:?})", rec.recommendation, rec.priority);
             }
         }
     } else {
-        println!("   No performance bottlenecks detected");
+        tracing::debug!("   No performance bottlenecks detected");
     }
-    println!();
 
     // Show alert status
-    println!("🚨 Current Alert Status:");
+    tracing::debug!("🚨 Current Alert Status:");
     let active_alerts = alerting.get_active_alerts().await;
     if active_alerts.is_empty() {
-        println!("   No active alerts - System is healthy! ✅");
+        tracing::debug!("   No active alerts - System is healthy! ✅");
     } else {
         for alert in &active_alerts {
-            println!(
+            tracing::debug!(
                 "   {} {}: {} ({})",
                 match alert.severity {
                     AlertSeverity::Critical => "🔴",
@@ -409,10 +403,9 @@ async fn main() -> RragResult<()> {
             );
         }
     }
-    println!();
 
     // Demonstrate log search
-    println!("📝 Recent Log Entries:");
+    tracing::debug!("📝 Recent Log Entries:");
     let recent_logs = logging
         .search_logs(&LogQuery {
             level_filter: Some(LogLevel::Info),
@@ -423,44 +416,41 @@ async fn main() -> RragResult<()> {
         .await;
 
     for log in recent_logs.iter().take(3) {
-        println!(
+        tracing::debug!(
             "   [{}] {}: {}",
             log.timestamp.format("%H:%M:%S"),
             log.component,
             log.message
         );
     }
-    println!();
 
     // Show health report
-    println!("🏥 System Health Report:");
+    tracing::debug!("🏥 System Health Report:");
     let health_report = health.get_health_report().await;
-    println!("   Overall Status: {}", health_report.overall_status);
-    println!("   Components Monitored: {}", health_report.services.len());
-    println!("   Active Alerts: {}", health_report.alerts.len());
-    println!(
+    tracing::debug!("   Overall Status: {}", health_report.overall_status);
+    tracing::debug!("   Components Monitored: {}", health_report.services.len());
+    tracing::debug!("   Active Alerts: {}", health_report.alerts.len());
+    tracing::debug!(
         "   System Uptime: {} seconds",
         health_report.system_info.uptime_seconds
     );
-    println!();
 
     // Keep the demo running
-    println!("🔄 Demo is running...");
-    println!("   Press Ctrl+C to stop");
-    println!("   Visit http://127.0.0.1:3000 to see the dashboard");
-    println!("   Monitor the console for real-time alerts and metrics");
-    println!();
+    tracing::debug!("🔄 Demo is running...");
+    tracing::debug!("   Press Ctrl+C to stop");
+    tracing::debug!("   Visit http://127.0.0.1:3000 to see the dashboard");
+    tracing::debug!("   Monitor the console for real-time alerts and metrics");
 
     // Run for demo duration
     let demo_duration = Duration::from_secs(300); // 5 minutes
-    println!("⏰ Demo will run for {} seconds", demo_duration.as_secs());
+    tracing::debug!("⏰ Demo will run for {} seconds", demo_duration.as_secs());
 
     tokio::select! {
         _ = sleep(demo_duration) => {
-            println!("\n⏰ Demo time completed!");
+            tracing::debug!("\n⏰ Demo time completed!");
         }
         _ = tokio::signal::ctrl_c() => {
-            println!("\n⛔ Demo stopped by user");
+            tracing::debug!("\n⛔ Demo stopped by user");
         }
     }
 
@@ -468,22 +458,22 @@ async fn main() -> RragResult<()> {
     simulation_handle.abort();
 
     // Generate final report
-    println!("\n📋 Generating Final Demo Report...");
+    tracing::debug!("\n📋 Generating Final Demo Report...");
     let final_metrics = observability.metrics().get_all_metrics().await;
     let final_health = health.get_health_report().await;
     let alert_stats = alerting.get_alert_stats().await;
     let log_stats = logging.get_stats().await;
 
-    println!("📊 Final Statistics:");
-    println!("===================");
-    println!("• Total Metrics Collected: {}", final_metrics.len());
-    println!(
+    tracing::debug!("📊 Final Statistics:");
+    tracing::debug!("===================");
+    tracing::debug!("• Total Metrics Collected: {}", final_metrics.len());
+    tracing::debug!(
         "• Total Alerts Generated: {}",
         alert_stats.total_active_alerts
     );
-    println!("• Total Log Entries: {}", log_stats.total_entries);
-    println!("• System Components: {}", final_health.services.len());
-    println!("• Overall System Status: {}", final_health.overall_status);
+    tracing::debug!("• Total Log Entries: {}", log_stats.total_entries);
+    tracing::debug!("• System Components: {}", final_health.services.len());
+    tracing::debug!("• Overall System Status: {}", final_health.overall_status);
 
     // Export final report
     let export_result = export
@@ -522,17 +512,17 @@ async fn main() -> RragResult<()> {
         )
         .await?;
 
-    println!("📄 Final report exported: {:?}", export_result.file_path);
+    tracing::debug!("📄 Final report exported: {:?}", export_result.file_path);
 
     // Stop observability system
-    println!("\n🛑 Stopping observability system...");
+    tracing::debug!("\n🛑 Stopping observability system...");
     observability.stop().await?;
 
-    println!("✅ RRAG Observability Dashboard Demo completed successfully!");
-    println!("\n📁 Generated Files:");
-    println!("   • Metrics exports in: ./exports/");
-    println!("   • Log files: rrag_demo.log");
-    println!("   • Archives in: ./archives/");
+    tracing::debug!("✅ RRAG Observability Dashboard Demo completed successfully!");
+    tracing::debug!("\n📁 Generated Files:");
+    tracing::debug!("   • Metrics exports in: ./exports/");
+    tracing::debug!("   • Log files: rrag_demo.log");
+    tracing::debug!("   • Archives in: ./archives/");
 
     Ok(())
 }

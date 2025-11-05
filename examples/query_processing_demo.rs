@@ -16,8 +16,8 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🔍 RRAG Query Processing Demo");
-    println!("=====================================\n");
+    tracing::debug!("🔍 RRAG Query Processing Demo");
+    tracing::debug!("=====================================\n");
 
     // Create mock embedding provider for HyDE
     let embedding_provider = Arc::new(MockEmbeddingProvider::new());
@@ -37,34 +37,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     for (i, query) in test_queries.iter().enumerate() {
-        println!("🔍 Query {}: {}", i + 1, query);
-        println!("{}", "─".repeat(50));
+        tracing::debug!("🔍 Query {}: {}", i + 1, query);
+        tracing::debug!("{}", "─".repeat(50));
 
         // Process the query through our complete system
         match query_processor.process_query(query).await {
             Ok(result) => {
-                println!("📊 Processing Results:");
-                println!(
+                tracing::debug!("📊 Processing Results:");
+                tracing::debug!(
                     "  • Techniques Applied: {:?}",
                     result.metadata.techniques_applied
                 );
-                println!(
+                tracing::debug!(
                     "  • Processing Time: {}ms",
                     result.metadata.processing_time_ms
                 );
 
                 // Show classification results
                 if let Some(classification) = &result.classification {
-                    println!("\n🎯 Query Classification:");
-                    println!("  • Intent: {:?}", classification.intent);
-                    println!("  • Type: {:?}", classification.query_type);
-                    println!("  • Confidence: {:.2}", classification.confidence);
-                    println!("  • Complexity: {:.2}", classification.metadata.complexity);
-                    println!(
+                    tracing::debug!("\n🎯 Query Classification:");
+                    tracing::debug!("  • Intent: {:?}", classification.intent);
+                    tracing::debug!("  • Type: {:?}", classification.query_type);
+                    tracing::debug!("  • Confidence: {:.2}", classification.confidence);
+                    tracing::debug!("  • Complexity: {:.2}", classification.metadata.complexity);
+                    tracing::debug!(
                         "  • Needs Context: {}",
                         classification.metadata.needs_context
                     );
-                    println!(
+                    tracing::debug!(
                         "  • Suggested Strategies: {:?}",
                         classification.metadata.suggested_strategies
                     );
@@ -72,9 +72,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // Show rewritten queries
                 if !result.rewritten_queries.is_empty() {
-                    println!("\n✏️ Rewritten Queries:");
+                    tracing::debug!("\n✏️ Rewritten Queries:");
                     for (j, rewrite) in result.rewritten_queries.iter().enumerate() {
-                        println!(
+                        tracing::debug!(
                             "  {}. [{}] {} (confidence: {:.2})",
                             j + 1,
                             format!("{:?}", rewrite.strategy),
@@ -86,9 +86,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // Show expanded queries
                 if !result.expanded_queries.is_empty() {
-                    println!("\n🔍 Expanded Queries:");
+                    tracing::debug!("\n🔍 Expanded Queries:");
                     for (j, expansion) in result.expanded_queries.iter().enumerate() {
-                        println!(
+                        tracing::debug!(
                             "  {}. [{}] {} (confidence: {:.2})",
                             j + 1,
                             format!("{:?}", expansion.expansion_type),
@@ -96,16 +96,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             expansion.confidence
                         );
                         if !expansion.added_terms.is_empty() {
-                            println!("     Added terms: {}", expansion.added_terms.join(", "));
+                            tracing::debug!("     Added terms: {}", expansion.added_terms.join(", "));
                         }
                     }
                 }
 
                 // Show sub-queries from decomposition
                 if !result.sub_queries.is_empty() {
-                    println!("\n🔄 Decomposed Sub-queries:");
+                    tracing::debug!("\n🔄 Decomposed Sub-queries:");
                     for (j, sub_query) in result.sub_queries.iter().enumerate() {
-                        println!(
+                        tracing::debug!(
                             "  {}. [{}] {} (priority: {:.2}, confidence: {:.2})",
                             j + 1,
                             format!("{:?}", sub_query.strategy),
@@ -118,17 +118,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // Show HyDE results
                 if !result.hyde_results.is_empty() {
-                    println!("\n📄 HyDE Hypothetical Documents:");
+                    tracing::debug!("\n📄 HyDE Hypothetical Documents:");
                     for (j, hyde) in result.hyde_results.iter().enumerate() {
-                        println!(
+                        tracing::debug!(
                             "  {}. [{}] (confidence: {:.2})",
                             j + 1,
                             hyde.generation_method,
                             hyde.confidence
                         );
-                        println!("     Query Type: {}", hyde.metadata.detected_query_type);
+                        tracing::debug!("     Query Type: {}", hyde.metadata.detected_query_type);
                         if let Some(domain) = &hyde.metadata.detected_domain {
-                            println!("     Domain: {}", domain);
+                            tracing::debug!("     Domain: {}", domain);
                         }
                         // Show first 150 chars of generated document
                         let preview = if hyde.hypothetical_answer.len() > 150 {
@@ -136,35 +136,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         } else {
                             hyde.hypothetical_answer.clone()
                         };
-                        println!("     Generated: {}", preview);
+                        tracing::debug!("     Generated: {}", preview);
                     }
                 }
 
                 // Show final optimized queries
-                println!("\n🎯 Final Optimized Queries:");
+                tracing::debug!("\n🎯 Final Optimized Queries:");
                 for (j, final_query) in result.final_queries.iter().enumerate() {
-                    println!("  {}. {}", j + 1, final_query);
+                    tracing::debug!("  {}. {}", j + 1, final_query);
                 }
 
                 // Show warnings if any
                 if !result.metadata.warnings.is_empty() {
-                    println!("\n⚠️ Warnings:");
+                    tracing::debug!("\n⚠️ Warnings:");
                     for warning in &result.metadata.warnings {
-                        println!("  • {}", warning);
+                        tracing::debug!("  • {}", warning);
                     }
                 }
             }
             Err(e) => {
-                println!("❌ Error processing query: {}", e);
+                error!(" Error processing query: {}", e);
             }
         }
 
-        println!("\n{}\n", "=".repeat(70));
+        tracing::debug!("\n{}\n", "=".repeat(70));
     }
 
     // Demonstrate individual components
-    println!("🔧 Individual Component Demonstrations");
-    println!("=====================================\n");
+    tracing::debug!("🔧 Individual Component Demonstrations");
+    tracing::debug!("=====================================\n");
 
     demo_classifier().await?;
     demo_rewriter().await?;
@@ -176,7 +176,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn demo_classifier() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🎯 Query Classifier Demo:");
+    tracing::debug!("🎯 Query Classifier Demo:");
 
     let classifier = QueryClassifier::new();
     let queries = [
@@ -188,17 +188,16 @@ async fn demo_classifier() -> Result<(), Box<dyn std::error::Error>> {
 
     for query in &queries {
         let result = classifier.classify(query).await?;
-        println!(
+        tracing::debug!(
             "  • '{}' → Intent: {:?}, Type: {:?}",
             query, result.intent, result.query_type
         );
     }
-    println!();
     Ok(())
 }
 
 async fn demo_rewriter() -> Result<(), Box<dyn std::error::Error>> {
-    println!("✏️ Query Rewriter Demo:");
+    tracing::debug!("✏️ Query Rewriter Demo:");
 
     let rewriter = QueryRewriter::new(QueryRewriteConfig::default());
     let queries = [
@@ -210,15 +209,14 @@ async fn demo_rewriter() -> Result<(), Box<dyn std::error::Error>> {
     for query in &queries {
         let results = rewriter.rewrite(query).await?;
         if !results.is_empty() {
-            println!("  • '{}' → '{}'", query, results[0].rewritten_query);
+            tracing::debug!("  • '{}' → '{}'", query, results[0].rewritten_query);
         }
     }
-    println!();
     Ok(())
 }
 
 async fn demo_expander() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🔍 Query Expander Demo:");
+    tracing::debug!("🔍 Query Expander Demo:");
 
     let expander = QueryExpander::new(ExpansionConfig::default());
     let queries = ["fast algorithm", "ML model", "programming languages"];
@@ -227,16 +225,15 @@ async fn demo_expander() -> Result<(), Box<dyn std::error::Error>> {
         let results = expander.expand(query).await?;
         for result in results {
             if !result.added_terms.is_empty() {
-                println!("  • '{}' + [{}]", query, result.added_terms.join(", "));
+                tracing::debug!("  • '{}' + [{}]", query, result.added_terms.join(", "));
             }
         }
     }
-    println!();
     Ok(())
 }
 
 async fn demo_decomposer() -> Result<(), Box<dyn std::error::Error>> {
-    println!("🔄 Query Decomposer Demo:");
+    tracing::debug!("🔄 Query Decomposer Demo:");
 
     let decomposer = QueryDecomposer::new();
     let queries = [
@@ -247,20 +244,19 @@ async fn demo_decomposer() -> Result<(), Box<dyn std::error::Error>> {
     for query in &queries {
         let results = decomposer.decompose(query).await?;
         if !results.is_empty() {
-            println!("  • '{}' →", query);
+            tracing::debug!("  • '{}' →", query);
             for sub_query in results {
-                println!("    - {}", sub_query.query);
+                tracing::debug!("    - {}", sub_query.query);
             }
         }
     }
-    println!();
     Ok(())
 }
 
 async fn demo_hyde(
     embedding_provider: Arc<MockEmbeddingProvider>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    println!("📄 HyDE Generator Demo:");
+    tracing::debug!("📄 HyDE Generator Demo:");
 
     let hyde = HyDEGenerator::new(HyDEConfig::default(), embedding_provider);
     let queries = [
@@ -276,9 +272,8 @@ async fn demo_hyde(
             } else {
                 results[0].hypothetical_answer.clone()
             };
-            println!("  • '{}' → {}", query, preview);
+            tracing::debug!("  • '{}' → {}", query, preview);
         }
     }
-    println!();
     Ok(())
 }

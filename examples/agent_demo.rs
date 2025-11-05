@@ -114,20 +114,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .init();
 
-    println!("╔══════════════════════════════════════════════════════╗");
-    println!("║  🤖 RRAG Agent Demo - Production Framework          ║");
-    println!("╚══════════════════════════════════════════════════════╝\n");
-    println!("💡 Set RUST_LOG=debug for detailed logs\n");
+    tracing::debug!("╔══════════════════════════════════════════════════════╗");
+    tracing::debug!("║  🤖 RRAG Agent Demo - Production Framework          ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════╝\n");
+    tracing::debug!("💡 Set RUST_LOG=debug for detailed logs\n");
 
-    println!("✅ Initializing LLM clients...\n");
+    tracing::debug!("✅ Initializing LLM clients...\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // MODE 1: STATELESS (Each call is independent)
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("╔══════════════════════════════════════════════════════╗");
-    println!("║  MODE 1: Stateless Agent                             ║");
-    println!("╚══════════════════════════════════════════════════════╝\n");
+    tracing::debug!("╔══════════════════════════════════════════════════════╗");
+    tracing::debug!("║  MODE 1: Stateless Agent                             ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════╝\n");
 
     let llm_client1 = rsllm::Client::builder()
         .provider(rsllm::Provider::Ollama)
@@ -146,22 +146,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .verbose(true)
         .build()?;
 
-    println!("🧪 Query 1: What is 50 * 12?");
+    tracing::debug!("🧪 Query 1: What is 50 * 12?");
     let response1 = stateless_agent.run("What is 50 * 12?").await?;
-    println!("📤 Final: {}\n", response1);
+    tracing::debug!("📤 Final: {}\n", response1);
 
-    println!("🧪 Query 2: What was my previous question?");
+    tracing::debug!("🧪 Query 2: What was my previous question?");
     let response2 = stateless_agent.run("What was my previous question?").await?;
-    println!("📤 Final: {}", response2);
-    println!("   💡 Stateless mode: Agent doesn't remember previous question!\n");
+    tracing::debug!("📤 Final: {}", response2);
+    tracing::debug!("   💡 Stateless mode: Agent doesn't remember previous question!\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // MODE 2: STATEFUL (Maintains conversation across calls)
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("\n╔══════════════════════════════════════════════════════╗");
-    println!("║  MODE 2: Stateful Agent                              ║");
-    println!("╚══════════════════════════════════════════════════════╝\n");
+    tracing::debug!("\n╔══════════════════════════════════════════════════════╗");
+    tracing::debug!("║  MODE 2: Stateful Agent                              ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════╝\n");
 
     let llm_client2 = rsllm::Client::builder()
         .provider(rsllm::Provider::Ollama)
@@ -181,43 +181,43 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .verbose(true)
         .build()?;
 
-    println!("🧪 Query 1: Calculate 25 + 75");
+    tracing::debug!("🧪 Query 1: Calculate 25 + 75");
     let response3 = stateful_agent.run("Calculate 25 + 75").await?;
-    println!("📤 Final: {}\n", response3);
+    tracing::debug!("📤 Final: {}\n", response3);
 
-    println!("🧪 Query 2: Now multiply that by 2");
+    tracing::debug!("🧪 Query 2: Now multiply that by 2");
     let response4 = stateful_agent.run("Now multiply that by 2").await?;
-    println!("📤 Final: {}", response4);
-    println!("   💡 Stateful mode: Agent remembers the result was 100!\n");
+    tracing::debug!("📤 Final: {}", response4);
+    tracing::debug!("   💡 Stateful mode: Agent remembers the result was 100!\n");
 
-    println!("🧪 Query 3: What's the weather in Tokyo?");
+    tracing::debug!("🧪 Query 3: What's the weather in Tokyo?");
     let response5 = stateful_agent.run("What's the weather in Tokyo?").await?;
-    println!("📤 Final: {}\n", response5);
+    tracing::debug!("📤 Final: {}\n", response5);
 
-    println!("🧪 Query 4: How warm is that in Fahrenheit?");
+    tracing::debug!("🧪 Query 4: How warm is that in Fahrenheit?");
     let response6 = stateful_agent.run("How warm is that in Fahrenheit?").await?;
-    println!("📤 Final: {}", response6);
-    println!("   💡 Stateful mode: Agent remembers the temperature!\n");
+    tracing::debug!("📤 Final: {}", response6);
+    tracing::debug!("   💡 Stateful mode: Agent remembers the temperature!\n");
 
     // ═══════════════════════════════════════════════════════════════════════
     // SUMMARY
     // ═══════════════════════════════════════════════════════════════════════
 
-    println!("\n╔══════════════════════════════════════════════════════╗");
-    println!("║  Summary                                             ║");
-    println!("╚══════════════════════════════════════════════════════╝\n");
+    tracing::debug!("\n╔══════════════════════════════════════════════════════╗");
+    tracing::debug!("║  Summary                                             ║");
+    tracing::debug!("╚══════════════════════════════════════════════════════╝\n");
 
-    println!("✅ Stateless Mode:");
-    println!("   • Each call is independent");
-    println!("   • No memory between calls");
-    println!("   • Good for one-off queries\n");
+    tracing::debug!("✅ Stateless Mode:");
+    tracing::debug!("   • Each call is independent");
+    tracing::debug!("   • No memory between calls");
+    tracing::debug!("   • Good for one-off queries\n");
 
-    println!("✅ Stateful Mode:");
-    println!("   • Maintains conversation history");
-    println!("   • Remembers context between calls");
-    println!("   • Perfect for chat applications\n");
+    tracing::debug!("✅ Stateful Mode:");
+    tracing::debug!("   • Maintains conversation history");
+    tracing::debug!("   • Remembers context between calls");
+    tracing::debug!("   • Perfect for chat applications\n");
 
-    println!("🎉 RRAG Agent framework is production-ready!");
+    tracing::debug!("🎉 RRAG Agent framework is production-ready!");
 
     Ok(())
 }

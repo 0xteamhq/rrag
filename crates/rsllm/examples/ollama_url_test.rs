@@ -6,12 +6,12 @@ use rsllm::prelude::*;
 
 #[tokio::main]
 async fn main() -> RsllmResult<()> {
-    println!("🦀 RSLLM URL Flexibility Test");
-    println!("================================\n");
+    tracing::debug!("🦀 RSLLM URL Flexibility Test");
+    tracing::debug!("================================\n");
 
     // Test 1: URL WITHOUT trailing slash
-    println!("📝 Test 1: Base URL WITHOUT trailing slash");
-    println!("   URL: http://localhost:11434/api");
+    tracing::debug!("📝 Test 1: Base URL WITHOUT trailing slash");
+    tracing::debug!("   URL: http://localhost:11434/api");
 
     let client1 = Client::builder()
         .provider(Provider::Ollama)
@@ -21,10 +21,10 @@ async fn main() -> RsllmResult<()> {
         .build()?;
 
     match client1.health_check().await {
-        Ok(true) => println!("   ✅ Health check passed!"),
-        Ok(false) => println!("   ⚠️  Health check returned false"),
+        Ok(true) => tracing::debug!("   ✅ Health check passed!"),
+        Ok(false) => tracing::debug!("   ⚠️  Health check returned false"),
         Err(e) => {
-            println!("   ❌ Health check failed: {}", e);
+            tracing::debug!("   ❌ Health check failed: {}", e);
             return Ok(());
         }
     }
@@ -34,18 +34,18 @@ async fn main() -> RsllmResult<()> {
     )];
     match client1.chat_completion(messages1).await {
         Ok(response) => {
-            println!("   ✅ Chat completion succeeded!");
-            println!("   📤 Response: {}\n", response.content);
+            tracing::debug!("   ✅ Chat completion succeeded!");
+            tracing::debug!("   📤 Response: {}\n", response.content);
         }
         Err(e) => {
-            println!("   ❌ Chat completion failed: {}\n", e);
+            tracing::debug!("   ❌ Chat completion failed: {}\n", e);
             return Ok(());
         }
     }
 
     // Test 2: URL WITH trailing slash
-    println!("📝 Test 2: Base URL WITH trailing slash");
-    println!("   URL: http://localhost:11434/api/");
+    tracing::debug!("📝 Test 2: Base URL WITH trailing slash");
+    tracing::debug!("   URL: http://localhost:11434/api/");
 
     let client2 = Client::builder()
         .provider(Provider::Ollama)
@@ -55,10 +55,10 @@ async fn main() -> RsllmResult<()> {
         .build()?;
 
     match client2.health_check().await {
-        Ok(true) => println!("   ✅ Health check passed!"),
-        Ok(false) => println!("   ⚠️  Health check returned false"),
+        Ok(true) => tracing::debug!("   ✅ Health check passed!"),
+        Ok(false) => tracing::debug!("   ⚠️  Health check returned false"),
         Err(e) => {
-            println!("   ❌ Health check failed: {}", e);
+            tracing::debug!("   ❌ Health check failed: {}", e);
             return Ok(());
         }
     }
@@ -68,18 +68,18 @@ async fn main() -> RsllmResult<()> {
     )];
     match client2.chat_completion(messages2).await {
         Ok(response) => {
-            println!("   ✅ Chat completion succeeded!");
-            println!("   📤 Response: {}\n", response.content);
+            tracing::debug!("   ✅ Chat completion succeeded!");
+            tracing::debug!("   📤 Response: {}\n", response.content);
         }
         Err(e) => {
-            println!("   ❌ Chat completion failed: {}\n", e);
+            tracing::debug!("   ❌ Chat completion failed: {}\n", e);
             return Ok(());
         }
     }
 
     // Test 3: Using default URL (which has trailing slash)
-    println!("📝 Test 3: Using default provider URL");
-    println!("   (Provider::Ollama.default_base_url())");
+    tracing::debug!("📝 Test 3: Using default provider URL");
+    tracing::debug!("   (Provider::Ollama.default_base_url())");
 
     let client3 = Client::builder()
         .provider(Provider::Ollama)
@@ -88,10 +88,10 @@ async fn main() -> RsllmResult<()> {
         .build()?;
 
     match client3.health_check().await {
-        Ok(true) => println!("   ✅ Health check passed!"),
-        Ok(false) => println!("   ⚠️  Health check returned false"),
+        Ok(true) => tracing::debug!("   ✅ Health check passed!"),
+        Ok(false) => tracing::debug!("   ⚠️  Health check returned false"),
         Err(e) => {
-            println!("   ❌ Health check failed: {}", e);
+            tracing::debug!("   ❌ Health check failed: {}", e);
             return Ok(());
         }
     }
@@ -101,20 +101,20 @@ async fn main() -> RsllmResult<()> {
     )];
     match client3.chat_completion(messages3).await {
         Ok(response) => {
-            println!("   ✅ Chat completion succeeded!");
-            println!("   📤 Response: {}\n", response.content);
+            tracing::debug!("   ✅ Chat completion succeeded!");
+            tracing::debug!("   📤 Response: {}\n", response.content);
         }
         Err(e) => {
-            println!("   ❌ Chat completion failed: {}\n", e);
+            tracing::debug!("   ❌ Chat completion failed: {}\n", e);
             return Ok(());
         }
     }
 
-    println!("🎉 All URL format tests passed!");
-    println!("✨ RSLLM handles both URL formats correctly!");
-    println!("\n💡 Key Insight:");
-    println!("   Customers can provide base URLs with or without trailing slashes,");
-    println!("   and the library will normalize them automatically for consistent behavior.");
+    tracing::debug!("🎉 All URL format tests passed!");
+    tracing::debug!("✨ RSLLM handles both URL formats correctly!");
+    tracing::debug!("\n💡 Key Insight:");
+    tracing::debug!("   Customers can provide base URLs with or without trailing slashes,");
+    tracing::debug!("   and the library will normalize them automatically for consistent behavior.");
 
     Ok(())
 }

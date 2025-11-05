@@ -11,5 +11,5 @@ enum SmallPrime {
 
 fn main() {
     let schema = schema_for!(SmallPrime);
-    println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+    tracing::debug!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }

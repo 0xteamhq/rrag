@@ -46,7 +46,7 @@
 //!     .add_table("data/quarterly_results.csv");
 //!
 //! let processed = service.process_document(document).await?;
-//! println!("Extracted {} text chunks, {} images, {} tables",
+//! tracing::debug!("Extracted {} text chunks, {} images, {} tables",
 //!          processed.text_chunks.len(),
 //!          processed.images.len(),
 //!          processed.tables.len());
@@ -69,9 +69,9 @@
 //! let image_path = "images/product_diagram.png";
 //! let analysis = processor.analyze_image(image_path).await?;
 //!
-//! println!("Caption: {}", analysis.caption);
-//! println!("Detected {} objects", analysis.objects.len());
-//! println!("Extracted text: {}", analysis.text);
+//! tracing::debug!("Caption: {}", analysis.caption);
+//! tracing::debug!("Detected {} objects", analysis.objects.len());
+//! tracing::debug!("Extracted text: {}", analysis.text);
 //! # Ok(())
 //! # }
 //! ```
@@ -88,7 +88,7 @@
 //! let tables = processor.extract_from_html(html).await?;
 //!
 //! for table in tables {
-//!     println!("Table: {} rows, {} columns",
+//!     tracing::debug!("Table: {} rows, {} columns",
 //!              table.rows.len(),
 //!              table.headers.len());
 //! }
@@ -106,9 +106,9 @@
 //! let chart_path = "charts/sales_trend.png";
 //! let analysis = processor.analyze_chart(chart_path).await?;
 //!
-//! println!("Chart type: {:?}", analysis.chart_type);
-//! println!("Description: {}", analysis.description);
-//! println!("Key insights: {:?}", analysis.insights);
+//! tracing::debug!("Chart type: {:?}", analysis.chart_type);
+//! tracing::debug!("Description: {}", analysis.description);
+//! tracing::debug!("Key insights: {:?}", analysis.insights);
 //! # Ok(())
 //! # }
 //! ```
@@ -131,9 +131,9 @@
 //!
 //! for result in results {
 //!     match result.content_type {
-//!         ContentType::Text => println!("Text: {}", result.content),
-//!         ContentType::Image => println!("Image: {}", result.path),
-//!         ContentType::Table => println!("Table: {} rows", result.metadata["rows"]),
+//!         ContentType::Text => tracing::debug!("Text: {}", result.content),
+//!         ContentType::Image => tracing::debug!("Image: {}", result.path),
+//!         ContentType::Table => tracing::debug!("Table: {} rows", result.metadata["rows"]),
 //!     }
 //! }
 //! # Ok(())

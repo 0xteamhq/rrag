@@ -6,6 +6,7 @@
 
 use crate::{RragResult, SearchResult};
 use std::collections::HashMap;
+use tracing::warn;
 
 /// Multi-signal reranker that combines various relevance signals
 pub struct MultiSignalReranker {
@@ -387,7 +388,7 @@ impl MultiSignalReranker {
                     all_signals.insert(signal_type.clone(), signals);
                 }
                 Err(e) => {
-                    eprintln!("Warning: Failed to extract signal {:?}: {}", signal_type, e);
+                    warn!(" Failed to extract signal {:?}: {}", signal_type, e);
                     // Continue with other signals
                 }
             }

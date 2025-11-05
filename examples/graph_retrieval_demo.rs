@@ -21,41 +21,41 @@ use tokio;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("🚀 Starting Graph-Based Retrieval Demo");
-    println!("=====================================\n");
+    tracing::debug!("🚀 Starting Graph-Based Retrieval Demo");
+    tracing::debug!("=====================================\n");
 
     // Create sample documents for knowledge graph construction
     let documents = create_sample_documents();
-    println!(
+    tracing::debug!(
         "📄 Created {} sample documents about AI and technology",
         documents.len()
     );
 
     // Demo 1: Basic Graph Construction
-    println!("\n🔧 Demo 1: Knowledge Graph Construction");
+    tracing::debug!("\n🔧 Demo 1: Knowledge Graph Construction");
     let graph = demo_graph_construction().await?;
 
     // Demo 2: Entity and Relationship Extraction
-    println!("\n🎯 Demo 2: Entity and Relationship Extraction");
+    tracing::debug!("\n🎯 Demo 2: Entity and Relationship Extraction");
     demo_entity_extraction().await?;
 
     // Demo 3: Graph Algorithms
-    println!("\n📊 Demo 3: Graph Algorithms");
+    tracing::debug!("\n📊 Demo 3: Graph Algorithms");
     demo_graph_algorithms(&graph).await?;
 
     // Demo 4: Query Expansion
-    println!("\n🔍 Demo 4: Query Expansion using Graph Structure");
+    tracing::debug!("\n🔍 Demo 4: Query Expansion using Graph Structure");
     demo_query_expansion(&graph).await?;
 
     // Demo 5: Graph-Based Retrieval
-    println!("\n🔎 Demo 5: Graph-Based Retrieval System");
+    tracing::debug!("\n🔎 Demo 5: Graph-Based Retrieval System");
     demo_graph_retrieval(&documents).await?;
 
     // Demo 6: Advanced Configuration
-    println!("\n⚙️  Demo 6: Advanced Configuration Options");
+    tracing::debug!("\n⚙️  Demo 6: Advanced Configuration Options");
     demo_advanced_configuration().await?;
 
-    println!("\n✅ Graph-Based Retrieval Demo completed successfully!");
+    tracing::debug!("\n✅ Graph-Based Retrieval Demo completed successfully!");
     Ok(())
 }
 
@@ -85,7 +85,7 @@ fn create_sample_documents() -> Vec<Document> {
 
 /// Demonstrate basic knowledge graph construction
 async fn demo_graph_construction() -> RragResult<KnowledgeGraph> {
-    println!("Building a knowledge graph manually...");
+    tracing::debug!("Building a knowledge graph manually...");
 
     let mut graph = KnowledgeGraph::new();
 
@@ -228,19 +228,19 @@ async fn demo_graph_construction() -> RragResult<KnowledgeGraph> {
 
     // Calculate and display graph metrics
     let metrics = graph.calculate_metrics();
-    println!("Graph metrics:");
-    println!("  - Nodes: {}", metrics.node_count);
-    println!("  - Edges: {}", metrics.edge_count);
-    println!("  - Connected components: {}", metrics.connected_components);
-    println!("  - Density: {:.3}", metrics.density);
-    println!("  - Average degree: {:.2}", metrics.average_degree);
+    tracing::debug!("Graph metrics:");
+    tracing::debug!("  - Nodes: {}", metrics.node_count);
+    tracing::debug!("  - Edges: {}", metrics.edge_count);
+    tracing::debug!("  - Connected components: {}", metrics.connected_components);
+    tracing::debug!("  - Density: {:.3}", metrics.density);
+    tracing::debug!("  - Average degree: {:.2}", metrics.average_degree);
 
     Ok(graph)
 }
 
 /// Demonstrate entity and relationship extraction
 async fn demo_entity_extraction() -> RragResult<()> {
-    println!("Extracting entities and relationships from text...");
+    tracing::debug!("Extracting entities and relationships from text...");
 
     let config = EntityExtractionConfig::default();
     let extractor = RuleBasedEntityExtractor::new(config)?;
@@ -249,17 +249,17 @@ async fn demo_entity_extraction() -> RragResult<()> {
 
     let (entities, relationships) = extractor.extract_all(text, "demo_doc").await?;
 
-    println!("Extracted {} entities:", entities.len());
+    tracing::debug!("Extracted {} entities:", entities.len());
     for entity in &entities {
-        println!(
+        tracing::debug!(
             "  - '{}' (type: {:?}, confidence: {:.2})",
             entity.text, entity.entity_type, entity.confidence
         );
     }
 
-    println!("Extracted {} relationships:", relationships.len());
+    tracing::debug!("Extracted {} relationships:", relationships.len());
     for relationship in &relationships {
-        println!(
+        tracing::debug!(
             "  - '{}' --[{}]--> '{}'",
             relationship.source_entity, relationship.relation_type, relationship.target_entity
         );
@@ -270,10 +270,10 @@ async fn demo_entity_extraction() -> RragResult<()> {
 
 /// Demonstrate graph algorithms
 async fn demo_graph_algorithms(graph: &KnowledgeGraph) -> RragResult<()> {
-    println!("Running graph algorithms...");
+    tracing::debug!("Running graph algorithms...");
 
     // PageRank calculation
-    println!("\n🏆 PageRank scores:");
+    tracing::debug!("\n🏆 PageRank scores:");
     let pagerank_config = PageRankConfig::default();
     let pagerank_scores = GraphAlgorithms::pagerank(graph, &pagerank_config)?;
 
@@ -282,24 +282,24 @@ async fn demo_graph_algorithms(graph: &KnowledgeGraph) -> RragResult<()> {
 
     for (node_id, score) in sorted_scores.iter().take(5) {
         if let Some(node) = graph.get_node(node_id) {
-            println!("  - {}: {:.4}", node.label, score);
+            tracing::debug!("  - {}: {:.4}", node.label, score);
         }
     }
 
     // Betweenness centrality
-    println!("\n🌐 Betweenness centrality:");
+    tracing::debug!("\n🌐 Betweenness centrality:");
     let centrality_scores = GraphAlgorithms::betweenness_centrality(graph);
     let mut sorted_centrality: Vec<_> = centrality_scores.iter().collect();
     sorted_centrality.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap_or(std::cmp::Ordering::Equal));
 
     for (node_id, score) in sorted_centrality.iter().take(5) {
         if let Some(node) = graph.get_node(node_id) {
-            println!("  - {}: {:.4}", node.label, score);
+            tracing::debug!("  - {}: {:.4}", node.label, score);
         }
     }
 
     // Graph traversal
-    println!("\n🚶 Graph traversal from 'Artificial Intelligence':");
+    tracing::debug!("\n🚶 Graph traversal from 'Artificial Intelligence':");
     let ai_node_id = graph
         .nodes
         .values()
@@ -310,10 +310,10 @@ async fn demo_graph_algorithms(graph: &KnowledgeGraph) -> RragResult<()> {
         let traversal_config = TraversalConfig::default();
         let visited_nodes = GraphAlgorithms::bfs_search(graph, ai_id, &traversal_config)?;
 
-        println!("  Visited nodes in order:");
+        tracing::debug!("  Visited nodes in order:");
         for (i, node_id) in visited_nodes.iter().enumerate() {
             if let Some(node) = graph.get_node(node_id) {
-                println!("    {}. {}", i + 1, node.label);
+                tracing::debug!("    {}. {}", i + 1, node.label);
             }
         }
     }
@@ -325,7 +325,7 @@ async fn demo_graph_algorithms(graph: &KnowledgeGraph) -> RragResult<()> {
 async fn demo_query_expansion(graph: &KnowledgeGraph) -> RragResult<()> {
     use rrag::graph_retrieval::query_expansion::{ExpansionConfig, GraphQueryExpander};
 
-    println!("Demonstrating query expansion...");
+    tracing::debug!("Demonstrating query expansion...");
 
     let expansion_config = ExpansionConfig::default();
     let expander = GraphQueryExpander::new(graph.clone(), expansion_config);
@@ -337,7 +337,7 @@ async fn demo_query_expansion(graph: &KnowledgeGraph) -> RragResult<()> {
     ];
 
     for query in queries {
-        println!("\n🔍 Expanding query: '{}'", query);
+        tracing::debug!("\n🔍 Expanding query: '{}'", query);
 
         let options = ExpansionOptions {
             strategies: vec![
@@ -353,20 +353,20 @@ async fn demo_query_expansion(graph: &KnowledgeGraph) -> RragResult<()> {
 
         let expansion_result = expander.expand_query(query, &options).await?;
 
-        println!("  Original: {}", expansion_result.original_query);
-        println!("  Expanded terms:");
+        tracing::debug!("  Original: {}", expansion_result.original_query);
+        tracing::debug!("  Expanded terms:");
         for term in &expansion_result.expanded_terms {
-            println!(
+            tracing::debug!(
                 "    - '{}' (strategy: {}, confidence: {:.2})",
                 term.term, term.strategy, term.confidence
             );
         }
-        println!("  Overall confidence: {:.2}", expansion_result.confidence);
+        tracing::debug!("  Overall confidence: {:.2}", expansion_result.confidence);
 
         // Get suggestions
         let suggestions = expander.get_suggestions(query, 3).await?;
         if !suggestions.is_empty() {
-            println!("  Suggestions: {:?}", suggestions);
+            tracing::debug!("  Suggestions: {:?}", suggestions);
         }
     }
 
@@ -375,7 +375,7 @@ async fn demo_query_expansion(graph: &KnowledgeGraph) -> RragResult<()> {
 
 /// Demonstrate the complete graph-based retrieval system
 async fn demo_graph_retrieval(documents: &[Document]) -> RragResult<()> {
-    println!("Building complete graph-based retrieval system...");
+    tracing::debug!("Building complete graph-based retrieval system...");
 
     // Configure the builder
     let build_config = GraphBuildConfig {
@@ -406,7 +406,7 @@ async fn demo_graph_retrieval(documents: &[Document]) -> RragResult<()> {
 
     match retriever {
         Ok(retriever) => {
-            println!("\n✅ Graph retriever built successfully!");
+            tracing::debug!("\n✅ Graph retriever built successfully!");
 
             // Test retrieval with different queries
             let test_queries = vec![
@@ -417,7 +417,7 @@ async fn demo_graph_retrieval(documents: &[Document]) -> RragResult<()> {
             ];
 
             for query_text in test_queries {
-                println!("\n🔍 Query: '{}'", query_text);
+                tracing::debug!("\n🔍 Query: '{}'", query_text);
 
                 let search_query = SearchQuery::text(query_text)
                     .with_limit(3)
@@ -425,9 +425,9 @@ async fn demo_graph_retrieval(documents: &[Document]) -> RragResult<()> {
 
                 match retriever.search(&search_query).await {
                     Ok(results) => {
-                        println!("  Found {} results:", results.len());
+                        tracing::debug!("  Found {} results:", results.len());
                         for (i, result) in results.iter().enumerate() {
-                            println!(
+                            tracing::debug!(
                                 "    {}. Score: {:.3}, Content: {}",
                                 i + 1,
                                 result.score,
@@ -436,32 +436,32 @@ async fn demo_graph_retrieval(documents: &[Document]) -> RragResult<()> {
 
                             // Show graph-specific metadata
                             if let Some(graph_score) = result.metadata.get("graph_score") {
-                                println!("       Graph score: {}", graph_score);
+                                tracing::debug!("       Graph score: {}", graph_score);
                             }
                             if let Some(entities) = result.metadata.get("related_entities") {
-                                println!("       Related entities: {}", entities);
+                                tracing::debug!("       Related entities: {}", entities);
                             }
                         }
                     }
-                    Err(e) => println!("  Search failed: {}", e),
+                    Err(e) => tracing::debug!("  Search failed: {}", e),
                 }
             }
 
             // Display retriever statistics
             match retriever.stats().await {
                 Ok(stats) => {
-                    println!("\n📊 Retriever statistics:");
-                    println!("  - Total items: {}", stats.total_items);
-                    println!("  - Index type: {}", stats.index_type);
-                    println!("  - Size: {} bytes", stats.size_bytes);
+                    tracing::debug!("\n📊 Retriever statistics:");
+                    tracing::debug!("  - Total items: {}", stats.total_items);
+                    tracing::debug!("  - Index type: {}", stats.index_type);
+                    tracing::debug!("  - Size: {} bytes", stats.size_bytes);
                 }
-                Err(e) => println!("Failed to get stats: {}", e),
+                Err(e) => tracing::debug!("Failed to get stats: {}", e),
             }
 
             // Health check
             match retriever.health_check().await {
                 Ok(is_healthy) => {
-                    println!(
+                    tracing::debug!(
                         "  - Health status: {}",
                         if is_healthy {
                             "✅ Healthy"
@@ -470,12 +470,12 @@ async fn demo_graph_retrieval(documents: &[Document]) -> RragResult<()> {
                         }
                     );
                 }
-                Err(e) => println!("Health check failed: {}", e),
+                Err(e) => tracing::debug!("Health check failed: {}", e),
             }
         }
         Err(e) => {
-            println!("❌ Failed to build graph retriever: {}", e);
-            println!(
+            error!(" Failed to build graph retriever: {}", e);
+            tracing::debug!(
                 "This is expected in the demo as we don't have full NLP capabilities implemented"
             );
         }
@@ -486,7 +486,7 @@ async fn demo_graph_retrieval(documents: &[Document]) -> RragResult<()> {
 
 /// Demonstrate advanced configuration options
 async fn demo_advanced_configuration() -> RragResult<()> {
-    println!("Exploring advanced configuration options...");
+    tracing::debug!("Exploring advanced configuration options...");
 
     // Create different configuration profiles
     let configs = vec![
@@ -523,83 +523,83 @@ async fn demo_advanced_configuration() -> RragResult<()> {
     ];
 
     for (name, config) in configs {
-        println!("\n⚙️  {} Configuration:", name);
+        tracing::debug!("\n⚙️  {} Configuration:", name);
 
         // Validate configuration
         match config.validate() {
             Ok(warnings) => {
-                println!("  ✅ Configuration is valid");
+                tracing::debug!("  ✅ Configuration is valid");
                 if !warnings.is_empty() {
-                    println!("  ⚠️  Warnings:");
+                    tracing::debug!("  ⚠️  Warnings:");
                     for warning in warnings {
-                        println!("    - {}", warning);
+                        tracing::debug!("    - {}", warning);
                     }
                 }
             }
             Err(errors) => {
-                println!("  ❌ Configuration has errors:");
+                tracing::debug!("  ❌ Configuration has errors:");
                 for error in errors {
-                    println!("    - {}", error);
+                    tracing::debug!("    - {}", error);
                 }
             }
         }
 
         // Display key settings
-        println!("  Features:");
-        println!(
+        tracing::debug!("  Features:");
+        tracing::debug!(
             "    - Entity extraction: {}",
             config.features.entity_extraction
         );
-        println!("    - Query expansion: {}", config.features.query_expansion);
-        println!(
+        tracing::debug!("    - Query expansion: {}", config.features.query_expansion);
+        tracing::debug!(
             "    - PageRank scoring: {}",
             config.features.pagerank_scoring
         );
-        println!(
+        tracing::debug!(
             "    - Path-based retrieval: {}",
             config.features.path_based_retrieval
         );
 
-        println!("  Performance:");
-        println!(
+        tracing::debug!("  Performance:");
+        tracing::debug!(
             "    - Parallel processing: {}",
             config.performance.enable_parallel_processing
         );
-        println!("    - Workers: {}", config.performance.num_workers);
-        println!("    - Batch size: {}", config.performance.batch_size);
-        println!(
+        tracing::debug!("    - Workers: {}", config.performance.num_workers);
+        tracing::debug!("    - Batch size: {}", config.performance.batch_size);
+        tracing::debug!(
             "    - Memory limit: {} MB",
             config.performance.memory_limits.max_graph_size_mb
         );
 
-        println!("  Algorithms:");
-        println!(
+        tracing::debug!("  Algorithms:");
+        tracing::debug!(
             "    - PageRank damping: {:.2}",
             config.algorithms.pagerank.damping_factor
         );
-        println!(
+        tracing::debug!(
             "    - Max traversal depth: {}",
             config.algorithms.traversal.max_depth
         );
-        println!(
+        tracing::debug!(
             "    - Similarity threshold: {:.2}",
             config.algorithms.similarity.similarity_threshold
         );
     }
 
     // Demonstrate serialization
-    println!("\n💾 Configuration serialization:");
+    tracing::debug!("\n💾 Configuration serialization:");
     let config = GraphConfigBuilder::new().with_all_features().build();
 
     match serde_json::to_string_pretty(&config) {
         Ok(json) => {
-            println!("Configuration as JSON (first 300 chars):");
-            println!("{}", json.chars().take(300).collect::<String>());
+            tracing::debug!("Configuration as JSON (first 300 chars):");
+            tracing::debug!("{}", json.chars().take(300).collect::<String>());
             if json.len() > 300 {
-                println!("...(truncated)");
+                tracing::debug!("...(truncated)");
             }
         }
-        Err(e) => println!("Failed to serialize configuration: {}", e),
+        Err(e) => tracing::debug!("Failed to serialize configuration: {}", e),
     }
 
     Ok(())

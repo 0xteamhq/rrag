@@ -10,6 +10,7 @@ use super::{
 use crate::RragResult;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::warn;
 
 /// End-to-end evaluator
 pub struct EndToEndEvaluator {
@@ -340,7 +341,7 @@ impl Evaluator for EndToEndEvaluator {
                     overall_scores.insert(metric.name().to_string(), score);
                 }
                 Err(e) => {
-                    eprintln!("Warning: Failed to evaluate {}: {}", metric.name(), e);
+                    warn!(" Failed to evaluate {}: {}", metric.name(), e);
                 }
             }
         }

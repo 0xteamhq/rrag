@@ -17,30 +17,30 @@ use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("🎨 RRAG Multimodal RAG Demo");
-    println!("===========================\n");
+    tracing::debug!("🎨 RRAG Multimodal RAG Demo");
+    tracing::debug!("===========================\n");
 
     // 1. Setup Multimodal Service
-    println!("1. Setting up multimodal processing...");
+    tracing::debug!("1. Setting up multimodal processing...");
     let multimodal_service = setup_multimodal_service().await?;
-    println!("   ✓ Multimodal service initialized\n");
+    tracing::debug!("   ✓ Multimodal service initialized\n");
 
     // 2. Process Mixed Content Documents
-    println!("2. Processing documents with mixed content...");
+    tracing::debug!("2. Processing documents with mixed content...");
     let documents = process_multimodal_documents(&multimodal_service).await?;
-    println!("   ✓ Processed {} multimodal documents\n", documents.len());
+    tracing::debug!("   ✓ Processed {} multimodal documents\n", documents.len());
 
     // 3. Multimodal Search Demo
-    println!("3. Performing multimodal search...");
+    tracing::debug!("3. Performing multimodal search...");
     demo_multimodal_search(&documents).await?;
-    println!("   ✓ Multimodal search completed\n");
+    tracing::debug!("   ✓ Multimodal search completed\n");
 
     // 4. Cross-Modal Retrieval
-    println!("4. Cross-modal retrieval examples...");
+    tracing::debug!("4. Cross-modal retrieval examples...");
     demo_cross_modal_retrieval().await?;
-    println!("   ✓ Cross-modal retrieval demonstrated\n");
+    tracing::debug!("   ✓ Cross-modal retrieval demonstrated\n");
 
-    println!("🎉 Multimodal RAG demo completed successfully!");
+    tracing::debug!("🎉 Multimodal RAG demo completed successfully!");
     Ok(())
 }
 
@@ -53,11 +53,11 @@ async fn setup_multimodal_service() -> RragResult<MultiModalService> {
         .with_layout_analysis(true);
 
     let service = MultiModalService::new(config)?;
-    println!("   - Image processing: enabled");
-    println!("   - Table extraction: enabled");
-    println!("   - Chart analysis: enabled");
-    println!("   - OCR: enabled");
-    println!("   - Layout analysis: enabled");
+    tracing::debug!("   - Image processing: enabled");
+    tracing::debug!("   - Table extraction: enabled");
+    tracing::debug!("   - Chart analysis: enabled");
+    tracing::debug!("   - OCR: enabled");
+    tracing::debug!("   - Layout analysis: enabled");
 
     Ok(service)
 }
@@ -68,19 +68,19 @@ async fn process_multimodal_documents(
     let mut documents = Vec::new();
 
     // Example 1: Financial report with charts and tables
-    println!("   Processing financial report...");
+    tracing::debug!("   Processing financial report...");
     let financial_doc = create_financial_report().await?;
     let processed_financial = service.process_document(&financial_doc).await?;
     documents.push(processed_financial);
 
     // Example 2: Research paper with diagrams
-    println!("   Processing research paper...");
+    tracing::debug!("   Processing research paper...");
     let research_doc = create_research_paper().await?;
     let processed_research = service.process_document(&research_doc).await?;
     documents.push(processed_research);
 
     // Example 3: Product catalog with images
-    println!("   Processing product catalog...");
+    tracing::debug!("   Processing product catalog...");
     let catalog_doc = create_product_catalog().await?;
     let processed_catalog = service.process_document(&catalog_doc).await?;
     documents.push(processed_catalog);
@@ -95,9 +95,9 @@ async fn create_financial_report() -> RragResult<PathBuf> {
     // - Executive summary text
     // - Infographics
 
-    println!("     - Revenue trend charts: 3 detected");
-    println!("     - Data tables: 5 extracted");
-    println!("     - Text sections: 12 processed");
+    tracing::debug!("     - Revenue trend charts: 3 detected");
+    tracing::debug!("     - Data tables: 5 extracted");
+    tracing::debug!("     - Text sections: 12 processed");
 
     // Return mock path - in real usage this would be an actual file
     Ok(PathBuf::from("./examples/data/financial_report.pdf"))
@@ -110,9 +110,9 @@ async fn create_research_paper() -> RragResult<PathBuf> {
     // - Mathematical equations
     // - Citation tables
 
-    println!("     - Scientific diagrams: 8 analyzed");
-    println!("     - Equations: 15 recognized (OCR)");
-    println!("     - Reference tables: 2 structured");
+    tracing::debug!("     - Scientific diagrams: 8 analyzed");
+    tracing::debug!("     - Equations: 15 recognized (OCR)");
+    tracing::debug!("     - Reference tables: 2 structured");
 
     Ok(PathBuf::from("./examples/data/research_paper.pdf"))
 }
@@ -124,25 +124,25 @@ async fn create_product_catalog() -> RragResult<PathBuf> {
     // - Comparison charts
     // - Price tables
 
-    println!("     - Product images: 24 captioned");
-    println!("     - Spec tables: 12 extracted");
-    println!("     - Price comparisons: 3 charts analyzed");
+    tracing::debug!("     - Product images: 24 captioned");
+    tracing::debug!("     - Spec tables: 12 extracted");
+    tracing::debug!("     - Price comparisons: 3 charts analyzed");
 
     Ok(PathBuf::from("./examples/data/product_catalog.pdf"))
 }
 
 async fn demo_multimodal_search(documents: &[MultiModalDocument]) -> RragResult<()> {
-    println!("   Searching across modalities:");
+    tracing::debug!("   Searching across modalities:");
 
     // Text-based search
     let text_query = "revenue growth trends";
-    println!("     🔤 Text query: '{}'", text_query);
+    tracing::debug!("     🔤 Text query: '{}'", text_query);
 
     // Find documents with relevant text, charts, or tables
     for (i, doc) in documents.iter().enumerate() {
         let relevance_score = calculate_multimodal_relevance(doc, text_query).await?;
         if relevance_score > 0.7 {
-            println!(
+            tracing::debug!(
                 "       Found in document {}: score {:.2}",
                 i + 1,
                 relevance_score
@@ -150,52 +150,52 @@ async fn demo_multimodal_search(documents: &[MultiModalDocument]) -> RragResult<
 
             // Show what modalities matched
             if doc.text_content.to_lowercase().contains("revenue") {
-                println!("         ✓ Text content match");
+                tracing::debug!("         ✓ Text content match");
             }
             if doc
                 .charts
                 .iter()
                 .any(|c| matches!(c.chart_type, ChartType::Line))
             {
-                println!("         ✓ Revenue trend chart detected");
+                tracing::debug!("         ✓ Revenue trend chart detected");
             }
             if doc
                 .tables
                 .iter()
                 .any(|t| t.headers.iter().any(|h| h.contains("Revenue")))
             {
-                println!("         ✓ Revenue data table found");
+                tracing::debug!("         ✓ Revenue data table found");
             }
         }
     }
 
     // Visual similarity search
-    println!("     🖼️  Visual similarity search:");
-    println!("       - Found 3 similar chart patterns");
-    println!("       - Identified 2 matching table structures");
-    println!("       - Located 5 related images");
+    tracing::debug!("     🖼️  Visual similarity search:");
+    tracing::debug!("       - Found 3 similar chart patterns");
+    tracing::debug!("       - Identified 2 matching table structures");
+    tracing::debug!("       - Located 5 related images");
 
     Ok(())
 }
 
 async fn demo_cross_modal_retrieval() -> RragResult<()> {
-    println!("   Cross-modal retrieval scenarios:");
+    tracing::debug!("   Cross-modal retrieval scenarios:");
 
     // Text query → Visual results
-    println!("     📝 → 🖼️  'Show me sales performance'");
-    println!("       Result: Revenue charts, performance dashboards");
+    tracing::debug!("     📝 → 🖼️  'Show me sales performance'");
+    tracing::debug!("       Result: Revenue charts, performance dashboards");
 
     // Image query → Text results
-    println!("     🖼️  → 📝 [Upload chart image]");
-    println!("       Result: Related textual analysis and explanations");
+    tracing::debug!("     🖼️  → 📝 [Upload chart image]");
+    tracing::debug!("       Result: Related textual analysis and explanations");
 
     // Table query → Chart results
-    println!("     📊 → 📈 'Similar data patterns'");
-    println!("       Result: Charts with similar data distributions");
+    tracing::debug!("     📊 → 📈 'Similar data patterns'");
+    tracing::debug!("       Result: Charts with similar data distributions");
 
     // Combined multimodal query
-    println!("     🔗 Combined: 'Financial performance with visual evidence'");
-    println!("       Result: Text analysis + supporting charts + data tables");
+    tracing::debug!("     🔗 Combined: 'Financial performance with visual evidence'");
+    tracing::debug!("       Result: Text analysis + supporting charts + data tables");
 
     Ok(())
 }

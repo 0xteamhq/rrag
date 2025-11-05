@@ -747,7 +747,7 @@ impl IntegrityChecker {
                 timer.tick().await;
 
                 if let Err(e) = checker.quick_check().await {
-                    eprintln!("Quick integrity check failed: {}", e);
+                    tracing::debug!("Quick integrity check failed: {}", e);
                 }
             }
         })
@@ -765,7 +765,7 @@ impl IntegrityChecker {
                 timer.tick().await;
 
                 if let Err(e) = checker.comprehensive_check().await {
-                    eprintln!("Comprehensive integrity check failed: {}", e);
+                    tracing::debug!("Comprehensive integrity check failed: {}", e);
                 }
             }
         })

@@ -125,7 +125,7 @@
 //!
 //! // Get overall health status
 //! let status = health_monitor.check_all().await?;
-//! println!("System health: {:?}", status.overall_status);
+//! tracing::debug!("System health: {:?}", status.overall_status);
 //! # Ok(())
 //! # }
 //! ```
@@ -147,7 +147,7 @@
 //! // Analyze bottlenecks
 //! let bottlenecks = profiler.analyze_bottlenecks(5).await?;
 //! for bottleneck in bottlenecks.bottlenecks {
-//!     println!("Bottleneck: {} took {:.2}ms",
+//!     tracing::debug!("Bottleneck: {} took {:.2}ms",
 //!              bottleneck.operation,
 //!              bottleneck.average_duration_ms);
 //! }
@@ -173,7 +173,7 @@
 //!
 //! // Start dashboard server
 //! dashboard.start().await?;
-//! println!("Dashboard available at: http://localhost:3000");
+//! tracing::debug!("Dashboard available at: http://localhost:3000");
 //! # Ok(())
 //! # }
 //! ```

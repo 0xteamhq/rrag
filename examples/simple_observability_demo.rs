@@ -18,8 +18,8 @@ async fn main() -> RragResult<()> {
         .with_target(false)
         .init();
 
-    println!("🚀 RRAG Simple Observability Demo");
-    println!("==================================");
+    tracing::debug!("🚀 RRAG Simple Observability Demo");
+    tracing::debug!("==================================");
 
     // Create a basic RRAG system for demonstration
     let system = RragSystemBuilder::new()
@@ -28,16 +28,16 @@ async fn main() -> RragResult<()> {
         .build()
         .await?;
 
-    println!("✅ RRAG System initialized");
+    tracing::debug!("✅ RRAG System initialized");
 
     // Demonstrate basic system operations
-    println!("📊 Generating sample metrics...");
+    tracing::debug!("📊 Generating sample metrics...");
 
     for i in 0..10 {
         // Simulate document processing
         let doc = Document::new(format!("Sample document {}", i + 1));
         let result = system.process_document(doc).await?;
-        println!(
+        tracing::debug!(
             "   Processed document {} in {}ms",
             i + 1,
             result.processing_time_ms
@@ -45,7 +45,7 @@ async fn main() -> RragResult<()> {
 
         // Simulate search operations
         let search_response = system.search(format!("query {}", i + 1), Some(5)).await?;
-        println!(
+        tracing::debug!(
             "   Search query {} completed in {}ms",
             i + 1,
             search_response.processing_time_ms
@@ -55,7 +55,7 @@ async fn main() -> RragResult<()> {
         let chat_response = system
             .chat("demo_agent", format!("Hello {}", i + 1), None)
             .await?;
-        println!(
+        tracing::debug!(
             "   Chat interaction {} completed in {}ms",
             i + 1,
             chat_response.processing_time_ms
@@ -65,10 +65,10 @@ async fn main() -> RragResult<()> {
         sleep(Duration::from_millis(100)).await;
     }
 
-    println!("\n🏥 System Health Check:");
+    tracing::debug!("\n🏥 System Health Check:");
     let health = system.health_check().await?;
-    println!("   Overall Status: {:?}", health.overall_status);
-    println!("   Components:");
+    tracing::debug!("   Overall Status: {:?}", health.overall_status);
+    tracing::debug!("   Components:");
     for (component, status) in &health.component_status {
         let status_icon = match status {
             HealthStatus::Healthy => "✅",
@@ -76,47 +76,47 @@ async fn main() -> RragResult<()> {
             HealthStatus::Unhealthy => "❌",
             HealthStatus::Unknown => "❓",
         };
-        println!("      {} {}: {:?}", status_icon, component, status);
+        tracing::debug!("      {} {}: {:?}", status_icon, component, status);
     }
 
-    println!("\n📈 System Metrics:");
+    tracing::debug!("\n📈 System Metrics:");
     let metrics = system.get_metrics().await;
-    println!("   Uptime: {} seconds", metrics.uptime_seconds);
-    println!(
+    tracing::debug!("   Uptime: {} seconds", metrics.uptime_seconds);
+    tracing::debug!(
         "   Total Requests: {}",
         metrics.request_counts.total_requests
     );
-    println!(
+    tracing::debug!(
         "   Successful Requests: {}",
         metrics.request_counts.successful_requests
     );
-    println!(
+    tracing::debug!(
         "   Failed Requests: {}",
         metrics.request_counts.failed_requests
     );
-    println!(
+    tracing::debug!(
         "   Average Response Time: {:.2}ms",
         metrics.performance.average_response_time_ms
     );
-    println!(
+    tracing::debug!(
         "   P95 Response Time: {:.2}ms",
         metrics.performance.p95_response_time_ms
     );
-    println!(
+    tracing::debug!(
         "   Memory Usage: {:.1}MB",
         metrics.resource_usage.memory_usage_mb
     );
-    println!(
+    tracing::debug!(
         "   CPU Usage: {:.1}%",
         metrics.resource_usage.cpu_usage_percent
     );
 
     // Simulate some system stress to trigger different metrics
-    println!("\n🔥 Simulating system load...");
+    tracing::debug!("\n🔥 Simulating system load...");
     let start_time = std::time::Instant::now();
 
     for batch in 0..5 {
-        println!("   Processing batch {} of 5...", batch + 1);
+        tracing::debug!("   Processing batch {} of 5...", batch + 1);
 
         for i in 0..20 {
             let doc = Document::new(format!("Batch {} document {}", batch + 1, i + 1));
@@ -126,7 +126,7 @@ async fn main() -> RragResult<()> {
         // Check metrics periodically
         if batch % 2 == 0 {
             let interim_metrics = system.get_metrics().await;
-            println!(
+            tracing::debug!(
                 "      Interim stats - Total: {}, Success: {}, Avg time: {:.1}ms",
                 interim_metrics.request_counts.total_requests,
                 interim_metrics.request_counts.successful_requests,
@@ -136,32 +136,32 @@ async fn main() -> RragResult<()> {
     }
 
     let total_time = start_time.elapsed();
-    println!(
+    tracing::debug!(
         "   Batch processing completed in {:.2}s",
         total_time.as_secs_f64()
     );
 
     // Final health check and metrics
-    println!("\n📋 Final System Report:");
-    println!("========================");
+    tracing::debug!("\n📋 Final System Report:");
+    tracing::debug!("========================");
 
     let final_health = system.health_check().await?;
     let final_metrics = system.get_metrics().await;
 
-    println!("Health Status:");
-    println!("   Overall: {:?}", final_health.overall_status);
-    println!("   Uptime: {} seconds", final_health.uptime_seconds);
-    println!(
+    tracing::debug!("Health Status:");
+    tracing::debug!("   Overall: {:?}", final_health.overall_status);
+    tracing::debug!("   Uptime: {} seconds", final_health.uptime_seconds);
+    tracing::debug!(
         "   Components Checked: {}",
         final_health.component_status.len()
     );
 
-    println!("\nPerformance Metrics:");
-    println!(
+    tracing::debug!("\nPerformance Metrics:");
+    tracing::debug!(
         "   Total Requests Processed: {}",
         final_metrics.request_counts.total_requests
     );
-    println!(
+    tracing::debug!(
         "   Success Rate: {:.1}%",
         if final_metrics.request_counts.total_requests > 0 {
             (final_metrics.request_counts.successful_requests as f64
@@ -171,96 +171,96 @@ async fn main() -> RragResult<()> {
             0.0
         }
     );
-    println!(
+    tracing::debug!(
         "   Average Response Time: {:.2}ms",
         final_metrics.performance.average_response_time_ms
     );
-    println!(
+    tracing::debug!(
         "   P95 Response Time: {:.2}ms",
         final_metrics.performance.p95_response_time_ms
     );
-    println!(
+    tracing::debug!(
         "   P99 Response Time: {:.2}ms",
         final_metrics.performance.p99_response_time_ms
     );
-    println!(
+    tracing::debug!(
         "   Requests/Second: {:.2}",
         final_metrics.performance.requests_per_second
     );
 
-    println!("\nResource Usage:");
-    println!(
+    tracing::debug!("\nResource Usage:");
+    tracing::debug!(
         "   Memory: {:.1}MB ({:.1}%)",
         final_metrics.resource_usage.memory_usage_mb,
         final_metrics.resource_usage.cpu_usage_percent
     );
-    println!(
+    tracing::debug!(
         "   Storage: {:.1}MB",
         final_metrics.resource_usage.storage_usage_mb
     );
-    println!(
+    tracing::debug!(
         "   Network I/O: {}KB sent, {}KB received",
         final_metrics.resource_usage.network_bytes_sent / 1024,
         final_metrics.resource_usage.network_bytes_received / 1024
     );
 
-    println!("\nRequest Breakdown:");
-    println!(
+    tracing::debug!("\nRequest Breakdown:");
+    tracing::debug!(
         "   Document Processing: {}",
         final_metrics.request_counts.total_requests / 3
     ); // Approximation
-    println!(
+    tracing::debug!(
         "   Search Queries: {}",
         final_metrics.request_counts.retrieval_requests
     );
-    println!(
+    tracing::debug!(
         "   Agent Interactions: {}",
         final_metrics.request_counts.agent_requests
     );
 
     // Demonstrate error handling
-    println!("\n⚠️ Demonstrating Error Scenarios:");
+    tracing::debug!("\n⚠️ Demonstrating Error Scenarios:");
 
     // Try to process an invalid document
     match system.process_document(Document::new("")).await {
-        Ok(result) => println!("   Empty document processed: {:?}", result.success),
-        Err(e) => println!("   Expected error for empty document: {}", e),
+        Ok(result) => tracing::debug!("   Empty document processed: {:?}", result.success),
+        Err(e) => tracing::debug!("   Expected error for empty document: {}", e),
     }
 
     // Performance recommendations
-    println!("\n💡 Performance Insights:");
+    tracing::debug!("\n💡 Performance Insights:");
     if final_metrics.performance.average_response_time_ms > 100.0 {
-        println!(
+        tracing::debug!(
             "   ⚠️  Average response time is elevated ({}ms)",
             final_metrics.performance.average_response_time_ms
         );
-        println!("      Consider optimizing query processing or adding caching");
+        tracing::debug!("      Consider optimizing query processing or adding caching");
     } else {
-        println!("   ✅ Response times are within acceptable range");
+        tracing::debug!("   ✅ Response times are within acceptable range");
     }
 
     if final_metrics.resource_usage.memory_usage_mb > 500.0 {
-        println!(
+        tracing::debug!(
             "   ⚠️  Memory usage is high ({:.1}MB)",
             final_metrics.resource_usage.memory_usage_mb
         );
-        println!("      Consider implementing memory cleanup strategies");
+        tracing::debug!("      Consider implementing memory cleanup strategies");
     } else {
-        println!("   ✅ Memory usage is reasonable");
+        tracing::debug!("   ✅ Memory usage is reasonable");
     }
 
-    println!("\n📊 System Characteristics:");
-    println!(
+    tracing::debug!("\n📊 System Characteristics:");
+    tracing::debug!(
         "   Peak Throughput: ~{:.1} requests/second",
         final_metrics.performance.requests_per_second
     );
-    println!(
+    tracing::debug!(
         "   Reliability: {:.2}% success rate",
         (final_metrics.request_counts.successful_requests as f64
             / final_metrics.request_counts.total_requests as f64)
             * 100.0
     );
-    println!(
+    tracing::debug!(
         "   Efficiency: {:.1}ms average latency",
         final_metrics.performance.average_response_time_ms
     );
@@ -272,30 +272,30 @@ async fn main() -> RragResult<()> {
         0.0
     };
 
-    println!("\n🎯 Demo Summary:");
-    println!(
+    tracing::debug!("\n🎯 Demo Summary:");
+    tracing::debug!(
         "   • Processed {} total operations",
         final_metrics.request_counts.total_requests
     );
-    println!("   • Maintained {:.1}% uptime", 100.0); // Demo ran successfully
-    println!(
+    tracing::debug!("   • Maintained {:.1}% uptime", 100.0); // Demo ran successfully
+    tracing::debug!(
         "   • Achieved {:.1} req/sec theoretical throughput",
         processing_efficiency
     );
-    println!("   • System health: {:?}", final_health.overall_status);
+    tracing::debug!("   • System health: {:?}", final_health.overall_status);
 
     // Future enhancement suggestions
-    println!("\n🔮 Potential Enhancements:");
-    println!("   • Real-time dashboard with WebSocket updates");
-    println!("   • Advanced alerting with custom thresholds");
-    println!("   • Historical data analysis and trending");
-    println!("   • Automated performance profiling");
-    println!("   • Integration with external monitoring tools");
-    println!("   • Custom metrics and business KPIs");
+    tracing::debug!("\n🔮 Potential Enhancements:");
+    tracing::debug!("   • Real-time dashboard with WebSocket updates");
+    tracing::debug!("   • Advanced alerting with custom thresholds");
+    tracing::debug!("   • Historical data analysis and trending");
+    tracing::debug!("   • Automated performance profiling");
+    tracing::debug!("   • Integration with external monitoring tools");
+    tracing::debug!("   • Custom metrics and business KPIs");
 
-    println!("\n✨ RRAG Simple Observability Demo completed successfully!");
-    println!("    This demo showcased basic monitoring capabilities.");
-    println!("    For full observability features, see the comprehensive demo.");
+    tracing::debug!("\n✨ RRAG Simple Observability Demo completed successfully!");
+    tracing::debug!("    This demo showcased basic monitoring capabilities.");
+    tracing::debug!("    For full observability features, see the comprehensive demo.");
 
     Ok(())
 }

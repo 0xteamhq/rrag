@@ -38,5 +38,5 @@ pub struct Process {
 
 fn main() {
     let schema = schema_for!(Process);
-    println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+    tracing::debug!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }

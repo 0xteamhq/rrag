@@ -19,40 +19,40 @@ use std::time::{Duration, Instant};
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("🚀 RRAG Caching Performance Demo");
-    println!("================================\n");
+    tracing::debug!("🚀 RRAG Caching Performance Demo");
+    tracing::debug!("================================\n");
 
     // 1. Setup Cache System
-    println!("1. Setting up intelligent caching system...");
+    tracing::debug!("1. Setting up intelligent caching system...");
     let mut cache = setup_cache_system().await?;
-    println!("   ✓ Multi-level cache system initialized\n");
+    tracing::debug!("   ✓ Multi-level cache system initialized\n");
 
     // 2. Cache Performance Comparison
-    println!("2. Cache performance comparison...");
+    tracing::debug!("2. Cache performance comparison...");
     demo_cache_performance(&mut cache).await?;
-    println!("   ✓ Performance comparison completed\n");
+    tracing::debug!("   ✓ Performance comparison completed\n");
 
     // 3. Semantic Similarity Caching
-    println!("3. Semantic similarity caching demo...");
+    tracing::debug!("3. Semantic similarity caching demo...");
     demo_semantic_caching(&mut cache).await?;
-    println!("   ✓ Semantic caching demonstrated\n");
+    tracing::debug!("   ✓ Semantic caching demonstrated\n");
 
     // 4. Embedding Cache Optimization
-    println!("4. Embedding cache optimization...");
+    tracing::debug!("4. Embedding cache optimization...");
     demo_embedding_caching(&mut cache).await?;
-    println!("   ✓ Embedding caching optimized\n");
+    tracing::debug!("   ✓ Embedding caching optimized\n");
 
     // 5. Cache Analytics and Monitoring
-    println!("5. Cache analytics and monitoring...");
+    tracing::debug!("5. Cache analytics and monitoring...");
     analyze_cache_performance(&cache).await?;
-    println!("   ✓ Cache analytics completed\n");
+    tracing::debug!("   ✓ Cache analytics completed\n");
 
     // 6. Memory Management Demo
-    println!("6. Memory management and eviction policies...");
+    tracing::debug!("6. Memory management and eviction policies...");
     demo_memory_management(&mut cache).await?;
-    println!("   ✓ Memory management demonstrated\n");
+    tracing::debug!("   ✓ Memory management demonstrated\n");
 
-    println!("🎉 Caching performance demo completed successfully!");
+    tracing::debug!("🎉 Caching performance demo completed successfully!");
     Ok(())
 }
 
@@ -86,21 +86,21 @@ async fn setup_cache_system() -> RragResult<CacheService> {
 
     let cache = CacheService::new(config)?;
 
-    println!(
+    tracing::debug!(
         "   - Query cache: {} entries, semantic-aware eviction",
         1000
     );
-    println!(
+    tracing::debug!(
         "   - Embedding cache: {} entries, LFU eviction, compression",
         10000
     );
-    println!("   - Semantic cache: {} entries, clustering enabled", 2000);
+    tracing::debug!("   - Semantic cache: {} entries, clustering enabled", 2000);
 
     Ok(cache)
 }
 
 async fn demo_cache_performance(cache: &mut CacheService) -> RragResult<()> {
-    println!("   Comparing performance with and without caching:");
+    tracing::debug!("   Comparing performance with and without caching:");
 
     let queries = vec![
         "What is machine learning?",
@@ -112,7 +112,7 @@ async fn demo_cache_performance(cache: &mut CacheService) -> RragResult<()> {
     ];
 
     // First run - cache misses
-    println!("     🔥 Cold start (cache misses):");
+    tracing::debug!("     🔥 Cold start (cache misses):");
     let cold_start = Instant::now();
 
     for (i, query) in queries.iter().enumerate() {
@@ -121,7 +121,7 @@ async fn demo_cache_performance(cache: &mut CacheService) -> RragResult<()> {
         // Check cache first
         if let Some(_cached_result) = cache.get_query_results(query).await {
             let duration = query_start.elapsed();
-            println!(
+            tracing::debug!(
                 "       Query {}: CACHE HIT - {:.1}ms",
                 i + 1,
                 duration.as_millis()
@@ -136,7 +136,7 @@ async fn demo_cache_performance(cache: &mut CacheService) -> RragResult<()> {
                 .await?;
 
             let duration = query_start.elapsed();
-            println!(
+            tracing::debug!(
                 "       Query {}: CACHE MISS - {:.1}ms",
                 i + 1,
                 duration.as_millis()
@@ -145,13 +145,13 @@ async fn demo_cache_performance(cache: &mut CacheService) -> RragResult<()> {
     }
 
     let total_cold = cold_start.elapsed();
-    println!(
+    tracing::debug!(
         "     Total cold start time: {:.1}ms",
         total_cold.as_millis()
     );
 
     // Second run - cache hits
-    println!("\n     ⚡ Warm cache (cache hits):");
+    tracing::debug!("\n     ⚡ Warm cache (cache hits):");
     let warm_start = Instant::now();
 
     for (i, query) in queries.iter().enumerate() {
@@ -159,30 +159,30 @@ async fn demo_cache_performance(cache: &mut CacheService) -> RragResult<()> {
 
         if let Some(_cached_result) = cache.get_query_results(query).await {
             let duration = query_start.elapsed();
-            println!(
+            tracing::debug!(
                 "       Query {}: CACHE HIT - {:.1}ms",
                 i + 1,
                 duration.as_millis()
             );
         } else {
-            println!("       Query {}: Unexpected cache miss", i + 1);
+            tracing::debug!("       Query {}: Unexpected cache miss", i + 1);
         }
     }
 
     let total_warm = warm_start.elapsed();
-    println!(
+    tracing::debug!(
         "     Total warm cache time: {:.1}ms",
         total_warm.as_millis()
     );
 
     let speedup = total_cold.as_millis() as f32 / total_warm.as_millis() as f32;
-    println!("     🚀 Performance improvement: {:.1}x faster", speedup);
+    tracing::debug!("     🚀 Performance improvement: {:.1}x faster", speedup);
 
     Ok(())
 }
 
 async fn demo_semantic_caching(cache: &mut CacheService) -> RragResult<()> {
-    println!("   Semantic similarity caching:");
+    tracing::debug!("   Semantic similarity caching:");
 
     let similar_queries = vec![
         ("What is artificial intelligence?", "primary"),
@@ -195,16 +195,16 @@ async fn demo_semantic_caching(cache: &mut CacheService) -> RragResult<()> {
     for (query, query_type) in similar_queries {
         if let Some(semantic_result) = cache.get_semantic_results(query).await {
             let similarity = calculate_similarity(query, &semantic_result.representative);
-            println!(
+            tracing::debug!(
                 "     🎯 {} query: '{}' (similarity: {:.2})",
                 query_type, query, similarity
             );
-            println!(
+            tracing::debug!(
                 "       Matched cluster: {}",
                 semantic_result.cluster_id.unwrap_or(0)
             );
         } else {
-            println!(
+            tracing::debug!(
                 "     🆕 {} query: '{}' (new semantic entry)",
                 query_type, query
             );
@@ -217,13 +217,13 @@ async fn demo_semantic_caching(cache: &mut CacheService) -> RragResult<()> {
         }
     }
 
-    println!("     💡 Semantic caching groups similar queries for broader cache hits");
+    tracing::debug!("     💡 Semantic caching groups similar queries for broader cache hits");
 
     Ok(())
 }
 
 async fn demo_embedding_caching(cache: &mut CacheService) -> RragResult<()> {
-    println!("   Embedding caching optimization:");
+    tracing::debug!("   Embedding caching optimization:");
 
     let texts = vec![
         "Machine learning algorithms",
@@ -240,7 +240,7 @@ async fn demo_embedding_caching(cache: &mut CacheService) -> RragResult<()> {
 
         if let Some(cached_embedding) = cache.get_embedding(text, model).await {
             let duration = embedding_start.elapsed();
-            println!(
+            tracing::debug!(
                 "     ⚡ Cached embedding for '{}' - {:.1}ms (dim: {})",
                 text,
                 duration.as_micros() as f32 / 1000.0,
@@ -256,7 +256,7 @@ async fn demo_embedding_caching(cache: &mut CacheService) -> RragResult<()> {
                 .await?;
 
             let duration = embedding_start.elapsed();
-            println!(
+            tracing::debug!(
                 "     🔥 Computed embedding for '{}' - {:.1}ms (dim: {})",
                 text,
                 duration.as_millis(),
@@ -265,7 +265,7 @@ async fn demo_embedding_caching(cache: &mut CacheService) -> RragResult<()> {
         }
     }
 
-    println!("     📊 Embedding cache saves expensive computation time");
+    tracing::debug!("     📊 Embedding cache saves expensive computation time");
 
     Ok(())
 }
@@ -273,8 +273,8 @@ async fn demo_embedding_caching(cache: &mut CacheService) -> RragResult<()> {
 async fn analyze_cache_performance(cache: &CacheService) -> RragResult<()> {
     let metrics = cache.get_metrics();
 
-    println!("   📈 Cache Performance Analytics:");
-    println!(
+    tracing::debug!("   📈 Cache Performance Analytics:");
+    tracing::debug!(
         "     
 ┌─────────────────┬──────────┬───────────┬──────────┬─────────────┐
 │ Cache Type      │ Hit Rate │ Entries   │ Memory   │ Avg Time    │
@@ -286,36 +286,36 @@ async fn analyze_cache_performance(cache: &CacheService) -> RragResult<()> {
     print_cache_stats("Semantic Cache", &metrics.semantic_cache);
     print_cache_stats("Result Cache", &metrics.result_cache);
 
-    println!("└─────────────────┴──────────┴───────────┴──────────┴─────────────┘");
+    tracing::debug!("└─────────────────┴──────────┴───────────┴──────────┴─────────────┘");
 
     // Overall performance metrics
-    println!("\n     🎯 Overall Cache Efficiency:");
-    println!(
+    tracing::debug!("\n     🎯 Overall Cache Efficiency:");
+    tracing::debug!(
         "       • Memory saved: {:.1} MB",
         metrics.overall.memory_saved as f32 / 1024.0 / 1024.0
     );
-    println!(
+    tracing::debug!(
         "       • Time saved: {:.1} seconds",
         metrics.overall.time_saved_ms / 1000.0
     );
-    println!(
+    tracing::debug!(
         "       • Efficiency score: {:.1}%",
         metrics.overall.efficiency_score * 100.0
     );
-    println!(
+    tracing::debug!(
         "       • Operations/sec: {:.1}",
         metrics.overall.ops_per_second
     );
 
     // Memory pressure analysis
     if metrics.overall.memory_pressure > 0.8 {
-        println!(
+        tracing::debug!(
             "     ⚠️  High memory pressure detected: {:.1}%",
             metrics.overall.memory_pressure * 100.0
         );
-        println!("       Consider increasing cache sizes or enabling compression");
+        tracing::debug!("       Consider increasing cache sizes or enabling compression");
     } else {
-        println!(
+        tracing::debug!(
             "     ✅ Memory pressure healthy: {:.1}%",
             metrics.overall.memory_pressure * 100.0
         );
@@ -325,10 +325,10 @@ async fn analyze_cache_performance(cache: &CacheService) -> RragResult<()> {
 }
 
 async fn demo_memory_management(cache: &mut CacheService) -> RragResult<()> {
-    println!("   Memory management and eviction policies:");
+    tracing::debug!("   Memory management and eviction policies:");
 
     // Simulate cache filling up
-    println!("     🔄 Filling caches to capacity...");
+    tracing::debug!("     🔄 Filling caches to capacity...");
     for i in 0..100 {
         let query = format!("test query number {}", i);
         let result = simulate_expensive_search(&query).await?;
@@ -338,31 +338,31 @@ async fn demo_memory_management(cache: &mut CacheService) -> RragResult<()> {
             .await?;
 
         if i % 25 == 0 {
-            println!("       Cached {} queries", i + 1);
+            tracing::debug!("       Cached {} queries", i + 1);
         }
     }
 
     // Trigger maintenance
-    println!("     🧹 Triggering cache maintenance...");
+    tracing::debug!("     🧹 Triggering cache maintenance...");
     cache.maintenance().await?;
 
-    println!("     📊 Eviction policy behaviors:");
-    println!("       • LRU: Removes least recently accessed items");
-    println!("       • LFU: Removes least frequently used items");
-    println!("       • Semantic-aware: Keeps diverse representative queries");
-    println!("       • TTL: Removes expired items based on time");
+    tracing::debug!("     📊 Eviction policy behaviors:");
+    tracing::debug!("       • LRU: Removes least recently accessed items");
+    tracing::debug!("       • LFU: Removes least frequently used items");
+    tracing::debug!("       • Semantic-aware: Keeps diverse representative queries");
+    tracing::debug!("       • TTL: Removes expired items based on time");
 
     let metrics = cache.get_metrics();
-    println!("     📈 Current eviction counts:");
-    println!(
+    tracing::debug!("     📈 Current eviction counts:");
+    tracing::debug!(
         "       • Query cache: {} evictions",
         metrics.query_cache.evictions
     );
-    println!(
+    tracing::debug!(
         "       • Embedding cache: {} evictions",
         metrics.embedding_cache.evictions
     );
-    println!(
+    tracing::debug!(
         "       • Semantic cache: {} evictions",
         metrics.semantic_cache.evictions
     );
@@ -454,7 +454,7 @@ fn calculate_similarity(query1: &str, query2: &str) -> f32 {
 }
 
 fn print_cache_stats(name: &str, stats: &rrag::caching::CacheStats) {
-    println!(
+    tracing::debug!(
         "│ {:<15} │ {:>7.1}% │ {:>9} │ {:>6.1}MB │ {:>9.1}μs │",
         name,
         stats.hit_rate * 100.0,

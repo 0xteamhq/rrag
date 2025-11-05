@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::RwLock;
+use tracing::info;
 
 /// System configuration for RRAG
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -452,9 +453,9 @@ impl RragSystem {
         // Initialize components based on configuration
         // This is a simplified implementation - in production, would create actual service instances
 
-        println!("Initializing RRAG System: {}", self.config.name);
-        println!("Environment: {}", self.config.environment);
-        println!("Version: {}", self.config.version);
+        info!("Initializing RRAG System: {}", self.config.name);
+        info!("Environment: {}", self.config.environment);
+        info!("Version: {}", self.config.version);
 
         // Update metrics with initial health status
         let mut metrics = self.metrics.write().await;
@@ -637,7 +638,7 @@ impl RragSystem {
 
     /// Shutdown the system gracefully
     pub async fn shutdown(&self) -> RragResult<()> {
-        println!("Shutting down RRAG System gracefully...");
+        info!("Shutting down RRAG System gracefully...");
 
         // In a full implementation, would:
         // 1. Stop accepting new requests
@@ -646,7 +647,7 @@ impl RragSystem {
         // 4. Persist any necessary state
         // 5. Close connections and cleanup resources
 
-        println!("RRAG System shutdown complete");
+        info!("RRAG System shutdown complete");
         Ok(())
     }
 
@@ -663,7 +664,7 @@ impl RragSystem {
         // Update configuration
         self.config = new_config;
 
-        println!("System configuration updated");
+        info!("System configuration updated");
         Ok(())
     }
 

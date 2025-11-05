@@ -8,22 +8,22 @@ use serde_json::json;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("🦀 RRAG + Ollama Integration Test");
-    println!("==================================\n");
+    tracing::debug!("🦀 RRAG + Ollama Integration Test");
+    tracing::debug!("==================================\n");
 
     // Test direct Ollama API call first
-    println!("📡 Testing Ollama API connectivity...");
+    tracing::debug!("📡 Testing Ollama API connectivity...");
     match test_ollama_api().await {
-        Ok(_) => println!("✅ Ollama API is accessible and working!\n"),
+        Ok(_) => tracing::debug!("✅ Ollama API is accessible and working!\n"),
         Err(e) => {
-            println!("❌ Ollama API test failed: {}", e);
-            println!("⚠️  Make sure Ollama is running: ollama serve");
+            error!(" Ollama API test failed: {}", e);
+            warn!("  Make sure Ollama is running: ollama serve");
             return Ok(());
         }
     }
 
     // Create RRAG agent with Ollama
-    println!("🤖 Creating RRAG agent with Ollama...");
+    tracing::debug!("🤖 Creating RRAG agent with Ollama...");
     let agent = RragAgent::builder()
         .with_name("Ollama Test Agent")
         .with_model("ollama", "llama3.2:3b")
@@ -31,29 +31,28 @@ async fn main() -> RragResult<()> {
         .with_temperature(0.7)
         .build()?;
 
-    println!("✅ Agent created successfully!\n");
+    tracing::debug!("✅ Agent created successfully!\n");
 
     // Test 1: Simple question
-    println!("💬 Test 1: Simple Question");
-    println!("Question: What is Rust?");
+    tracing::debug!("💬 Test 1: Simple Question");
+    tracing::debug!("Question: What is Rust?");
     match agent
         .process_message("What is Rust programming language in one sentence?", None)
         .await
     {
         Ok(response) => {
-            println!("🤖 Response: {}", response.text);
-            println!("⏱️  Duration: {}ms", response.metadata.duration_ms);
-            println!("✅ Test 1 passed!\n");
+            tracing::debug!("🤖 Response: {}", response.text);
+            tracing::debug!("⏱️  Duration: {}ms", response.metadata.duration_ms);
+            tracing::debug!("✅ Test 1 passed!\n");
         }
         Err(e) => {
-            println!("❌ Test 1 failed: {}", e);
-            println!();
+            error!(" Test 1 failed: {}", e);
         }
     }
 
     // Test 2: Conversation with context
-    println!("💬 Test 2: Multi-turn Conversation");
-    println!("Question 1: Tell me about memory safety");
+    tracing::debug!("💬 Test 2: Multi-turn Conversation");
+    tracing::debug!("Question 1: Tell me about memory safety");
     match agent
         .process_message(
             "Tell me about memory safety in programming in one sentence.",
@@ -62,49 +61,47 @@ async fn main() -> RragResult<()> {
         .await
     {
         Ok(response) => {
-            println!("🤖 Response: {}", response.text);
+            tracing::debug!("🤖 Response: {}", response.text);
 
             // Follow-up question
-            println!("\nQuestion 2: How does Rust achieve this?");
+            tracing::debug!("\nQuestion 2: How does Rust achieve this?");
             match agent
                 .process_message("How does Rust achieve this?", None)
                 .await
             {
                 Ok(followup) => {
-                    println!("🤖 Response: {}", followup.text);
-                    println!("✅ Test 2 passed!\n");
+                    tracing::debug!("🤖 Response: {}", followup.text);
+                    tracing::debug!("✅ Test 2 passed!\n");
                 }
                 Err(e) => {
-                    println!("❌ Test 2 follow-up failed: {}", e);
+                    error!(" Test 2 follow-up failed: {}", e);
                 }
             }
         }
         Err(e) => {
-            println!("❌ Test 2 failed: {}", e);
-            println!();
+            error!(" Test 2 failed: {}", e);
         }
     }
 
     // Test 3: Technical question
-    println!("💬 Test 3: Technical Question");
-    println!("Question: Explain borrowing");
+    tracing::debug!("💬 Test 3: Technical Question");
+    tracing::debug!("Question: Explain borrowing");
     match agent
         .process_message("Explain Rust's borrowing concept in one sentence.", None)
         .await
     {
         Ok(response) => {
-            println!("🤖 Response: {}", response.text);
-            println!("⏱️  Duration: {}ms", response.metadata.duration_ms);
-            println!("✅ Test 3 passed!\n");
+            tracing::debug!("🤖 Response: {}", response.text);
+            tracing::debug!("⏱️  Duration: {}ms", response.metadata.duration_ms);
+            tracing::debug!("✅ Test 3 passed!\n");
         }
         Err(e) => {
-            println!("❌ Test 3 failed: {}", e);
-            println!();
+            error!(" Test 3 failed: {}", e);
         }
     }
 
-    println!("🎉 All Ollama integration tests completed!");
-    println!("✨ RRAG successfully integrates with Ollama for real conversations!");
+    tracing::debug!("🎉 All Ollama integration tests completed!");
+    tracing::debug!("✨ RRAG successfully integrates with Ollama for real conversations!");
 
     Ok(())
 }

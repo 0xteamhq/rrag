@@ -24,68 +24,68 @@ use tokio;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("🦀 RRAG - Rust RAG Framework Comprehensive Demo");
-    println!("==============================================\n");
+    tracing::debug!("🦀 RRAG - Rust RAG Framework Comprehensive Demo");
+    tracing::debug!("==============================================\n");
 
     // 1. System Setup and Configuration
-    println!("1. Setting up RRAG System...");
+    tracing::debug!("1. Setting up RRAG System...");
     let system = setup_rrag_system().await?;
-    println!("   ✓ System initialized with all components\n");
+    tracing::debug!("   ✓ System initialized with all components\n");
 
     // 2. Document Processing Pipeline
-    println!("2. Document Processing Pipeline...");
+    tracing::debug!("2. Document Processing Pipeline...");
     let documents = create_sample_documents();
     let processed_docs = process_documents_with_pipeline(documents).await?;
-    println!(
+    tracing::debug!(
         "   ✓ Processed {} documents through pipeline\n",
         processed_docs.len()
     );
 
     // 3. Embedding and Storage
-    println!("3. Embedding Generation and Storage...");
+    tracing::debug!("3. Embedding Generation and Storage...");
     let embeddings = generate_and_store_embeddings(&processed_docs).await?;
-    println!(
+    tracing::debug!(
         "   ✓ Generated {} embeddings and stored them\n",
         embeddings.len()
     );
 
     // 4. Retrieval and Search
-    println!("4. Retrieval and Search Demo...");
+    tracing::debug!("4. Retrieval and Search Demo...");
     demo_retrieval_search(&embeddings).await?;
-    println!("   ✓ Performed similarity search with multiple algorithms\n");
+    tracing::debug!("   ✓ Performed similarity search with multiple algorithms\n");
 
     // 5. Agent Interactions with Tools
-    println!("5. Agent Interactions with Tool Calling...");
+    tracing::debug!("5. Agent Interactions with Tool Calling...");
     demo_agent_interactions().await?;
-    println!("   ✓ Agent successfully used tools and maintained conversation\n");
+    tracing::debug!("   ✓ Agent successfully used tools and maintained conversation\n");
 
     // 6. Memory Management
-    println!("6. Memory Management Demo...");
+    tracing::debug!("6. Memory Management Demo...");
     demo_memory_systems().await?;
-    println!("   ✓ Tested different memory strategies\n");
+    tracing::debug!("   ✓ Tested different memory strategies\n");
 
     // 7. Streaming Responses
-    println!("7. Streaming Response Demo...");
+    tracing::debug!("7. Streaming Response Demo...");
     demo_streaming_responses().await?;
-    println!("   ✓ Demonstrated real-time token streaming\n");
+    tracing::debug!("   ✓ Demonstrated real-time token streaming\n");
 
     // 8. Complete RAG Workflow
-    println!("8. Complete RAG Workflow...");
+    tracing::debug!("8. Complete RAG Workflow...");
     demo_complete_rag_workflow().await?;
-    println!("   ✓ Full RAG pipeline: ingest → embed → retrieve → generate\n");
+    tracing::debug!("   ✓ Full RAG pipeline: ingest → embed → retrieve → generate\n");
 
     // 9. System Monitoring
-    println!("9. System Monitoring and Health...");
+    tracing::debug!("9. System Monitoring and Health...");
     demo_system_monitoring(&system).await?;
-    println!("   ✓ Health checks and metrics collection\n");
+    tracing::debug!("   ✓ Health checks and metrics collection\n");
 
     // 10. Advanced Features
-    println!("10. Advanced Features Demo...");
+    tracing::debug!("10. Advanced Features Demo...");
     demo_advanced_features().await?;
-    println!("    ✓ Pipeline composition, parallel processing, and error handling\n");
+    tracing::debug!("    ✓ Pipeline composition, parallel processing, and error handling\n");
 
-    println!("🎉 RRAG Demo Complete!");
-    println!("All framework components working successfully in a Rust-native environment.");
+    tracing::debug!("🎉 RRAG Demo Complete!");
+    tracing::debug!("All framework components working successfully in a Rust-native environment.");
 
     Ok(())
 }
@@ -167,7 +167,7 @@ fn create_sample_documents() -> Vec<Document> {
 async fn process_documents_with_pipeline(
     documents: Vec<Document>,
 ) -> RragResult<Vec<DocumentChunk>> {
-    println!("   📄 Processing {} documents...", documents.len());
+    tracing::debug!("   📄 Processing {} documents...", documents.len());
 
     // Create embedding service
     let embedding_provider = Arc::new(LocalEmbeddingProvider::new("demo-model", 384));
@@ -181,7 +181,7 @@ async fn process_documents_with_pipeline(
     let mut all_chunks = Vec::new();
 
     for (i, document) in documents.iter().enumerate() {
-        println!(
+        tracing::debug!(
             "     - Processing document {}: {}...",
             i + 1,
             &document.content_str()[..50.min(document.content_str().len())]
@@ -195,17 +195,17 @@ async fn process_documents_with_pipeline(
         // Extract chunks from pipeline result
         match &context.data {
             PipelineData::Chunks(chunks) => {
-                println!("       → Generated {} chunks", chunks.len());
+                tracing::debug!("       → Generated {} chunks", chunks.len());
                 all_chunks.extend(chunks.clone());
             }
             PipelineData::Embeddings(embeddings) => {
-                println!(
+                tracing::debug!(
                     "       → Pipeline generated {} embeddings instead of chunks",
                     embeddings.len()
                 );
             }
             _ => {
-                println!(
+                tracing::debug!(
                     "       → Pipeline output unexpected data type: {:?}",
                     std::mem::discriminant(&context.data)
                 );
@@ -213,13 +213,13 @@ async fn process_documents_with_pipeline(
         }
     }
 
-    println!("   ✓ Total chunks generated: {}", all_chunks.len());
+    tracing::debug!("   ✓ Total chunks generated: {}", all_chunks.len());
     Ok(all_chunks)
 }
 
 /// Generate embeddings and store them
 async fn generate_and_store_embeddings(chunks: &[DocumentChunk]) -> RragResult<Vec<Embedding>> {
-    println!("   🧮 Generating embeddings for {} chunks...", chunks.len());
+    tracing::debug!("   🧮 Generating embeddings for {} chunks...", chunks.len());
 
     // Create embedding service
     let embedding_provider = Arc::new(LocalEmbeddingProvider::new("demo-model", 384));
@@ -228,13 +228,13 @@ async fn generate_and_store_embeddings(chunks: &[DocumentChunk]) -> RragResult<V
     // Generate embeddings in batches
     let embeddings = embedding_service.embed_chunks(chunks).await?;
     if !embeddings.is_empty() {
-        println!(
+        tracing::debug!(
             "     - Generated {} embeddings with {} dimensions",
             embeddings.len(),
             embeddings[0].dimensions
         );
     } else {
-        println!("     - Generated 0 embeddings (no chunks to process)");
+        tracing::debug!("     - Generated 0 embeddings (no chunks to process)");
         return Ok(Vec::new());
     }
 
@@ -246,17 +246,17 @@ async fn generate_and_store_embeddings(chunks: &[DocumentChunk]) -> RragResult<V
         storage_service.store_embedding(embedding).await?;
     }
 
-    println!("     - Stored all embeddings in vector storage");
+    tracing::debug!("     - Stored all embeddings in vector storage");
     Ok(embeddings)
 }
 
 /// Demonstrate retrieval and search capabilities
 async fn demo_retrieval_search(embeddings: &[Embedding]) -> RragResult<()> {
-    println!("   🔍 Setting up retrieval system...");
+    tracing::debug!("   🔍 Setting up retrieval system...");
 
     if embeddings.is_empty() {
-        println!("     ⚠️  No embeddings available for retrieval demo");
-        println!("     Creating mock embeddings for demonstration...");
+        tracing::debug!("     ⚠️  No embeddings available for retrieval demo");
+        tracing::debug!("     Creating mock embeddings for demonstration...");
 
         // Create mock embeddings for demo
         let embedding_provider = Arc::new(LocalEmbeddingProvider::new("demo-model", 384));
@@ -313,7 +313,7 @@ async fn demo_retrieval_with_embeddings(
     ];
 
     for (name, algorithm) in search_algorithms {
-        println!("     - Testing {} search...", name);
+        tracing::debug!("     - Testing {} search...", name);
 
         let query_embedding = embeddings[0].clone();
         let query = SearchQuery::embedding(query_embedding)
@@ -324,10 +324,10 @@ async fn demo_retrieval_with_embeddings(
             });
 
         let results = retriever.search(&query).await?;
-        println!("       → Found {} results", results.len());
+        tracing::debug!("       → Found {} results", results.len());
 
         for (i, result) in results.iter().enumerate() {
-            println!(
+            tracing::debug!(
                 "         {}. Score: {:.3}, Content: {}...",
                 i + 1,
                 result.score,
@@ -341,7 +341,7 @@ async fn demo_retrieval_with_embeddings(
 
 /// Demonstrate agent interactions with tool calling
 async fn demo_agent_interactions() -> RragResult<()> {
-    println!("   🤖 Setting up intelligent agent...");
+    tracing::debug!("   🤖 Setting up intelligent agent...");
 
     // Create agent with tools
     let agent = RragAgent::builder()
@@ -353,36 +353,36 @@ async fn demo_agent_interactions() -> RragResult<()> {
         .build()?;
 
     // Test calculations
-    println!("     - Testing calculator tool...");
+    tracing::debug!("     - Testing calculator tool...");
     let calc_response = agent.process_message("Calculate 15 * 8 + 42", None).await?;
-    println!("       Agent: {}", calc_response.text);
-    println!("       Tools used: {}", calc_response.tool_calls.len());
+    tracing::debug!("       Agent: {}", calc_response.text);
+    tracing::debug!("       Tools used: {}", calc_response.tool_calls.len());
 
     // Test echo tool
-    println!("     - Testing echo tool...");
+    tracing::debug!("     - Testing echo tool...");
     let echo_response = agent
         .process_message(
             "Echo: Hello from RRAG!",
             Some(calc_response.metadata.turn_id.clone()),
         )
         .await?;
-    println!("       Agent: {}", echo_response.text);
+    tracing::debug!("       Agent: {}", echo_response.text);
 
     // Test streaming response
-    println!("     - Testing streaming response...");
+    tracing::debug!("     - Testing streaming response...");
     let mut stream = agent
         .stream_message("Tell me about Rust in a streaming way", None)
         .await?;
-    print!("       Stream: ");
+    tracing::debug!("       Stream: ");
     while let Some(token_result) = futures::StreamExt::next(&mut stream).await {
         match token_result? {
             token if token.token_type == TokenType::Text => {
-                print!("{}", token.content);
+                tracing::debug!("{}", token.content);
                 tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
                 // Simulate real streaming
             }
             token if token.is_final => {
-                println!(" [DONE]");
+                tracing::debug!(" [DONE]");
                 break;
             }
             _ => {}
@@ -394,10 +394,10 @@ async fn demo_agent_interactions() -> RragResult<()> {
 
 /// Demonstrate different memory systems
 async fn demo_memory_systems() -> RragResult<()> {
-    println!("   🧠 Testing memory systems...");
+    tracing::debug!("   🧠 Testing memory systems...");
 
     // Test buffer memory
-    println!("     - Testing ConversationBufferMemory...");
+    tracing::debug!("     - Testing ConversationBufferMemory...");
     let buffer_memory = Arc::new(ConversationBufferMemory::new());
     let memory_service = MemoryService::new(buffer_memory.clone());
 
@@ -412,10 +412,10 @@ async fn demo_memory_systems() -> RragResult<()> {
         .await?;
 
     let context = memory_service.get_conversation_context("conv1").await?;
-    println!("       Memory context length: {} chars", context.len());
+    tracing::debug!("       Memory context length: {} chars", context.len());
 
     // Test token buffer memory
-    println!("     - Testing ConversationTokenBufferMemory...");
+    tracing::debug!("     - Testing ConversationTokenBufferMemory...");
     let token_memory = Arc::new(ConversationTokenBufferMemory::new());
 
     for i in 1..=10 {
@@ -429,10 +429,10 @@ async fn demo_memory_systems() -> RragResult<()> {
     }
 
     let messages = token_memory.get_messages("conv2").await?;
-    println!("       Token memory kept {} messages", messages.len());
+    tracing::debug!("       Token memory kept {} messages", messages.len());
 
     // Test summary memory
-    println!("     - Testing ConversationSummaryMemory...");
+    tracing::debug!("     - Testing ConversationSummaryMemory...");
     let summary_memory = Arc::new(ConversationSummaryMemory::new());
 
     for i in 1..=25 {
@@ -447,7 +447,7 @@ async fn demo_memory_systems() -> RragResult<()> {
     }
 
     let variables = summary_memory.get_memory_variables("conv3").await?;
-    println!(
+    tracing::debug!(
         "       Summary memory variables: {:?}",
         variables.keys().collect::<Vec<_>>()
     );
@@ -457,17 +457,17 @@ async fn demo_memory_systems() -> RragResult<()> {
 
 /// Demonstrate streaming responses
 async fn demo_streaming_responses() -> RragResult<()> {
-    println!("   📡 Creating streaming responses...");
+    tracing::debug!("   📡 Creating streaming responses...");
 
     // Create simple text stream
-    println!("     - Text streaming:");
+    tracing::debug!("     - Text streaming:");
     let text_stream =
         StreamingResponse::from_text("This is a streaming response from RRAG framework");
     let collected = text_stream.collect_text().await?;
-    println!("       Collected: {}", collected);
+    tracing::debug!("       Collected: {}", collected);
 
     // Create custom token stream
-    println!("     - Custom token stream:");
+    tracing::debug!("     - Custom token stream:");
     let (mut builder, receiver) = TokenStreamBuilder::new();
 
     tokio::spawn(async move {
@@ -479,15 +479,15 @@ async fn demo_streaming_responses() -> RragResult<()> {
     });
 
     let custom_stream = StreamingResponse::from_channel(receiver);
-    print!("       Custom stream: ");
+    tracing::debug!("       Custom stream: ");
     let mut token_stream = custom_stream;
     while let Some(token_result) = futures::StreamExt::next(&mut token_stream).await {
         match token_result? {
             token if token.token_type == TokenType::Text => {
-                print!("{} ", token.content.trim());
+                tracing::debug!("{} ", token.content.trim());
             }
             token if token.is_final => {
-                println!("[COMPLETE]");
+                tracing::debug!("[COMPLETE]");
                 break;
             }
             _ => {}
@@ -495,7 +495,7 @@ async fn demo_streaming_responses() -> RragResult<()> {
     }
 
     // Demonstrate filtered streaming
-    println!("     - Filtered streaming (text only):");
+    tracing::debug!("     - Filtered streaming (text only):");
     let (mut builder, receiver) = TokenStreamBuilder::new();
 
     tokio::spawn(async move {
@@ -510,17 +510,17 @@ async fn demo_streaming_responses() -> RragResult<()> {
     let collected_filtered = StreamingResponse::from_stream(text_only)
         .collect_text()
         .await?;
-    println!("       Filtered result: {}", collected_filtered);
+    tracing::debug!("       Filtered result: {}", collected_filtered);
 
     Ok(())
 }
 
 /// Demonstrate complete RAG workflow
 async fn demo_complete_rag_workflow() -> RragResult<()> {
-    println!("   🔄 Complete RAG workflow...");
+    tracing::debug!("   🔄 Complete RAG workflow...");
 
     // 1. Document ingestion
-    println!("     - Step 1: Document ingestion");
+    tracing::debug!("     - Step 1: Document ingestion");
     let knowledge_docs = vec![
         Document::new("Rust provides memory safety without garbage collection through its ownership system."),
         Document::new("RRAG is a Rust-native framework for building RAG applications with zero-cost abstractions."),
@@ -528,7 +528,7 @@ async fn demo_complete_rag_workflow() -> RragResult<()> {
     ];
 
     // 2. Embedding and storage
-    println!("     - Step 2: Embedding generation and storage");
+    tracing::debug!("     - Step 2: Embedding generation and storage");
     let embedding_provider = Arc::new(LocalEmbeddingProvider::new("rag-model", 256));
     let embedding_service = Arc::new(EmbeddingService::new(embedding_provider));
 
@@ -539,7 +539,7 @@ async fn demo_complete_rag_workflow() -> RragResult<()> {
     }
 
     // 3. Retrieval setup
-    println!("     - Step 3: Retrieval system setup");
+    tracing::debug!("     - Step 3: Retrieval system setup");
     let retriever = Arc::new(InMemoryRetriever::new());
     let retrieval_service = Arc::new(RetrievalService::new(retriever));
 
@@ -548,24 +548,24 @@ async fn demo_complete_rag_workflow() -> RragResult<()> {
         .await?;
 
     // 4. Query processing
-    println!("     - Step 4: Query processing");
+    tracing::debug!("     - Step 4: Query processing");
     let user_query = "How does Rust ensure memory safety?";
     let query_embedding = embedding_service
         .embed_document(&Document::new(user_query))
         .await?;
 
     // 5. Retrieval
-    println!("     - Step 5: Similar document retrieval");
+    tracing::debug!("     - Step 5: Similar document retrieval");
     let search_results = retrieval_service
         .search_embedding(query_embedding, Some(2))
         .await?;
 
-    println!(
+    tracing::debug!(
         "       Retrieved {} relevant documents:",
         search_results.len()
     );
     for (i, result) in search_results.iter().enumerate() {
-        println!(
+        tracing::debug!(
             "         {}. Score: {:.3} - {}...",
             i + 1,
             result.score,
@@ -574,49 +574,49 @@ async fn demo_complete_rag_workflow() -> RragResult<()> {
     }
 
     // 6. Response generation (simulated)
-    println!("     - Step 6: Response generation");
+    tracing::debug!("     - Step 6: Response generation");
     let context = search_results
         .iter()
         .map(|r| r.content.clone())
         .collect::<Vec<_>>()
         .join(" ");
 
-    println!(
+    tracing::debug!(
         "       Generated response context ({} chars)",
         context.len()
     );
-    println!("       Query: {}", user_query);
-    println!("       Context-aware response: Based on the retrieved documents, Rust ensures memory safety through its ownership system...");
+    tracing::debug!("       Query: {}", user_query);
+    tracing::debug!("       Context-aware response: Based on the retrieved documents, Rust ensures memory safety through its ownership system...");
 
     Ok(())
 }
 
 /// Demonstrate system monitoring and health checks
 async fn demo_system_monitoring(system: &RragSystem) -> RragResult<()> {
-    println!("   📊 System monitoring and health checks...");
+    tracing::debug!("   📊 System monitoring and health checks...");
 
     // Health check
-    println!("     - Performing health check...");
+    tracing::debug!("     - Performing health check...");
     let health = system.health_check().await?;
-    println!("       Overall status: {:?}", health.overall_status);
-    println!(
+    tracing::debug!("       Overall status: {:?}", health.overall_status);
+    tracing::debug!(
         "       Components checked: {}",
         health.component_status.len()
     );
 
     for (component, status) in &health.component_status {
-        println!("         {}: {:?}", component, status);
+        tracing::debug!("         {}: {:?}", component, status);
     }
 
     // System metrics
-    println!("     - Collecting system metrics...");
+    tracing::debug!("     - Collecting system metrics...");
     let metrics = system.get_metrics().await;
-    println!("       Uptime: {} seconds", metrics.uptime_seconds);
-    println!(
+    tracing::debug!("       Uptime: {} seconds", metrics.uptime_seconds);
+    tracing::debug!(
         "       Total requests: {}",
         metrics.request_counts.total_requests
     );
-    println!(
+    tracing::debug!(
         "       Success rate: {:.1}%",
         if metrics.request_counts.total_requests > 0 {
             (metrics.request_counts.successful_requests as f64
@@ -628,14 +628,15 @@ async fn demo_system_monitoring(system: &RragSystem) -> RragResult<()> {
     );
 
     // Configuration info
-    println!("     - System configuration:");
+    tracing::debug!("     - System configuration:");
     let config = system.get_config();
-    println!("       Name: {}", config.name);
-    println!("       Environment: {}", config.environment);
-    println!("       Version: {}", config.version);
-    println!(
+    tracing::debug!("       Name: {}", config.name);
+    tracing::debug!("       Environment: {}", config.environment);
+    tracing::debug!("       Version: {}", config.version);
+    tracing::debug!(
         "       Features enabled: async_processing={}, caching={}",
-        config.features.enable_async_processing, config.features.enable_caching
+        config.features.enable_async_processing,
+        config.features.enable_caching
     );
 
     Ok(())
@@ -643,10 +644,10 @@ async fn demo_system_monitoring(system: &RragSystem) -> RragResult<()> {
 
 /// Demonstrate advanced features
 async fn demo_advanced_features() -> RragResult<()> {
-    println!("    🚀 Advanced features demonstration...");
+    tracing::debug!("    🚀 Advanced features demonstration...");
 
     // 1. Pipeline composition
-    println!("      - Pipeline composition and chaining");
+    tracing::debug!("      - Pipeline composition and chaining");
     let embedding_provider = Arc::new(LocalEmbeddingProvider::new("advanced-model", 128));
     let embedding_service = Arc::new(EmbeddingService::new(embedding_provider));
 
@@ -669,17 +670,17 @@ async fn demo_advanced_features() -> RragResult<()> {
         .execute(PipelineData::Document(test_doc))
         .await?;
 
-    println!(
+    tracing::debug!(
         "        → Pipeline executed {} steps successfully",
         result.execution_history.len()
     );
-    println!(
+    tracing::debug!(
         "        → Total processing time: {}ms",
         result.total_execution_time()
     );
 
     // 2. Error handling and resilience
-    println!("      - Error handling and resilience testing");
+    tracing::debug!("      - Error handling and resilience testing");
     let resilient_config = rrag::pipeline::PipelineConfig {
         continue_on_error: true,
         max_execution_time: 10,
@@ -690,10 +691,10 @@ async fn demo_advanced_features() -> RragResult<()> {
     let _resilient_pipeline = Pipeline::with_config(resilient_config);
 
     // This would test error scenarios in a real implementation
-    println!("        → Resilient pipeline configuration validated");
+    tracing::debug!("        → Resilient pipeline configuration validated");
 
     // 3. Parallel processing capabilities
-    println!("      - Parallel processing demonstration");
+    tracing::debug!("      - Parallel processing demonstration");
     let documents = (1..=5)
         .map(|i| Document::new(format!("Parallel document {} for concurrent processing", i)))
         .collect::<Vec<_>>();
@@ -712,29 +713,29 @@ async fn demo_advanced_features() -> RragResult<()> {
     let results = futures::future::join_all(futures).await;
     let processing_time = start_time.elapsed();
 
-    println!(
+    tracing::debug!(
         "        → Processed {} documents in parallel",
         results.len()
     );
-    println!(
+    tracing::debug!(
         "        → Total time: {:?} (would be ~{}ms sequential)",
         processing_time,
         results.len() * 100
     );
 
     // 4. Memory optimization showcase
-    println!("      - Memory optimization with zero-copy operations");
+    tracing::debug!("      - Memory optimization with zero-copy operations");
     let large_content = "x".repeat(10000);
     let doc_with_cow = Document::new(large_content); // Uses Cow for efficient string handling
 
-    println!(
+    tracing::debug!(
         "        → Document with {} chars using zero-copy Cow<str>",
         doc_with_cow.content_length()
     );
-    println!("        → Memory efficient chunking and processing");
+    tracing::debug!("        → Memory efficient chunking and processing");
 
     // 5. Type safety demonstration
-    println!("      - Type safety and compile-time guarantees");
+    tracing::debug!("      - Type safety and compile-time guarantees");
 
     // This shows how the type system prevents runtime errors
     let typed_pipeline_steps = vec![
@@ -745,9 +746,9 @@ async fn demo_advanced_features() -> RragResult<()> {
     ];
 
     for step in typed_pipeline_steps {
-        println!("        → {}", step);
+        tracing::debug!("        → {}", step);
     }
-    println!("        → All type transitions validated at compile time");
+    tracing::debug!("        → All type transitions validated at compile time");
 
     Ok(())
 }

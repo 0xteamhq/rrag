@@ -43,7 +43,7 @@
 //! let mut cache = CacheService::new(cache_config)?;
 //!
 //! // Cache will automatically optimize based on your RAG workload patterns
-//! println!("Cache initialized with {} layers", 4);
+//! tracing::debug!("Cache initialized with {} layers", 4);
 //! # Ok(())
 //! # }
 //! ```
@@ -58,7 +58,7 @@
 //!
 //! // Check cache first
 //! if let Some(cached_entry) = cache.get_query_results(query).await {
-//!     println!("Cache hit! Retrieved {} results", cached_entry.results.len());
+//!     tracing::debug!("Cache hit! Retrieved {} results", cached_entry.results.len());
 //!     return Ok(());
 //! }
 //!
@@ -95,7 +95,7 @@
 //!
 //! // Check if embedding is already computed
 //! if let Some(cached_embedding) = cache.get_embedding(text, model).await {
-//!     println!("Using cached embedding of dimension {}", cached_embedding.len());
+//!     tracing::debug!("Using cached embedding of dimension {}", cached_embedding.len());
 //! } else {
 //!     // Compute embedding (expensive operation)
 //!     let embedding = compute_embedding(text, model).await?;
@@ -107,7 +107,7 @@
 //!         embedding
 //!     ).await?;
 //!     
-//!     println!("Computed and cached new embedding");
+//!     tracing::debug!("Computed and cached new embedding");
 //! }
 //!
 //! # async fn compute_embedding(text: &str, model: &str) -> rrag::RragResult<Vec<f32>> {
@@ -132,9 +132,9 @@
 //! // Check for semantically similar cached results
 //! for query in &similar_queries {
 //!     if let Some(semantic_entry) = cache.get_semantic_results(query).await {
-//!         println!("Found semantic match for: {}", query);
-//!         println!("Representative: {}", semantic_entry.representative);
-//!         println!("Similar entries: {}", semantic_entry.similar_entries.len());
+//!         tracing::debug!("Found semantic match for: {}", query);
+//!         tracing::debug!("Representative: {}", semantic_entry.representative);
+//!         tracing::debug!("Similar entries: {}", semantic_entry.similar_entries.len());
 //!         return Ok(());
 //!     }
 //! }
@@ -202,7 +202,7 @@
 //! };
 //!
 //! let cache = CacheService::new(advanced_config)?;
-//! println!("Advanced cache configured with persistence and compression");
+//! tracing::debug!("Advanced cache configured with persistence and compression");
 //! # Ok(())
 //! # }
 //! ```
@@ -214,26 +214,26 @@
 //! // Get comprehensive cache metrics
 //! let metrics = cache.get_metrics();
 //!
-//! println!("📊 Cache Performance Report");
-//! println!("Query Cache: {:.1}% hit rate, {} entries",
+//! tracing::debug!("📊 Cache Performance Report");
+//! tracing::debug!("Query Cache: {:.1}% hit rate, {} entries",
 //!          metrics.query_cache.hit_rate * 100.0,
 //!          metrics.query_cache.total_entries);
 //!
-//! println!("Embedding Cache: {:.1}% hit rate, {:.1}MB memory",
+//! tracing::debug!("Embedding Cache: {:.1}% hit rate, {:.1}MB memory",
 //!          metrics.embedding_cache.hit_rate * 100.0,
 //!          metrics.embedding_cache.memory_usage as f32 / 1024.0 / 1024.0);
 //!
-//! println!("Semantic Cache: {:.1}% hit rate, {} evictions",
+//! tracing::debug!("Semantic Cache: {:.1}% hit rate, {} evictions",
 //!          metrics.semantic_cache.hit_rate * 100.0,
 //!          metrics.semantic_cache.evictions);
 //!
-//! println!("Overall Efficiency: {:.1}%, Time Saved: {:.1}ms",
+//! tracing::debug!("Overall Efficiency: {:.1}%, Time Saved: {:.1}ms",
 //!          metrics.overall.efficiency_score * 100.0,
 //!          metrics.overall.time_saved_ms);
 //!
 //! // Performance optimization based on metrics
 //! if metrics.overall.memory_pressure > 0.8 {
-//!     println!("⚠️  High memory pressure detected, triggering cleanup");
+//!     warn!("  High memory pressure detected, triggering cleanup");
 //!     cache.maintenance().await?;
 //! }
 //! # Ok(())

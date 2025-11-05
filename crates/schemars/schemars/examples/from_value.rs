@@ -20,5 +20,5 @@ fn main() {
         my_bool: true,
         my_nullable_enum: Some(MyEnum::StringNewType("foo".to_string()))
     });
-    println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+    tracing::debug!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }

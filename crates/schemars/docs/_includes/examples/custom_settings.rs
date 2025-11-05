@@ -20,5 +20,5 @@ fn main() {
     });
     let generator = settings.into_generator();
     let schema = generator.into_root_schema_for::<MyStruct>();
-    println!("{}", serde_json::to_string_pretty(&schema).unwrap());
+    tracing::debug!("{}", serde_json::to_string_pretty(&schema).unwrap());
 }

@@ -76,7 +76,7 @@
 //!     
 //!     // Search for relevant content
 //!     let results = rag.search("What is Rust?".to_string(), Some(5)).await?;
-//!     println!("Found {} results", results.total_results);
+//!     tracing::debug!("Found {} results", results.total_results);
 //!     
 //!     Ok(())
 //! }
@@ -109,7 +109,7 @@
 //!         &memory
 //!     ).await?;
 //!     
-//!     println!("Agent: {}", response.text);
+//!     tracing::debug!("Agent: {}", response.text);
 //!     
 //!     Ok(())
 //! }
@@ -172,6 +172,7 @@ pub mod memory;
 pub mod pipeline;
 pub mod retrieval_core;
 pub mod storage;
+pub mod storage_legacy;
 pub mod streaming;
 pub mod system;
 pub mod tools;
@@ -409,7 +410,7 @@ pub mod prelude {
 /// # Example
 /// ```rust
 /// use rrag::VERSION;
-/// println!("RRAG Framework version: {}", VERSION);
+/// tracing::debug!("RRAG Framework version: {}", VERSION);
 /// ```
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

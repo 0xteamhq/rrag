@@ -1,0 +1,36 @@
+// RRAG Memory Storage Schema for Toasty
+// This defines the database schema for persistent memory storage
+
+model MemoryEntry {
+    #[key]
+    #[auto]
+    id: Id,
+
+    // The key for this memory entry
+    #[unique]
+    key: String,
+
+    // The value stored (serialized as JSON)
+    value: String,
+
+    // Value type for faster querying
+    value_type: String,
+
+    // Optional namespace for organization
+    namespace: Option<String>,
+
+    // Timestamps
+    created_at: DateTime,
+    accessed_at: DateTime,
+    updated_at: DateTime,
+
+    // Indices for faster queries
+    #[index]
+    namespace,
+
+    #[index]
+    value_type,
+
+    #[index]
+    created_at,
+}

@@ -13,11 +13,11 @@ use tokio;
 
 #[tokio::main]
 async fn main() -> RragResult<()> {
-    println!("🔍 RRAG Hybrid Search Demonstration");
-    println!("====================================\n");
+    tracing::debug!("🔍 RRAG Hybrid Search Demonstration");
+    tracing::debug!("====================================\n");
 
     // 1. Setup hybrid retriever
-    println!("1. Setting up Hybrid Retriever...");
+    tracing::debug!("1. Setting up Hybrid Retriever...");
     let hybrid_config = HybridConfig {
         bm25_config: BM25Config {
             k1: 1.5,
@@ -47,10 +47,10 @@ async fn main() -> RragResult<()> {
     let embedding_service = Arc::new(MockEmbeddingService::new());
 
     let hybrid_retriever = HybridRetriever::new(hybrid_config, embedding_service);
-    println!("   ✓ Hybrid retriever initialized\n");
+    tracing::debug!("   ✓ Hybrid retriever initialized\n");
 
     // 2. Index diverse documents
-    println!("2. Indexing Documents...");
+    tracing::debug!("2. Indexing Documents...");
     let documents = vec![
         // Technical documentation
         Document::with_id("1", "The BM25 algorithm is a probabilistic ranking function used in information retrieval. It considers term frequency (TF) and inverse document frequency (IDF) to rank documents based on their relevance to a given query.")
@@ -87,24 +87,24 @@ async fn main() -> RragResult<()> {
     ];
 
     hybrid_retriever.index_batch(documents).await?;
-    println!("   ✓ Indexed {} documents\n", 8);
+    tracing::debug!("   ✓ Indexed {} documents\n", 8);
 
     // 3. Test different query types
-    println!("3. Testing Different Query Types\n");
-    println!("{}", "─".repeat(60));
+    tracing::debug!("3. Testing Different Query Types\n");
+    tracing::debug!("{}", "─".repeat(60));
 
     // Test 1: Technical exact match query
-    println!("\n📝 Query 1: 'BM25 algorithm IDF'");
-    println!("   Type: Technical/Exact Match");
-    println!("   Expected: Should favor BM25 retrieval\n");
+    tracing::debug!("\n📝 Query 1: 'BM25 algorithm IDF'");
+    tracing::debug!("   Type: Technical/Exact Match");
+    tracing::debug!("   Expected: Should favor BM25 retrieval\n");
 
     let results = hybrid_retriever.search("BM25 algorithm IDF", 3).await?;
     print_results(&results);
 
     // Test 2: Conceptual/semantic query
-    println!("\n💭 Query 2: 'How does meaning-based search work?'");
-    println!("   Type: Conceptual/Semantic");
-    println!("   Expected: Should favor semantic retrieval\n");
+    tracing::debug!("\n💭 Query 2: 'How does meaning-based search work?'");
+    tracing::debug!("   Type: Conceptual/Semantic");
+    tracing::debug!("   Expected: Should favor semantic retrieval\n");
 
     let results = hybrid_retriever
         .search("How does meaning-based search work?", 3)
@@ -112,9 +112,9 @@ async fn main() -> RragResult<()> {
     print_results(&results);
 
     // Test 3: Product search query
-    println!("\n🛍️ Query 3: 'phone with good camera and fast processor'");
-    println!("   Type: Product Search");
-    println!("   Expected: Should use both BM25 and semantic\n");
+    tracing::debug!("\n🛍️ Query 3: 'phone with good camera and fast processor'");
+    tracing::debug!("   Type: Product Search");
+    tracing::debug!("   Expected: Should use both BM25 and semantic\n");
 
     let results = hybrid_retriever
         .search("phone with good camera and fast processor", 3)
@@ -122,17 +122,17 @@ async fn main() -> RragResult<()> {
     print_results(&results);
 
     // Test 4: Question answering
-    println!("\n❓ Query 4: 'What is hybrid search?'");
-    println!("   Type: Question");
-    println!("   Expected: Should boost semantic understanding\n");
+    tracing::debug!("\n❓ Query 4: 'What is hybrid search?'");
+    tracing::debug!("   Type: Question");
+    tracing::debug!("   Expected: Should boost semantic understanding\n");
 
     let results = hybrid_retriever.search("What is hybrid search?", 3).await?;
     print_results(&results);
 
     // Test 5: Code search
-    println!("\n💻 Query 5: 'Rust implementation reciprocal rank fusion'");
-    println!("   Type: Code/Technical");
-    println!("   Expected: Mixed strategy\n");
+    tracing::debug!("\n💻 Query 5: 'Rust implementation reciprocal rank fusion'");
+    tracing::debug!("   Type: Code/Technical");
+    tracing::debug!("   Expected: Mixed strategy\n");
 
     let results = hybrid_retriever
         .search("Rust implementation reciprocal rank fusion", 3)
@@ -140,9 +140,9 @@ async fn main() -> RragResult<()> {
     print_results(&results);
 
     // Test 6: Typo/fuzzy query
-    println!("\n🔤 Query 6: 'enviornmental carbon captur technology'");
-    println!("   Type: Query with typos");
-    println!("   Expected: Semantic should compensate for typos\n");
+    tracing::debug!("\n🔤 Query 6: 'enviornmental carbon captur technology'");
+    tracing::debug!("   Type: Query with typos");
+    tracing::debug!("   Expected: Semantic should compensate for typos\n");
 
     let results = hybrid_retriever
         .search("enviornmental carbon captur technology", 3)
@@ -150,11 +150,11 @@ async fn main() -> RragResult<()> {
     print_results(&results);
 
     // 4. Demonstrate adaptive weighting
-    println!("\n4. Adaptive Weight Learning");
-    println!("{}", "─".repeat(60));
+    tracing::debug!("\n4. Adaptive Weight Learning");
+    tracing::debug!("{}", "─".repeat(60));
 
     // Simulate user feedback
-    println!("\n📊 Recording user satisfaction for query optimization...");
+    tracing::debug!("\n📊 Recording user satisfaction for query optimization...");
 
     hybrid_retriever
         .record_feedback("BM25 algorithm IDF", 0.9)
@@ -166,17 +166,17 @@ async fn main() -> RragResult<()> {
         .record_feedback("phone with good camera and fast processor", 0.85)
         .await?;
 
-    println!("   ✓ Feedback recorded for adaptive weight learning\n");
+    tracing::debug!("   ✓ Feedback recorded for adaptive weight learning\n");
 
     // 5. Advanced search with multiple strategies
-    println!("5. Advanced Multi-Strategy Search");
-    println!("{}", "─".repeat(60));
+    tracing::debug!("5. Advanced Multi-Strategy Search");
+    tracing::debug!("{}", "─".repeat(60));
 
     // Note: In a real implementation, we would use different search strategies
     // For now, we'll demonstrate with regular search calls
 
-    println!("\n🚀 Query: 'information retrieval'");
-    println!("   Using multiple strategies: ExactMatch, Semantic, QueryExpansion\n");
+    tracing::debug!("\n🚀 Query: 'information retrieval'");
+    tracing::debug!("   Using multiple strategies: ExactMatch, Semantic, QueryExpansion\n");
 
     // For now, just demonstrate regular search
     let results = hybrid_retriever.search("information retrieval", 5).await?;
@@ -184,30 +184,30 @@ async fn main() -> RragResult<()> {
     print_results(&results);
 
     // 6. Show statistics
-    println!("\n6. Retriever Statistics");
-    println!("{}", "─".repeat(60));
+    tracing::debug!("\n6. Retriever Statistics");
+    tracing::debug!("{}", "─".repeat(60));
 
     let stats = hybrid_retriever.stats().await;
-    println!("\n📈 Hybrid Retriever Stats:");
-    println!(
+    tracing::debug!("\n📈 Hybrid Retriever Stats:");
+    tracing::debug!(
         "   • BM25 Index: {} unique terms",
         stats.bm25_stats.get("unique_terms").unwrap()
     );
-    println!(
+    tracing::debug!(
         "   • Semantic Index: {} documents",
         stats.semantic_stats.get("total_documents").unwrap()
     );
-    println!("   • Total Queries: {}", stats.total_queries);
-    println!("   • Avg Response Time: {}ms", stats.avg_response_time_ms);
-    println!("   • Fusion Strategy: {}", stats.fusion_strategy);
+    tracing::debug!("   • Total Queries: {}", stats.total_queries);
+    tracing::debug!("   • Avg Response Time: {}ms", stats.avg_response_time_ms);
+    tracing::debug!("   • Fusion Strategy: {}", stats.fusion_strategy);
 
-    println!("\n✅ Hybrid Search Demo Complete!");
-    println!("\nKey Insights:");
-    println!("• Hybrid search combines the best of both worlds");
-    println!("• BM25 excels at exact matches and rare terms");
-    println!("• Semantic search handles concepts and typos");
-    println!("• Adaptive weighting learns from user feedback");
-    println!("• Fusion strategies merge results optimally");
+    tracing::debug!("\n✅ Hybrid Search Demo Complete!");
+    tracing::debug!("\nKey Insights:");
+    tracing::debug!("• Hybrid search combines the best of both worlds");
+    tracing::debug!("• BM25 excels at exact matches and rare terms");
+    tracing::debug!("• Semantic search handles concepts and typos");
+    tracing::debug!("• Adaptive weighting learns from user feedback");
+    tracing::debug!("• Fusion strategies merge results optimally");
 
     Ok(())
 }
@@ -215,7 +215,7 @@ async fn main() -> RragResult<()> {
 /// Helper function to print search results
 fn print_results(results: &[rrag::SearchResult]) {
     for (i, result) in results.iter().enumerate() {
-        println!(
+        tracing::debug!(
             "   {}. [Score: {:.3}] Doc #{}",
             i + 1,
             result.score,
@@ -228,11 +228,11 @@ fn print_results(results: &[rrag::SearchResult]) {
         } else {
             result.content.clone()
         };
-        println!("      \"{}\"", preview);
+        tracing::debug!("      \"{}\"", preview);
 
         // Show metadata
         if let Some(doc_type) = result.metadata.get("type") {
-            println!("      Type: {}", doc_type);
+            tracing::debug!("      Type: {}", doc_type);
         }
     }
 }

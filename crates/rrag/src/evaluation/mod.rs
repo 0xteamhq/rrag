@@ -47,7 +47,7 @@
 //! };
 //!
 //! let mut evaluator = EvaluationService::new(config);
-//! println!("📊 Evaluation service initialized with {} evaluators", 3);
+//! tracing::debug!("📊 Evaluation service initialized with {} evaluators", 3);
 //! # Ok(())
 //! # }
 //! ```
@@ -97,9 +97,9 @@
 //! let results = evaluator.evaluate(evaluation_data).await?;
 //!
 //! for (eval_type, result) in results {
-//!     println!("🏆 {:?} Evaluation Results:", eval_type);
+//!     tracing::debug!("🏆 {:?} Evaluation Results:", eval_type);
 //!     for (metric, score) in result.overall_scores {
-//!         println!("  {}: {:.4}", metric, score);
+//!         tracing::debug!("  {}: {:.4}", metric, score);
 //!     }
 //! }
 //! # Ok(())
@@ -150,7 +150,7 @@
 //!     metadata: HashMap::new(),
 //! };
 //!
-//! println!("📈 RAGAS evaluation completed with {} metrics", 4);
+//! tracing::debug!("📈 RAGAS evaluation completed with {} metrics", 4);
 //! # Ok(())
 //! # }
 //! ```
@@ -181,7 +181,7 @@
 //! // - Mean Reciprocal Rank
 //! // - Normalized Discounted Cumulative Gain
 //!
-//! println!("🏁 Retrieval evaluation configured for multiple K values");
+//! tracing::debug!("🏁 Retrieval evaluation configured for multiple K values");
 //! # Ok(())
 //! # }
 //! ```
@@ -213,7 +213,7 @@
 //! // - Factual accuracy
 //! // - Fluency and coherence
 //!
-//! println!("✍️ Generation evaluation ready for quality assessment");
+//! tracing::debug!("✍️ Generation evaluation ready for quality assessment");
 //! # Ok(())
 //! # }
 //! ```
@@ -245,7 +245,7 @@
 //! // - Error analysis
 //! // - Component contribution analysis
 //!
-//! println!("🎆 End-to-end evaluation configured for complete system assessment");
+//! tracing::debug!("🎆 End-to-end evaluation configured for complete system assessment");
 //! # Ok(())
 //! # }
 //! ```
@@ -273,7 +273,7 @@
 //! // Run against standard benchmarks
 //! // let results = benchmark_evaluator.run_benchmark_suite(benchmark_suite).await?;
 //!
-//! println!("📅 Benchmark evaluation ready with {} standard datasets", 4);
+//! tracing::debug!("📅 Benchmark evaluation ready with {} standard datasets", 4);
 //! # Ok(())
 //! # }
 //! ```
@@ -301,11 +301,11 @@
 //! // Export comprehensive results
 //! evaluator.export_results(&results).await?;
 //!
-//! println!("📊 Results exported in multiple formats:");
-//! println!("  • evaluation_results.json - Complete data");
-//! println!("  • evaluation_report.html - Interactive dashboard");
-//! println!("  • evaluation_summary.csv - Quick analysis");
-//! println!("  • evaluation_report.md - Documentation");
+//! tracing::debug!("📊 Results exported in multiple formats:");
+//! tracing::debug!("  • evaluation_results.json - Complete data");
+//! tracing::debug!("  • evaluation_report.html - Interactive dashboard");
+//! tracing::debug!("  • evaluation_summary.csv - Quick analysis");
+//! tracing::debug!("  • evaluation_report.md - Documentation");
 //! # Ok(())
 //! # }
 //! ```
@@ -322,16 +322,16 @@
 //!     match metric_name.as_str() {
 //!         "evaluation_time_ms" => {
 //!             if latest.value > 5000.0 {
-//!                 println!("⚠️  Evaluation taking longer than expected: {:.1}ms", latest.value);
+//!                 warn!("  Evaluation taking longer than expected: {:.1}ms", latest.value);
 //!             }
 //!         }
 //!         "evaluation_errors" => {
 //!             if latest.value > 0.0 {
-//!                 println!("❌ Evaluation errors detected: {}", latest.value);
+//!                 error!(" Evaluation errors detected: {}", latest.value);
 //!             }
 //!         }
 //!         _ => {
-//!             println!("📈 {}: {:.3}", metric_name, latest.value);
+//!             tracing::debug!("📈 {}: {:.3}", metric_name, latest.value);
 //!         }
 //!     }
 //! }
@@ -397,6 +397,7 @@ pub mod retrieval_eval;
 use crate::{RragError, RragResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tracing::{error, info};
 
 /// Main evaluation service
 pub struct EvaluationService {
@@ -860,7 +861,7 @@ impl EvaluationService {
 
         // Run each enabled evaluation
         for (eval_type, evaluator) in &self.evaluators {
-            println!("Running {} evaluation...", evaluator.name());
+            tracing::debug!("Running {} evaluation...", evaluator.name());
 
             let eval_start = std::time::Instant::now();
 
@@ -879,14 +880,14 @@ impl EvaluationService {
                     )?;
 
                     results.insert(eval_type.clone(), result);
-                    println!(
+                    tracing::debug!(
                         "✅ {} evaluation completed in {:.2}ms",
                         evaluator.name(),
                         eval_time
                     );
                 }
                 Err(e) => {
-                    eprintln!("❌ {} evaluation failed: {}", evaluator.name(), e);
+                    error!(" {} evaluation failed: {}", evaluator.name(), e);
                     self.metrics_collector.record_metric(
                         "evaluation_errors",
                         1.0,
@@ -948,7 +949,7 @@ impl EvaluationService {
         std::fs::write(&json_path, json_content)
             .map_err(|e| RragError::evaluation(format!("Failed to write JSON file: {}", e)))?;
 
-        println!("✅ Results exported to {}", json_path);
+        info!(" Results exported to {}", json_path);
         Ok(())
     }
 
@@ -976,7 +977,7 @@ impl EvaluationService {
         std::fs::write(&csv_path, csv_content)
             .map_err(|e| RragError::evaluation(format!("Failed to write CSV file: {}", e)))?;
 
-        println!("✅ Summary exported to {}", csv_path);
+        info!(" Summary exported to {}", csv_path);
         Ok(())
     }
 
@@ -1055,7 +1056,7 @@ impl EvaluationService {
         std::fs::write(&html_path, html_content)
             .map_err(|e| RragError::evaluation(format!("Failed to write HTML file: {}", e)))?;
 
-        println!("✅ Report exported to {}", html_path);
+        info!(" Report exported to {}", html_path);
         Ok(())
     }
 
@@ -1105,7 +1106,7 @@ impl EvaluationService {
         std::fs::write(&md_path, md_content)
             .map_err(|e| RragError::evaluation(format!("Failed to write Markdown file: {}", e)))?;
 
-        println!("✅ Markdown report exported to {}", md_path);
+        info!(" Markdown report exported to {}", md_path);
         Ok(())
     }
 

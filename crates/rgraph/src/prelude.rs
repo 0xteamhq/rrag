@@ -53,7 +53,3 @@ pub use crate::rrag_integration::{
 // Observability (when feature is enabled)
 #[cfg(feature = "observability")]
 pub use crate::observability::{ExecutionMetrics, GraphObserver, NodeMetrics, ObservabilityConfig};
-
-// Persistence (when feature is enabled)
-#[cfg(feature = "persistence")]
-pub use crate::persistence::{PersistentState, PostgresStateStore, SqliteStateStore, StateStore};
